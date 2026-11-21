@@ -47,6 +47,9 @@ title: none
 > \`\`\`
 
 > [!practice] 📓 Practice
+> \`\`\`inkwell-practice
+> title: none
+> \`\`\`
 > \`\`\`inkwell-prompt
 > \`\`\`
 > \`\`\`base

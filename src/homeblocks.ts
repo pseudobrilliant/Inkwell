@@ -6,7 +6,7 @@ import { listStories, storyProgress } from "./stories";
 import { stripFrontmatter } from "./util";
 
 /** Block options: simple "key: value" lines. */
-function opts(src: string): Record<string, string> {
+export function opts(src: string): Record<string, string> {
   const o: Record<string, string> = {};
   for (const line of src.split("\n")) {
     const m = line.match(/^\s*([\w-]+)\s*:\s*(.*?)\s*$/);
@@ -16,7 +16,7 @@ function opts(src: string): Record<string, string> {
 }
 
 /** A self-refreshing block that redraws when the vault or metadata changes. */
-class LiveBlock extends MarkdownRenderChild {
+export class LiveBlock extends MarkdownRenderChild {
   constructor(el: HTMLElement, private plugin: InkwellPlugin, private draw: (el: HTMLElement, child: LiveBlock) => Promise<void>) {
     super(el);
   }

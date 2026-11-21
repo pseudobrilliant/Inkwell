@@ -10,6 +10,7 @@ import { StoryView, STORY_VIEW } from "./storyview";
 import { snapshotDraft } from "./revisions";
 import { promoteToLongForm } from "./promote";
 import { registerHomeBlocks } from "./homeblocks";
+import { registerContributionBlocks } from "./contribution";
 import { openHome } from "./home";
 import { pick } from "./modals";
 import { formatProgress, newCodexNote, newShortStory, showStoryProgress, Story, storyForFile, storyProgress } from "./stories";
@@ -108,6 +109,7 @@ export default class InkwellPlugin extends Plugin {
     storyCommand("snapshot-draft", "Snapshot draft (new revision)", (s) => snapshotDraft(this, s));
     storyCommand("promote-long-form", "Promote story to long form", (s) => promoteToLongForm(this, s));
     registerHomeBlocks(this);
+    registerContributionBlocks(this);
 
     this.addCommand({ id: "new-character", name: "New character", callback: () => newCodexNote(this, "character") });
     this.addCommand({ id: "new-location", name: "New location", callback: () => newCodexNote(this, "location") });

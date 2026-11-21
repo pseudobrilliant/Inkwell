@@ -2,7 +2,7 @@
  * Keep the Rhythm (KTR) integration — the ONLY file that knows about KTR.
  * Read-only. Optional: every method returns null when KTR is missing,
  * disabled, or an untested version, so callers just hide the numbers.
- * See build_plan.md §5.
+ * Rules: see CLAUDE.md → Working rules → Keep the Rhythm.
  */
 import { App, moment, normalizePath } from "obsidian";
 
@@ -77,15 +77,30 @@ export class KeepTheRhythm {
     return today.clone().subtract(back, "days").format("YYYY-MM-DD");
   }
 
-  /** Net words written in matching files between two dates (inclusive). Null if unavailable. */
-  async words(match: (path: string) => boolean, from: string, to = moment().format("YYYY-MM-DD")): Promise<number | null> {
+  /** Net words per day (YYYY-MM-DD → words) in matching files between two dates (inclusive). Null if unavailable. */
+  async dailyWords(
+    match: (path: string) => boolean,
+    from: string,
+    to = moment().format("YYYY-MM-DD")
+  ): Promise<Map<string, number> | null> {
     const d = await this.data();
     if (!d) return null;
-    let total = 0;
+    const out = new Map<string, number>();
     for (const a of d.stats?.dailyActivity ?? []) {
       if (a.date < from || a.date > to || !match(a.filePath)) continue;
-      for (const c of a.changes ?? []) total += Number(c.w) || 0;
+      let n = 0;
+      for (const c of a.changes ?? []) n += Number(c.w) || 0;
+      out.set(a.date, (out.get(a.date) ?? 0) + n);
     }
+    return out;
+  }
+
+  /** Net words written in matching files between two dates (inclusive). Null if unavailable. */
+  async words(match: (path: string) => boolean, from: string, to = moment().format("YYYY-MM-DD")): Promise<number | null> {
+    const days = await this.dailyWords(match, from, to);
+    if (!days) return null;
+    let total = 0;
+    for (const n of days.values()) total += n;
     return total;
   }
 

@@ -60,7 +60,7 @@ Inkwell is organized around **Capture**, which feeds everything, and **three mod
 - **Progress signal:** total words across scenes against the target, words this week, scene statuses, next step.
 
 ### Shared view: Home
-- **Home** (`src/home.ts`, `src/homeblocks.ts`) brings everything together: inbox, in-progress pieces, practice, prompt of the day, heatmap. It is built from code blocks (`inkwell-inbox`, `inkwell-in-progress`, `inkwell-prompt`, `inkwell-heatmap`) that work in any note. The **New…** picker creates any Inkwell note.
+- **Home** (`src/home.ts`, `src/homeblocks.ts`, `src/contribution.ts`) brings everything together: inbox, in-progress pieces, practice, prompt of the day, heatmap. It is built from code blocks (`inkwell-inbox`, `inkwell-in-progress`, `inkwell-prompt`, `inkwell-practice`, `inkwell-heatmap`) that work in any note. The **New…** picker creates any Inkwell note.
 
 ## Movement between modes
 
@@ -76,7 +76,7 @@ Contribution is tracked at four levels. Each answers a different question.
 
 | Level | Question it answers | What exists now | Status |
 |---|---|---|---|
-| **Session / day** | Did I show up today? | KTR words today (`ktr-entries` in the journal), journal `writing_min`, exercise `minutes` | partial |
+| **Session / day** | Did I show up today? | `inkwell-practice` (`src/contribution.ts`): days showed up this week, streak, exercises, prompts used, journal entries, practice words. Also KTR's `ktr-entries` in the journal. Not yet: real minutes written (`writing_min` is never filled, and exercise `minutes` is only the goal) | built |
 | **Piece** | Is this story or project moving? | Words against `target_wordcount`, words this week, status, last worked on, status bar, Home in-progress list | built |
 | **Mode** | Where is my writing going: practice, stories, or projects? | Nothing yet | idea |
 | **Lifetime / streak** | What has all this added up to? | KTR heatmap (`inkwell-heatmap`) and KTR streaks | partial |

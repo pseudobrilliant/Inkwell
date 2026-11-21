@@ -64,7 +64,8 @@ Inkwell helps you organize and write projects, but it stops short of publishing 
 
 ### Home
 - A built-in **Home** dashboard (command + ribbon).
-- Code blocks you can use in any note: `inkwell-inbox`, `inkwell-in-progress`, `inkwell-prompt`, `inkwell-heatmap`.
+- Code blocks you can use in any note: `inkwell-inbox`, `inkwell-in-progress`, `inkwell-prompt`, `inkwell-practice`, `inkwell-heatmap`.
+- **Practice this week** (`inkwell-practice`): which days you showed up, your streak, and the exercises, prompts, journal entries, and practice words for the week.
 - A **New…** picker that creates any Inkwell note from one command.
 
 ## Installation
