@@ -6,7 +6,7 @@ draft
 Created
 2026-11-20
 Updated
-2026-11-20
+2026-11-21
 Inkwell — writing plugin feature list & plan
 [!abstract] One line A single Obsidian plugin that runs this vault's writing life: capture → practice → short stories → long-form projects, built small and grown over time.
 
@@ -93,8 +93,9 @@ F. Home & progress
 Feature	Version
 Home keeps working with Bases + Keep the Rhythm (no rewrite needed)	0.1
 Plugin adds code blocks for Home: inkwell-inbox, inkwell-in-progress, inkwell-prompt	0.3
-Per-story word targets and "words this week on this story"	0.3
-Streaks/goals: keep using Keep the Rhythm (don't duplicate)	—
+Per-story word targets and "words this week on this story" (read from Keep the Rhythm's daily log, drafts/scenes only; see §5)	0.3
+Embed Keep the Rhythm's heatmap and totals blocks (ktr-heatmap, ktr-slots) on Home and in the story panel instead of building our own	0.3
+Streaks/goals/word log: keep using Keep the Rhythm; Inkwell keeps no word log, streaks or heatmap of its own	—
 G. Settings
 Feature	Version
 Folder locations (defaults match this vault: 00 - Inbox, 01 - Writing, 02 - Long Projects, 04 - Practice, 05 - Resources)	0.1
@@ -119,13 +120,13 @@ Naming decisions
 
 target_wordcount everywhere (StoryLine's name), so promoting short → long needs no renaming.
 location, not place. The 99 - System/Templates/Place.md template now writes type: location (changed 2026-11-20). Inkwell still reads place as an alias for any older notes.
-Compatibility: StoryLine fields match StoryLine 1.11.12. Re-check §3 when StoryLine updates.
+Compatibility: StoryLine fields match StoryLine 1.11.12. Re-check §3 when StoryLine updates. Keep the Rhythm reading (§5) is tested against Keep the Rhythm 0.2.16 (data schema 0.2).
 
 4. Roadmap
 Version	Theme	Ships	Status
 0.1	Foundations	Plugin skeleton, settings (folders/templates/statuses), quick capture → Inbox (desktop + mobile), today's journal, new short story + progress, new exercise + random prompt, prompt notes + Prompts table	planned
 0.2	Inbox & practice	Inbox panel with triage actions, append-to-today, prompt of the day, "this became a story"	planned
-0.3	Short-form depth	Story panel, revision snapshots, promote short → long, Home code blocks, per-story targets	planned
+0.3	Short-form depth	Story panel, revision snapshots, promote short → long, Home code blocks, per-story targets + words this week (via Keep the Rhythm), embedded Keep the Rhythm heatmap/totals	planned
 0.4	Long-form core (gated)	Project panel: scene list, drag reorder, new scene, scene details sidebar	planned
 0.5	Boards (gated)	Corkboard + kanban for scenes	planned
 0.6	Codex (gated)	Characters & places panel with appears-in links (short + long)	planned
@@ -136,13 +137,33 @@ Status values: planned → building → shipped.
 At each step the vault keeps working without the plugin; Templater/Bases stay until a plugin feature fully replaces them.
 
 5. What stays with other plugins (for now)
-Keep the Rhythm: word counts, streaks, heatmap.
+Keep the Rhythm: word counts, streaks, heatmap — an optional dependency of Inkwell (see below).
 StoryLine: long-form views, timeline, plot grid, manuscript export — Inkwell only rebuilds what proves missing.
 Bases: the boards on Home.
 Templater: until 0.1 replaces the Story/Exercise/Journal templates.
 QuickAdd: replaced for writing capture by Inkwell quick capture in 0.1; keep for any non-writing macros.
 Novel Word Count: keeps file-explorer counts; Inkwell computes draft/scene counts itself for progress.
 Homepage, Harper, Excalidraw, Folder Notes: unchanged.
+
+Keep the Rhythm integration
+
+Inkwell does not keep its own word log, streaks or heatmap. It reads Keep the Rhythm (KTR) for anything time-based ("words this week", streaks) and embeds KTR's blocks for display.
+
+What Inkwell uses	How	Supported or internal
+ktr-heatmap, ktr-slots, ktr-entries code blocks	Embedded in Inkwell's notes and views (journal template already uses ktr-entries)	Supported (user-facing blocks)
+Daily log: stats.dailyActivity (date, filePath, wordCountStart, changes[].w)	Read from KTR's data.json to sum words per story per day/week	Internal (undocumented; may change)
+Streak totals: stats.currentStreak, stats.highestStreak	Read from KTR's data.json for Home	Internal (undocumented; may change)
+
+Rules
+Optional: Inkwell works fully without KTR installed or enabled; KTR-based numbers and blocks are simply hidden.
+One file: all KTR code lives in src/integrations/keep-the-rhythm.ts; nothing else reads KTR data.
+Read-only: Inkwell never writes KTR's data or settings.
+Version check: Inkwell checks KTR's version and data schema; on an untested version it hides KTR stats (with a note in settings) rather than showing wrong numbers.
+Drafts and scenes only: per-story numbers count only dailyActivity entries whose filePath is a story draft or scene — journal and exercise writing doesn't count toward a story (matches §8 Progress).
+
+Known risk: device-by-device history. KTR keeps its working history in each device's local IndexedDB and mirrors it into data.json. If phone and desktop each write data.json, the synced copy may hold only one device's history, so "words this week" could undercount. Fallback: if this shows up in real use, swap in Inkwell's own word log (behind the same one-file interface) — recorded in §9 until needed.
+
+After every KTR update: re-check the numbers against KTR's own heatmap/entries for a known day, then bump the tested version in §3.
 6. StoryLine features reviewed
 StoryLine is MIT-licensed, so Inkwell may reuse its code with attribution (keep StoryLine's copyright and license notice in Inkwell's LICENSE/README).
 
@@ -169,9 +190,12 @@ Submission tracking: not needed; dropped.
 Scheduling: the roadmap (§4) is the single source of truth; features carry version numbers, not MVP/Next/Later.
 Order: short-form depth (0.3) comes before long-form views; long-form views (0.4–0.6) are gated on StoryLine falling short.
 Field names: target_wordcount and type: location everywhere.
+2026-11-21 — Keep the Rhythm: optional dependency. Inkwell keeps no word log, streaks or heatmap of its own; it reads KTR's daily log and embeds its blocks (§5).
 9. Ideas / parking lot
 New ideas go here first; move them into §2 with a version once decided.
+Inkwell's own word log — only if KTR's device-by-device history proves unreliable (§5).
 StoryLine gaps (evidence for 0.4–0.6)
 10. Changelog
 Date	Version	Change
 2026-11-20	—	Plan reviewed: versions replace MVP/Next/Later, roadmap reordered (short form before long form), data-model names fixed, dev & release section added.
+2026-11-21	—	Keep the Rhythm made an optional dependency: §2F words-this-week reads KTR's daily log and a new 0.3 item embeds its heatmap/totals; §3 notes KTR 0.2.16 compatibility; §5 adds the integration table, rules and device-history risk; §8 records the decision. Also logged: Place template now writes type: location (2026-11-20).
