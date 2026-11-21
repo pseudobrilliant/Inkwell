@@ -121,7 +121,7 @@ export function registerHomeBlocks(plugin: InkwellPlugin): void {
         rows.sort((a, b) => b.last - a.last);
         const table = box.createEl("table", { cls: "inkwell-progress-table" });
         const hr = table.createEl("thead").createEl("tr");
-        ["Story", "Status", "Words", "This week", "Last worked"].forEach((h) => hr.createEl("th", { text: h }));
+        ["Title", "Status", "Words", "This week", "Last worked"].forEach((h) => hr.createEl("th", { text: h }));
         const tb = table.createEl("tbody");
         for (const r of rows) {
           const tr = tb.createEl("tr");

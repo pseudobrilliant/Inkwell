@@ -27,12 +27,14 @@ COLORING_MODE liquid
 STOPS 100, 500, 1000
 CENTER
 \`\`\`
+
 \`\`\`ktr-slots
 CURRENT_DAY, WORDS
 CURRENT_STREAK
 CURRENT_WEEK, WORDS
 CURRENT_MONTH, WORDS, AVG
 \`\`\`
+
 ## ▶ Pick up where you left off
 \`\`\`inkwell-in-progress
 title: none
@@ -156,6 +158,47 @@ type: draft
 ---
 
 `,
+  projectHub: `---
+type: storyline
+tags:
+---
+## Logline
+{{logline}}
+
+## Premise
+
+
+## Outline
+### Act 1
+
+### Act 2
+
+### Act 3
+
+
+## Parking lot
+- 
+
+---
+## Scenes
+\`\`\`base
+filters:
+  and:
+    - file.inFolder(this.file.folder + "/Scenes")
+    - type == "scene"
+views:
+  - type: table
+    name: Scenes
+    order:
+      - file.name
+      - status
+      - pov
+      - target_wordcount
+    sort:
+      - property: sequence
+        direction: ASC
+\`\`\`
+`,
   character: `---
 type: character
 tags:
@@ -202,6 +245,7 @@ export const TEMPLATE_FILE_NAMES: Record<TemplateKey, string> = {
   exercise: "Exercise",
   storyHub: "Story",
   storyDraft: "Story Draft",
+  projectHub: "Project",
   character: "Character",
   location: "Location",
 };

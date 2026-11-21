@@ -4,6 +4,7 @@ import { askForm, pick } from "./modals";
 import { loadTemplate, render } from "./templates";
 import { cleanName, createNote, ensureFolder, uniquePath } from "./util";
 import { countWords } from "./wordcount";
+import { listLongProjects, LongProject, projectForFile } from "./projects";
 
 export interface Story {
   name: string;
@@ -205,8 +206,35 @@ export async function showStoryProgress(plugin: InkwellPlugin): Promise<void> {
   new ProgressModal(plugin, story, await storyProgress(plugin, story)).open();
 }
 
-/** New character or location: in the current story folder, or a chosen one. */
-export async function newCodexNote(plugin: InkwellPlugin, kind: "character" | "location"): Promise<void> {
+interface CodexHome {
+  name: string;
+  folder: string | null;
+  link: string;
+}
+
+/** Where a character/location goes: a story folder, or a project's Codex/ sub-folder. */
+function codexHomeForFile(plugin: InkwellPlugin, file: TFile | null, kind: "character" | "location"): CodexHome | null {
+  const story = storyForFile(plugin, file);
+  if (story) return { name: story.name, folder: story.folder.path, link: `[[${story.hub?.basename ?? story.name}]]` };
+  const project = projectForFile(plugin, file);
+  if (project) return projectCodexHome(project, kind);
+  return null;
+}
+
+function projectCodexHome(project: LongProject, kind: "character" | "location"): CodexHome {
+  return {
+    name: project.name,
+    folder: `${project.folder.path}/Codex/${kind === "character" ? "Characters" : "Locations"}`,
+    link: `[[${project.hub?.basename ?? project.name}]]`,
+  };
+}
+
+/** New character or location: in the current story or project, or a chosen one. */
+export async function newCodexNote(
+  plugin: InkwellPlugin,
+  kind: "character" | "location",
+  forFile: TFile | null = plugin.app.workspace.getActiveFile()
+): Promise<void> {
   const { app, settings } = plugin;
   const v = await askForm(app, kind === "character" ? "New character" : "New location", [
     { key: "name", label: "Name", required: true },
@@ -216,21 +244,21 @@ export async function newCodexNote(plugin: InkwellPlugin, kind: "character" | "l
   const name = cleanName(v.name);
   if (!name) return;
 
-  let story = storyForFile(plugin, app.workspace.getActiveFile());
-  let folder: string;
-  if (story) {
-    folder = story.folder.path;
-  } else {
-    const inbox = { name: "(No story — Inbox)", folder: null } as unknown as Story;
-    const choice = await pick(app, [inbox, ...listStories(plugin)], (s) => s.name, "Which story is this for?");
-    if (!choice) return;
-    story = choice.folder ? choice : null;
-    folder = story ? story.folder.path : settings.folders.inbox;
+  let home = codexHomeForFile(plugin, forFile, kind);
+  if (!home) {
+    const choices: CodexHome[] = [
+      { name: "(None — Inbox)", folder: null, link: "" },
+      ...listStories(plugin).map((s) => ({ name: `${s.name} (story)`, folder: s.folder.path, link: `[[${s.hub?.basename ?? s.name}]]` })),
+      ...listLongProjects(plugin).map((p) => ({ ...projectCodexHome(p, kind), name: `${p.name} (project)` })),
+    ];
+    home = await pick(app, choices, (c) => c.name, "Which story or project is this for?");
+    if (!home) return;
   }
+  const folder = home.folder ?? settings.folders.inbox;
 
   const fields: Record<string, unknown> = {
     type: kind,
-    project: story ? `[[${story.hub?.basename ?? story.name}]]` : "",
+    project: home.link,
     name,
     created: moment().format("YYYY-MM-DD"),
   };

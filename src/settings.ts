@@ -17,6 +17,7 @@ export interface InkwellSettings {
     exercise: string;
     storyHub: string;
     storyDraft: string;
+    projectHub: string;
     character: string;
     location: string;
   };
@@ -36,11 +37,11 @@ export interface InkwellSettings {
 export const DEFAULT_SETTINGS: InkwellSettings = {
   folders: {
     inbox: "00 - Inbox",
-    writing: "01 - Writing",
-    longProjects: "02 - Long Projects",
-    journal: "04 - Practice/Journal",
-    exercises: "04 - Practice/Exercises",
-    prompts: "04 - Practice/Prompts",
+    journal: "01 - Practice/Journal",
+    exercises: "01 - Practice/Exercises",
+    prompts: "01 - Practice/Prompts",
+    writing: "02 - Stories",
+    longProjects: "03 - Projects",
     resources: "05 - Resources",
   },
   templates: {
@@ -49,6 +50,7 @@ export const DEFAULT_SETTINGS: InkwellSettings = {
     exercise: "99 - System/Templates/Inkwell/Exercise.md",
     storyHub: "99 - System/Templates/Inkwell/Story.md",
     storyDraft: "99 - System/Templates/Inkwell/Story Draft.md",
+    projectHub: "99 - System/Templates/Inkwell/Project.md",
     character: "99 - System/Templates/Inkwell/Character.md",
     location: "99 - System/Templates/Inkwell/Location.md",
   },
@@ -70,11 +72,11 @@ type TemplateKey = keyof InkwellSettings["templates"];
 
 const FOLDER_LABELS: Record<FolderKey, string> = {
   inbox: "Inbox",
-  writing: "Short stories",
-  longProjects: "Long projects",
   journal: "Journal",
   exercises: "Exercises",
   prompts: "Prompts",
+  writing: "Stories",
+  longProjects: "Projects",
   resources: "Resources",
 };
 
@@ -84,6 +86,7 @@ const TEMPLATE_LABELS: Record<TemplateKey, string> = {
   exercise: "Exercise",
   storyHub: "Short story hub",
   storyDraft: "Short story draft",
+  projectHub: "Project",
   character: "Character",
   location: "Location",
 };
@@ -189,8 +192,8 @@ export class InkwellSettingTab extends PluginSettingTab {
             await this.plugin.saveSettings();
           });
         });
-    num("Long project word target", "Pre-filled when promoting to long form. 0 = none.", "defaultLongTarget");
-    num("Scene word target", "target_wordcount for scenes created by promotion. 0 = none.", "defaultSceneTarget");
+    num("Project word target", "Pre-filled when creating a project or promoting a story. 0 = none.", "defaultLongTarget");
+    num("Scene word target", "target_wordcount for new scenes. 0 = none.", "defaultSceneTarget");
 
     new Setting(containerEl).setName("Keep the Rhythm").setHeading();
     const ktr = this.plugin.ktr.status();

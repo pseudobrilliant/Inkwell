@@ -3,6 +3,7 @@ import type InkwellPlugin from "./main";
 import { CaptureModal } from "./capture";
 import { createExercise } from "./exercise";
 import { askForm, pick } from "./modals";
+import { askProjectDetails, createProject } from "./projects";
 import { askStoryDetails, createShortStory } from "./stories";
 import { moveFile, slugWords, stripFrontmatter } from "./util";
 
@@ -34,18 +35,19 @@ interface Destination {
   name: string;
   folder: string;
   hub: string;
+  isProject: boolean;
 }
 
 function destinations(plugin: InkwellPlugin): Destination[] {
   const out: Destination[] = [];
   for (const [root, label] of [
-    [plugin.settings.folders.writing, "short"],
-    [plugin.settings.folders.longProjects, "long"],
+    [plugin.settings.folders.writing, "story"],
+    [plugin.settings.folders.longProjects, "project"],
   ] as const) {
     const f = plugin.app.vault.getAbstractFileByPath(normalizePath(root));
     if (!(f instanceof TFolder)) continue;
     for (const c of f.children) {
-      if (c instanceof TFolder) out.push({ name: `${c.name} (${label})`, folder: c.path, hub: c.name });
+      if (c instanceof TFolder) out.push({ name: `${c.name} (${label})`, folder: c.path, hub: c.name, isProject: label === "project" });
     }
   }
   return out.sort((a, b) => a.name.localeCompare(b.name));
@@ -62,9 +64,12 @@ export async function archiveCapture(plugin: InkwellPlugin, file: TFile): Promis
 async function sendToStory(plugin: InkwellPlugin, file: TFile): Promise<boolean> {
   const d = await pick(plugin.app, destinations(plugin), (x) => x.name, "Send to which story or project?");
   if (!d) return false;
+  // Research captures go to a project's Research/ folder; everything else to Notes/.
+  const kind = plugin.app.metadataCache.getFileCache(file)?.frontmatter?.kind;
+  const sub = d.isProject && kind === "research" ? "Research" : "Notes";
   await plugin.app.fileManager.processFrontMatter(file, (fm) => (fm.project = `[[${d.hub}]]`));
-  await moveFile(plugin.app, file, `${d.folder}/Notes`);
-  new Notice(`Sent to ${d.hub}/Notes`);
+  await moveFile(plugin.app, file, `${d.folder}/${sub}`);
+  new Notice(`Sent to ${d.hub}/${sub}`);
   return true;
 }
 
@@ -106,6 +111,23 @@ async function toStory(plugin: InkwellPlugin, file: TFile): Promise<boolean> {
   return true;
 }
 
+async function toProject(plugin: InkwellPlugin, file: TFile): Promise<boolean> {
+  const text = await bodyOf(plugin, file);
+  const firstLine = text.split("\n")[0] ?? "";
+  const input = await askProjectDetails(plugin, {
+    title: slugWords(text, 6, 50),
+    logline: firstLine.length <= 200 ? firstLine : "",
+  });
+  if (!input) return false;
+  const project = await createProject(plugin, input);
+  if (!project) return false;
+  // The capture becomes the project's first note (or research note).
+  const kind = plugin.app.metadataCache.getFileCache(file)?.frontmatter?.kind;
+  await plugin.app.fileManager.processFrontMatter(file, (fm) => (fm.project = `[[${input.title}]]`));
+  await moveFile(plugin.app, file, `${project.folder.path}/${kind === "research" ? "Research" : "Notes"}`);
+  return true;
+}
+
 async function toResource(plugin: InkwellPlugin, file: TFile): Promise<boolean> {
   const kind = await pick(plugin.app, RESOURCE_KINDS, (k) => k, "What kind of resource?");
   if (!kind) return false;
@@ -143,6 +165,7 @@ export function triageMenu(plugin: InkwellPlugin, file: TFile, menu: Menu): void
     );
   item("Send to story / project…", "folder-input", () => sendToStory(plugin, file));
   item("New short story from this…", "book-plus", () => toStory(plugin, file));
+  item("New project from this…", "library-big", () => toProject(plugin, file));
   item("Turn into exercise…", "pencil-line", () => toExercise(plugin, file));
   item(kind === "prompt" ? "Save as prompt note ★" : "Save as prompt note", "sparkles", () => toPrompt(plugin, file));
   item("File as resource…", "library", () => toResource(plugin, file));

@@ -1,6 +1,7 @@
 import { moment, normalizePath, Notice, TFile, TFolder } from "obsidian";
 import type InkwellPlugin from "./main";
 import { askForm } from "./modals";
+import { PROJECT_FOLDERS, sceneFileName } from "./projects";
 import type { Story } from "./stories";
 import { createNote, ensureFolder, moveFile, slugWords, stripFrontmatter, uniquePath } from "./util";
 
@@ -40,12 +41,6 @@ export function splitScenes(body: string): SceneText[] {
     .map((s, i) => ({ ...s, title: s.title || slugWords(s.text, 6, 50) || `Scene ${i + 1}` }));
 }
 
-/** StoryLine's scene file name: "<act>-<sequence> <title>". */
-function sceneFileName(seq: number, title: string): string {
-  const t = title.replace(/[\\/:*?"<>|]/g, "-").substring(0, 60);
-  return `00-${String(seq).padStart(2, "0")} ${t}`;
-}
-
 export async function promoteToLongForm(plugin: InkwellPlugin, story: Story): Promise<void> {
   const { app, settings } = plugin;
   const { hub, draft } = story;
@@ -82,6 +77,7 @@ export async function promoteToLongForm(plugin: InkwellPlugin, story: Story): Pr
   const today = moment().format("YYYY-MM-DD");
   const archive = `${dest}/Archive`;
   await ensureFolder(app, archive);
+  for (const sub of PROJECT_FOLDERS) await ensureFolder(app, `${dest}/${sub}`);
 
   // 1. Safety first: copy the hub, move the untouched draft into Archive/.
   await app.vault.copy(hub, uniquePath(app, archive, `${hub.basename} - Short Story Hub`));

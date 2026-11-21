@@ -2,7 +2,11 @@
 
 **A writing-practice plugin for Obsidian.**
 
-Inkwell helps you build a steady writing habit and gives you structure for the small and medium-sized work that comes out of it: daily journals, timed exercises, prompts, captured ideas, short stories, and longer projects.
+Inkwell helps you build a steady writing habit and gives you structure for the work that comes out of it. It organizes three kinds of writing, each a step in a practice:
+
+1. **Practice:** daily journals, prompts, and timed exercises.
+2. **Stories:** short pieces, each with one draft and a light folder around it.
+3. **Projects:** long-form work (novellas, novels, serials) organized into scenes, a codex, and research.
 
 ## What Inkwell is for
 
@@ -11,14 +15,14 @@ Many writing tools are built around publishing a finished manuscript: compiling,
 - **Showing up.** A daily journal, prompts, and exercises give you something to write today, even when you have no project.
 - **Catching ideas.** Quick capture sends a thought to your Inbox with one keystroke, from desktop or phone. You sort it later.
 - **Turning practice into stories.** When an exercise turns into something more, you can promote it to a short story, and Inkwell keeps a link back to where it started.
-- **Keeping projects organized.** Each short story gets a simple folder with a hub note, a draft, its characters and places, and a record of past revisions. Longer work gets a long-form project with scenes and a codex for characters and locations.
+- **Keeping stories and projects organized.** Each short story gets a simple folder with a hub note, a draft, its characters and places, and a record of past revisions. A project gets scenes, a codex for characters and locations, and room for notes and research.
 - **Seeing your progress.** A Home dashboard shows your inbox, what's in progress, the prompt of the day, and your writing activity.
 
 ## What Inkwell is not
 
 Inkwell is **not** a publishing or export tool. It won't compile a manuscript, format submissions, or export to DOCX/PDF, and those features aren't planned.
 
-Inkwell helps you organize and write long-form projects, but it stops short of publishing them. Because everything is plain Markdown, you can take a finished project to whatever tool you use to compile and publish.
+Inkwell helps you organize and write projects, but it stops short of publishing them. Because everything is plain Markdown, you can take a finished project to whatever tool you use to compile and publish.
 
 ## Principles
 
@@ -33,7 +37,7 @@ Inkwell helps you organize and write long-form projects, but it stops short of p
 ### Capture & Inbox
 - **Quick capture** (command + ribbon): a small popup for an idea, a line, a link, a prompt, or a research note. It goes straight to the Inbox without opening a note.
 - **Inbox panel:** your unsorted captures, newest first.
-- **Triage:** send a capture to a story, turn it into an exercise or prompt, start a new short story from it, file it as a resource, archive it, or delete it.
+- **Triage:** send a capture to a story or project (research captures land in a project's `Research/` folder), turn it into an exercise or prompt, start a new story or project from it, file it as a resource, archive it, or delete it.
 - **Append to today:** optionally log each capture in today's journal too.
 
 ### Practice
@@ -44,17 +48,19 @@ Inkwell helps you organize and write long-form projects, but it stops short of p
 - **Exercises:** start an exercise from a prompt with a time goal.
 - **This became a story:** promote an exercise into a short story, with a link back to it.
 
-### Short stories
+### Stories
 - **New short story:** builds a folder with a hub note (logline, premise, outline, status, next step) and a draft.
-- **Characters & locations:** notes that work the same way in every story.
-- **Story panel:** a sidebar with the hub summary, draft word count, characters, notes, and next step.
+- **Characters & locations:** notes that work the same way in stories and projects. In a project they go to `Codex/`.
+- **Story panel:** a sidebar with the hub summary, draft word count, characters, notes, and next step. It also works for projects (see below).
 - **Progress:** status (idea → drafting → revising → done), word count against a target, and when you last worked on it.
 - **Revisions:** snapshot the draft as v2, v3, … with old versions moved to `Archive/`.
 
-### Long-form projects
-- **Project layout:** a project note, a `Scenes/` folder, and a `Codex/` for characters and locations, plus `Notes/` and `Archive/`.
-- **Progress on Home:** long-form projects show up in the in-progress list with their total word count.
-- **Promote a short story:** if a short story outgrows one draft, Inkwell can split it into scenes at headings or `***` breaks and move its characters and locations into the codex. The original draft is archived first.
+### Projects
+- **New project:** asks for a title, logline, genre, and word target, then builds the layout: a project note (logline, premise, outline by act, a parking lot for loose ideas, and a table of scenes), plus `Scenes/`, `Codex/Characters/`, `Codex/Locations/`, `Notes/`, `Research/`, and `Archive/`.
+- **New scene:** adds a scene at the end of the current project (or one you pick), numbered so scenes stay in order.
+- **Project panel:** the same sidebar shows a project's status, word count against its target, words this week, next step, scenes in order with status and word count, characters, locations, notes, and research.
+- **Progress:** projects appear on Home's in-progress list and in the status bar, with total words across scenes.
+- **Promote a story:** if a short story outgrows one draft, Inkwell can turn it into a project, splitting the draft into scenes at headings or `***` breaks and moving its characters and locations into the codex. The original draft is archived first.
 
 ### Home
 - A built-in **Home** dashboard (command + ribbon).
@@ -79,9 +85,9 @@ All of these can be changed in settings.
 | Folder | Holds |
 |---|---|
 | `00 - Inbox` | Captures |
-| `01 - Writing` | Short stories |
-| `02 - Long Projects` | Stories promoted to long form |
-| `04 - Practice` | Journal, exercises, prompts |
+| `01 - Practice` | Journal, exercises, prompts |
+| `02 - Stories` | Short stories |
+| `03 - Projects` | Long-form projects |
 | `05 - Resources` | Filed resources |
 
 ## Development

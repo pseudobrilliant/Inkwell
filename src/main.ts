@@ -15,6 +15,7 @@ import { pick } from "./modals";
 import { formatProgress, newCodexNote, newShortStory, showStoryProgress, Story, storyForFile, storyProgress } from "./stories";
 import { createPromptsBase, newPrompt, RandomPromptModal, registerPromptBlock } from "./prompts";
 import { createExercise, newExercise } from "./exercise";
+import { newProject, newScene, projectForFile, projectProgress } from "./projects";
 
 export default class InkwellPlugin extends Plugin {
   settings!: InkwellSettings;
@@ -87,6 +88,8 @@ export default class InkwellPlugin extends Plugin {
 
     // Short form
     this.addCommand({ id: "new-short-story", name: "New short story", callback: () => newShortStory(this) });
+    this.addCommand({ id: "new-project", name: "New project", callback: () => newProject(this) });
+    this.addCommand({ id: "new-scene", name: "New scene", callback: () => newScene(this) });
     this.addCommand({ id: "story-progress", name: "Story progress", callback: () => showStoryProgress(this) });
     this.registerView(STORY_VIEW, (leaf) => new StoryView(leaf, this));
     this.addCommand({ id: "open-story-panel", name: "Open story panel", callback: () => this.activateView(STORY_VIEW) });
@@ -116,6 +119,8 @@ export default class InkwellPlugin extends Plugin {
       callback: async () => {
         const choices: [string, () => unknown][] = [
           ["Short story", () => newShortStory(this)],
+          ["Project", () => newProject(this)],
+          ["Scene", () => newScene(this)],
           ["Exercise", () => newExercise(this)],
           ["Exercise from a random prompt", () => new RandomPromptModal(this, (p) => void createExercise(this, p)).open()],
           ["Prompt", () => newPrompt(this)],
@@ -139,7 +144,9 @@ export default class InkwellPlugin extends Plugin {
     // Story progress in the status bar (desktop only; mobile has no status bar).
     this.statusEl = this.addStatusBarItem();
     this.statusEl.addClass("mod-clickable");
-    this.statusEl.onClickEvent(() => showStoryProgress(this));
+    this.statusEl.onClickEvent(() =>
+      projectForFile(this, this.app.workspace.getActiveFile()) ? this.activateView(STORY_VIEW) : showStoryProgress(this)
+    );
     const refresh = debounce(() => this.refreshStatusBar(), 1000, true);
     this.registerEvent(this.app.workspace.on("active-leaf-change", () => this.refreshStatusBar()));
     this.registerEvent(this.app.vault.on("modify", (f) => f instanceof TFile && refresh()));
@@ -163,14 +170,17 @@ export default class InkwellPlugin extends Plugin {
 
   async refreshStatusBar() {
     if (!this.statusEl) return;
-    const story = storyForFile(this, this.app.workspace.getActiveFile());
-    if (!story) {
+    const file = this.app.workspace.getActiveFile();
+    const story = storyForFile(this, file);
+    const project = story ? null : projectForFile(this, file);
+    if (!story && !project) {
       this.statusEl.setText("");
       this.statusEl.hide();
       return;
     }
-    const p = await storyProgress(this, story);
-    this.statusEl.setText(`${story.name} · ${formatProgress(p)}${p.status ? " · " + p.status : ""}`);
+    const p = story ? await storyProgress(this, story) : await projectProgress(this, project!);
+    const name = story ? story.name : project!.name;
+    this.statusEl.setText(`${name} · ${formatProgress(p)}${p.status ? " · " + p.status : ""}`);
     this.statusEl.show();
   }
 
