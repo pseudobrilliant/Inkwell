@@ -23,6 +23,8 @@ export async function saveCapture(plugin: InkwellPlugin, kind: CaptureKind, text
     type: "capture",
     kind,
     created: now.format("YYYY-MM-DDTHH:mm"),
+    // Kept through triage (prompt, resource, story notes…) so captures still count as contribution.
+    captured: now.format("YYYY-MM-DD"),
     source: Platform.isMobile ? "mobile" : "desktop",
   });
   if (plugin.settings.captureToJournal) {

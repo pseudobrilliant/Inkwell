@@ -2,6 +2,7 @@
  * Progress & motivation blocks (see CLAUDE.md → Progress & motivation model).
  *
  * ```inkwell-practice```      Session/day level: did I show up this week?
+ * ```inkwell-contribution```  Mode level: what did I add to each part of my writing?
  *
  * Counts come from frontmatter Inkwell already writes (type, created, prompt…).
  * Word numbers come from Keep the Rhythm and are hidden when it's unavailable.
@@ -135,10 +136,137 @@ function renderPractice(box: HTMLElement, w: PracticeWeek, title: string | undef
   box.createDiv({ cls: "inkwell-muted", text: parts.join(" · ") });
 }
 
+// ---------- Mode level: inkwell-contribution ----------
+
+export type Period = "week" | "month" | "year" | "all";
+const PERIODS: Period[] = ["week", "month", "year", "all"];
+const PERIOD_LABEL: Record<Period, string> = { week: "This week", month: "This month", year: "This year", all: "All time" };
+
+export interface Contribution {
+  period: Period;
+  from: string;
+  capture: { captured: number; sorted: number };
+  practice: { exercises: number; journals: number; prompts: number; words: number | null };
+  stories: { started: number; fromPractice: number; revisions: number; words: number | null };
+  projects: { started: number; promoted: number; scenes: number; words: number | null };
+  words: number | null;
+}
+
+async function periodStart(plugin: InkwellPlugin, p: Period): Promise<string> {
+  if (p === "week") return plugin.ktr.weekStart();
+  if (p === "month") return moment().startOf("month").format(DAY);
+  if (p === "year") return moment().startOf("year").format(DAY);
+  return "0000-00-00";
+}
+
+export async function contribution(plugin: InkwellPlugin, period: Period): Promise<Contribution> {
+  const { ktr, settings } = plugin;
+  const from = await periodStart(plugin, period);
+  const to = moment().format(DAY);
+  const inRange = (d: string) => !!d && d >= from && d <= to;
+  const notes = allNotes(plugin);
+  const of = (type: string) => notes.filter((x) => x.type === type && inRange(x.created));
+
+  // Captures keep `captured` through triage; older captures only have type + created.
+  const inbox = normalizePath(settings.folders.inbox);
+  const captures = notes.filter((x) =>
+    x.fm.captured ? inRange(fmDay(x.fm.captured)) : x.type === "capture" && inRange(x.created)
+  );
+  const exercises = of("exercise");
+  const stories = of("story");
+  const hubs = notes.filter((x) => x.type === "storyline");
+  const m = modeMatchers(plugin);
+
+  return {
+    period,
+    from,
+    capture: { captured: captures.length, sorted: captures.filter((x) => x.file.parent?.path !== inbox).length },
+    practice: {
+      exercises: exercises.length,
+      journals: of("journal").length,
+      prompts: exercises.filter((x) => !!x.fm.prompt).length,
+      words: await ktr.words(m.practice, from, to),
+    },
+    stories: {
+      started: stories.length,
+      fromPractice: stories.filter((x) => !!x.fm.from).length,
+      revisions: notes.filter((x) => inRange(fmDay(x.fm.snapshot))).length,
+      words: await ktr.words(m.stories, from, to),
+    },
+    projects: {
+      started: hubs.filter((x) => !x.fm.promoted && inRange(x.created)).length,
+      promoted: hubs.filter((x) => inRange(fmDay(x.fm.promoted))).length,
+      scenes: of("scene").length,
+      words: await ktr.words(m.projects, from, to),
+    },
+    words: await ktr.words(m.all, from, to),
+  };
+}
+
+function renderContribution(box: HTMLElement, c: Contribution, title: string | undefined, onPeriod: (p: Period) => void) {
+  box.addClass("inkwell-block", "inkwell-contribution");
+  const head = box.createDiv({ cls: "inkwell-block-head" });
+  if (title !== "none") head.createSpan({ text: title || "Your contribution" });
+  if (c.words !== null) head.createSpan({ cls: "inkwell-contribution-total", text: `${n(c.words)} words` });
+  const tabs = head.createDiv({ cls: "inkwell-period" });
+  for (const p of PERIODS) {
+    const b = tabs.createEl("button", { text: PERIOD_LABEL[p] });
+    if (p === c.period) b.addClass("is-active");
+    b.onclick = () => onPeriod(p);
+  }
+
+  const grid = box.createDiv({ cls: "inkwell-contribution-grid" });
+  const card = (name: string, lines: [number | null, string][]) => {
+    const el = grid.createDiv({ cls: "inkwell-contribution-card" });
+    el.createDiv({ cls: "inkwell-label", text: name });
+    for (const [v, label] of lines) {
+      if (v === null) continue;
+      const line = el.createDiv({ cls: "inkwell-contribution-line" });
+      line.createSpan({ cls: "inkwell-contribution-num", text: n(v) });
+      line.createSpan({ text: " " + label });
+    }
+  };
+  card("Capture", [
+    [c.capture.captured, c.capture.captured === 1 ? "idea captured" : "ideas captured"],
+    [c.capture.sorted, "sorted"],
+  ]);
+  card("Practice", [
+    [c.practice.exercises, c.practice.exercises === 1 ? "exercise" : "exercises"],
+    [c.practice.journals, c.practice.journals === 1 ? "journal entry" : "journal entries"],
+    [c.practice.prompts, c.practice.prompts === 1 ? "prompt used" : "prompts used"],
+    [c.practice.words, "words"],
+  ]);
+  card("Stories", [
+    [c.stories.started, "started"],
+    [c.stories.fromPractice, "grew from practice"],
+    [c.stories.revisions, c.stories.revisions === 1 ? "revision" : "revisions"],
+    [c.stories.words, "draft words"],
+  ]);
+  card("Projects", [
+    [c.projects.started, "started"],
+    [c.projects.promoted, "promoted from stories"],
+    [c.projects.scenes, c.projects.scenes === 1 ? "scene added" : "scenes added"],
+    [c.projects.words, "scene words"],
+  ]);
+}
+
 export function registerContributionBlocks(plugin: InkwellPlugin): void {
   // ```inkwell-practice```  (option: title: <text>|none)
   plugin.registerMarkdownCodeBlockProcessor("inkwell-practice", (src, el, ctx) => {
     const o = opts(src);
     ctx.addChild(new LiveBlock(el, plugin, async (box) => renderPractice(box, await practiceWeek(plugin), o.title)));
+  });
+
+  // ```inkwell-contribution```  (options: period: week|month|year|all, title: <text>|none)
+  plugin.registerMarkdownCodeBlockProcessor("inkwell-contribution", (src, el, ctx) => {
+    const o = opts(src);
+    let period: Period = PERIODS.includes(o.period as Period) ? (o.period as Period) : "month";
+    const block = new LiveBlock(el, plugin, async (box) =>
+      renderContribution(box, await contribution(plugin, period), o.title, (p) => {
+        period = p;
+        void block.redraw();
+      })
+    );
+    ctx.addChild(block);
   });
 }

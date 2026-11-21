@@ -38,7 +38,7 @@ Inkwell is organized around **Capture**, which feeds everything, and **three mod
   - Short form: send it to a story, or start a new story
   - Long form: send it to a project (research captures go to the project's `Research/`), or start a new project
   - Resources: file it, archive it, or delete it (Obsidian trash)
-- **Progress signal:** ideas captured, inbox processed. *Today only the inbox count exists.*
+- **Progress signal:** ideas captured and sorted (`inkwell-contribution`), plus the inbox count.
 - **Non-negotiable:** one keystroke, works on mobile.
 
 ### Mode 1: Practice. Show up.
@@ -78,8 +78,8 @@ Contribution is tracked at four levels. Each answers a different question.
 |---|---|---|---|
 | **Session / day** | Did I show up today? | `inkwell-practice` (`src/contribution.ts`): days showed up this week, streak, exercises, prompts used, journal entries, practice words. Also KTR's `ktr-entries` in the journal. Not yet: real minutes written (`writing_min` is never filled, and exercise `minutes` is only the goal) | built |
 | **Piece** | Is this story or project moving? | Words against `target_wordcount`, words this week, status, last worked on, status bar, Home in-progress list | built |
-| **Mode** | Where is my writing going: practice, stories, or projects? | Nothing yet | idea |
-| **Lifetime / streak** | What has all this added up to? | KTR heatmap (`inkwell-heatmap`) and KTR streaks | partial |
+| **Mode** | Where is my writing going: capture, practice, stories, or projects? | `inkwell-contribution` (`src/contribution.ts`): counts per objective for a week, month, year, or all time (captures, exercises, journals, prompts, stories started or grown from practice, revisions, projects, scenes) plus KTR words per mode | built |
+| **Lifetime / streak** | What has all this added up to? | KTR heatmap (`inkwell-heatmap`), KTR streak in `inkwell-practice`, all-time view of `inkwell-contribution`. Not yet: a dedicated writing-life view (milestones, pieces finished) | partial |
 
 **Counting rule:** practice writing (journal, exercises) **never** counts toward a piece's progress. It **does** count toward the day and lifetime levels. Piece-level numbers come only from drafts and scenes.
 
@@ -99,7 +99,7 @@ Contribution is tracked at four levels. Each answers a different question.
 ### Data model (`type:` values)
 | `type` | Where | Key fields |
 |---|---|---|
-| `capture` | Inbox | `kind`, `created`, `source` |
+| `capture` | Inbox | `kind`, `created`, `captured` (date; kept through triage so it still counts as contribution), `source` |
 | `journal` | Practice/Journal | `created`, `writing_min` |
 | `exercise` | Practice/Exercises | `prompt` (link), `minutes`, `became` (link) |
 | `prompt` | Practice/Prompts | `tags`, `used` (count), `last_used` (date) |
@@ -143,8 +143,8 @@ New key concepts land here first. Move them up once they're settled.
 
 - **Capture as a habit:** should capture have its own progress signal (ideas per week, time to inbox zero)?
 - **Weekly review:** a checklist covering inbox zero, picking an exercise, and checking stalled stories. It ties Capture and the modes together.
-- **Mode-level contribution:** a view of where your writing goes (practice vs. stories vs. projects) over time.
-- **Lifetime contribution:** a "writing life" view: total words, pieces finished, prompts used, ideas captured.
+- **Mode trends:** `inkwell-contribution` shows totals per period. A trend over time (this month vs. last) is still open.
+- **Writing life:** milestones and pieces finished. Finishing needs a date: status changes don't record when a piece reached `done`.
 - **Timed sprints:** a 10, 15, or 25-minute timer on any note that logs minutes to it (session/day level).
 - **Shared cast:** one set of characters and locations used across related stories.
 - **Manuscript view:** read all of a project's scenes as one continuous document (reading, not export).

@@ -230,6 +230,7 @@
 .home-page .callout .inkwell-block { border: none; padding: 0; }
 .home-page .callout .inkwell-prompt-block { border: none; padding: 0 0 var(--size-4-3); border-bottom: 1px solid var(--background-modifier-border); margin-bottom: var(--size-4-2); border-radius: 0; }
 .home-page .inkwell-block-head:empty { display: none; }
+.home-page .inkwell-contribution { border: none; padding: 0; }
 .home-page .callout .inkwell-practice { padding: 0 0 var(--size-4-3); border-bottom: 1px solid var(--background-modifier-border); margin-bottom: var(--size-4-3); border-radius: 0; }
 
 /* Inbox and Practice: one full-width row each */
@@ -250,3 +251,15 @@
 .inkwell-day.is-today { box-shadow: 0 0 0 2px var(--interactive-accent); }
 .inkwell-day.is-future { opacity: 0.4; }
 .inkwell-week-count { font-size: var(--font-ui-small); color: var(--text-muted); }
+
+/* Your contribution (inkwell-contribution) */
+.inkwell-contribution .inkwell-block-head { flex-wrap: wrap; }
+.inkwell-contribution-total { font-weight: var(--font-normal); color: var(--text-muted); font-size: var(--font-ui-small); }
+.inkwell-period { margin-left: auto; display: flex; gap: var(--size-2-1); }
+.inkwell-block-head .inkwell-period button { margin-left: 0; font-size: var(--font-ui-smaller); padding: var(--size-2-1) var(--size-4-2); height: auto; }
+.inkwell-period button.is-active { background: var(--interactive-accent); color: var(--text-on-accent); }
+.inkwell-contribution-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: var(--size-4-3); }
+.inkwell-contribution-card { background: var(--background-secondary); border-radius: var(--radius-m); padding: var(--size-4-2) var(--size-4-3); }
+.inkwell-contribution-card .inkwell-label { margin-bottom: var(--size-2-2); }
+.inkwell-contribution-line { font-size: var(--font-ui-small); color: var(--text-muted); }
+.inkwell-contribution-num { font-weight: var(--font-semibold); color: var(--text-normal); }

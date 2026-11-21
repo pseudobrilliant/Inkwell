@@ -64,8 +64,9 @@ Inkwell helps you organize and write projects, but it stops short of publishing 
 
 ### Home
 - A built-in **Home** dashboard (command + ribbon).
-- Code blocks you can use in any note: `inkwell-inbox`, `inkwell-in-progress`, `inkwell-prompt`, `inkwell-practice`, `inkwell-heatmap`.
+- Code blocks you can use in any note: `inkwell-inbox`, `inkwell-in-progress`, `inkwell-prompt`, `inkwell-practice`, `inkwell-contribution`, `inkwell-heatmap`.
 - **Practice this week** (`inkwell-practice`): which days you showed up, your streak, and the exercises, prompts, journal entries, and practice words for the week.
+- **Your contribution** (`inkwell-contribution`): what you added to each part of your writing this week, month, year, or all time: ideas captured and sorted; exercises, journal entries, and prompts used; stories started, grown from practice, and revised; projects started or promoted and scenes added. Word counts per mode appear when Keep the Rhythm is installed.
 - A **New…** picker that creates any Inkwell note from one command.
 
 ## Installation
