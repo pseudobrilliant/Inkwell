@@ -4,12 +4,104 @@ import type { InkwellSettings } from "./settings";
 
 export type TemplateKey = keyof InkwellSettings["templates"];
 
+/** Home dashboard. {{inbox}} and {{practice}} come from the folder settings. */
+const HOME_TEMPLATE = `---
+aliases:
+  - Home
+cssclasses:
+  - home-page
+---
+# ✍️ Write Something Today
+
+> [!moves]
+> - **⌘N** Capture an idea
+> - **⌘⇧D** Today's journal
+> - **⌘⇧N** New story, exercise…
+> - **StoryLine** Long projects (ribbon)
+> - **⌘P** Everything else
+
+\`\`\`ktr-heatmap
+OPTIONS
+WEEKS 48
+COLORING_MODE liquid
+STOPS 100, 500, 1000
+CENTER
+\`\`\`
+\`\`\`ktr-slots
+CURRENT_DAY, WORDS
+CURRENT_STREAK
+CURRENT_WEEK, WORDS
+CURRENT_MONTH, WORDS, AVG
+\`\`\`
+## ▶ Pick up where you left off
+\`\`\`base
+filters:
+  or:
+    - status == "drafting"
+    - status == "revising"
+    - status == "in-progress"
+views:
+  - type: cards
+    name: In progress
+    cardSize: 220
+    order:
+      - file.name
+      - note.status
+    sort:
+      - property: file.mtime
+        direction: DESC
+    limit: 6
+\`\`\`
+
+> [!columns]
+> > [!inbox] 📥 Inbox (to sort)
+> > \`\`\`base
+> > filters:
+> >   and:
+> >     - file.inFolder("{{inbox}}")
+> > views:
+> >   - type: list
+> >     name: Inbox
+> >     order:
+> >       - file.name
+> >       - file.mtime
+> >     sort:
+> >       - property: file.mtime
+> >         direction: DESC
+> >     limit: 7
+> > \`\`\`
+>
+> > [!practice] 📓 Recent practice
+> > \`\`\`base
+> > filters:
+> >   and:
+> >     - file.inFolder("{{practice}}")
+> > views:
+> >   - type: list
+> >     name: Practice
+> >     order:
+> >       - file.name
+> >       - note.type
+> >     sort:
+> >       - property: file.mtime
+> >         direction: DESC
+> >     limit: 7
+> > \`\`\`
+
+## 📚 Learning from
+![[Resources.base#In progress]]
+
+> [!footer]
+> 🗂 Boards: [[Writing.base|Writing]] · [[Practice.base|Practice]] · [[Resources.base|Resources]]  ·  📖 [[How this vault works]]
+`;
+
 /**
  * Built-in templates. Placeholders: {{name}} is replaced with the value passed
  * in, or left empty. Frontmatter here holds optional extras only — Inkwell sets
  * the required fields (type, status, project…) itself after creating the note.
  */
 export const BUILTIN_TEMPLATES: Record<TemplateKey, string> = {
+  home: HOME_TEMPLATE,
   journal: `---
 type: journal
 writing_min:
@@ -116,6 +208,7 @@ tags:
 };
 
 export const TEMPLATE_FILE_NAMES: Record<TemplateKey, string> = {
+  home: "Home",
   journal: "Journal",
   exercise: "Exercise",
   storyHub: "Story",

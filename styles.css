@@ -101,3 +101,127 @@
 .inkwell-block a { cursor: pointer; }
 .inkwell-progress-table { width: 100%; font-size: var(--font-ui-small); }
 .inkwell-progress-table .inkwell-progress { height: 4px; margin: 0; }
+
+/* ==========================================================
+   Home dashboard — notes with cssclasses: [home-page]
+   (moved from the vault's home.css snippet)
+   ========================================================== */
+
+/* Clean page: no properties box, no big inline title, wider */
+.home-page .metadata-container,
+.home-page .inline-title { display: none; }
+.home-page.markdown-preview-view.is-readable-line-width .markdown-preview-sizer,
+.home-page.is-readable-line-width .cm-sizer { max-width: 1100px; }
+
+/* Section headings: small, quiet, uppercase (reading + editing view) */
+.home-page .cm-line.HyperMD-header-2,
+.home-page .cm-line.HyperMD-header-2 .cm-header {
+  font-size: 0.8rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+.home-page h2 {
+  font-size: 0.8em;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  border-bottom: 1px solid var(--background-modifier-border);
+  padding-bottom: 4px;
+  margin-top: 1.6em;
+}
+
+/* Greeting line */
+.home-page h1 { font-size: 1.6em; margin-bottom: 0.2em; }
+
+/* Keep the Rhythm stats + heatmap sit in one soft panel */
+.home-page .slots-codeblock,
+.home-page .heatmap-codeblock {
+  background: var(--background-secondary);
+  border-radius: 10px;
+  padding: 10px 14px;
+  margin-bottom: 8px;
+}
+
+/* ---------- Quick moves: one compact row of pills ---------- */
+.home-page .callout[data-callout="moves"] {
+  background: none; border: none; padding: 0; box-shadow: none;
+  margin: 6px 0 0;
+}
+.home-page .callout[data-callout="moves"] > .callout-title { display: none; }
+.home-page .callout[data-callout="moves"] > .callout-content { padding: 0; }
+.home-page .callout[data-callout="moves"] ul {
+  display: flex; flex-wrap: wrap; justify-content: center; gap: 6px;
+  list-style: none; padding: 0; margin: 0;
+}
+.home-page .callout[data-callout="moves"] li {
+  flex: 0 1 auto;
+  background: var(--background-secondary);
+  border: 1px solid var(--background-modifier-border);
+  border-radius: 999px;
+  padding: 2px 10px;
+  margin: 0;
+  font-size: var(--font-smallest);
+  color: var(--text-muted);
+  white-space: nowrap;
+}
+.home-page .callout[data-callout="moves"] li::before,
+.home-page .callout[data-callout="moves"] .list-bullet,
+.home-page .callout[data-callout="moves"] .list-collapse-indicator { display: none; }
+/* Two pills on the first row, three on the second:
+   an invisible full-width break sits between item 2 and item 3 */
+.home-page .callout[data-callout="moves"] ul::after {
+  content: ""; flex-basis: 100%; height: 0; order: 2;
+}
+.home-page .callout[data-callout="moves"] li:nth-child(-n+2) { order: 1; }
+.home-page .callout[data-callout="moves"] li:nth-child(n+3) { order: 3; }
+.home-page .callout[data-callout="moves"] li strong {
+  color: var(--text-accent); font-weight: 600; margin-right: 4px;
+}
+
+/* ---------- Two columns ---------- */
+.home-page .callout[data-callout="columns"] {
+  background: none; border: none; padding: 0; box-shadow: none;
+}
+.home-page .callout[data-callout="columns"] > .callout-title { display: none; }
+.home-page .callout[data-callout="columns"] > .callout-content {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+  padding: 0;
+}
+.home-page .callout[data-callout="columns"] > .callout-content > .callout {
+  margin: 0;
+  min-width: 0;
+  border-radius: 10px;
+}
+@media (max-width: 800px) {
+  .home-page .callout[data-callout="columns"] > .callout-content {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* Footer links row */
+.home-page .callout[data-callout="footer"] {
+  background: none; border: none; box-shadow: none; padding: 0;
+  text-align: center; color: var(--text-muted); font-size: 0.9em;
+}
+.home-page .callout[data-callout="footer"] > .callout-title { display: none; }
+
+/* Story cards: slightly roomier than Obsidian's default */
+.home-page {
+  --bases-cards-line-height: 26px;
+}
+
+/* ---------- Keep the Rhythm heatmap ----------
+   Drawn by the plugin as-is; only spacing around it is set here. */
+.home-page .heatmap-codeblock {
+  width: 100%;
+  justify-content: center;
+  margin: 6px 0 24px;
+}
+/* a little more room between day names and the first column of dots */
+.home-page .heatmap-codeblock .heatmap-content { padding-left: 42px; }
+
+/* space above the shortcut pills, below the stats */
+.home-page .block-language-ktr-slots { margin-bottom: 14px; }

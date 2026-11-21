@@ -10,6 +10,7 @@ import { StoryView, STORY_VIEW } from "./storyview";
 import { snapshotDraft } from "./revisions";
 import { promoteToLongForm } from "./promote";
 import { registerHomeBlocks } from "./homeblocks";
+import { openHome } from "./home";
 import { formatProgress, newCodexNote, newShortStory, showStoryProgress, Story, storyForFile, storyProgress } from "./stories";
 import { createPromptsBase, newPrompt, RandomPromptModal, registerPromptBlock } from "./prompts";
 import { createExercise, newExercise } from "./exercise";
@@ -23,6 +24,10 @@ export default class InkwellPlugin extends Plugin {
     await this.loadSettings();
     this.ktr = new KeepTheRhythm(this.app);
     this.addSettingTab(new InkwellSettingTab(this.app, this));
+
+    // Home
+    this.addCommand({ id: "open-home", name: "Open Home", callback: () => openHome(this) });
+    this.addRibbonIcon("home", "Inkwell: Home", () => openHome(this));
 
     // Capture
     const capture = () => new CaptureModal(this.app, this).open();

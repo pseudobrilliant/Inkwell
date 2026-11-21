@@ -92,6 +92,7 @@ Shared cast: one set of characters/places used by several related stories	0.8+
 F. Home & progress
 Feature	Version
 Home keeps working with Bases + Keep the Rhythm (no rewrite needed)	0.1
+Home dashboard ships with Inkwell: built-in Home template (the vault's 00 - Home), "Open Home" command + ribbon, home-page styles moved from the home.css snippet into the plugin	0.3
 Plugin adds code blocks for Home: inkwell-inbox, inkwell-in-progress, inkwell-heatmap (KTR heatmap of drafts + scenes only); inkwell-prompt shipped early in 0.2	0.3
 Per-story word targets and "words this week on this story" (read from Keep the Rhythm's daily log, drafts/scenes only; see §5)	0.3
 Embed Keep the Rhythm's heatmap and totals blocks (ktr-heatmap, ktr-slots) on Home and in the story panel instead of building our own	0.3
@@ -202,3 +203,4 @@ Date	Version	Change
 2026-11-21	—	Keep the Rhythm made an optional dependency: §2F words-this-week reads KTR's daily log and a new 0.3 item embeds its heatmap/totals; §3 notes KTR 0.2.16 compatibility; §5 adds the integration table, rules and device-history risk; §8 records the decision. Also logged: Place template now writes type: location (2026-11-20).
 2026-11-21	—	Distribution decided: BRAT from GitHub releases (§7, §8); phone testing deferred.
 2026-11-21	0.3	Built 0.3 (story panel, revision snapshots, promote short → long, Home blocks, KTR words-this-week and heatmap). §3 gains story next/from, draft snapshot, storyline promoted; long-form statuses default to StoryLine's; inkwell-prompt block moved to 0.2.
+2026-11-21	0.3	Home dashboard added to Inkwell: built-in Home template (identical to 00 - Home with default folders), Open Home command, home.css styles bundled in the plugin.

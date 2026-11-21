@@ -12,6 +12,7 @@ export interface InkwellSettings {
     resources: string;
   };
   templates: {
+    home: string;
     journal: string;
     exercise: string;
     storyHub: string;
@@ -19,6 +20,7 @@ export interface InkwellSettings {
     character: string;
     location: string;
   };
+  homeNote: string;
   journalDateFormat: string;
   shortStatuses: string[];
   longStatuses: string[];
@@ -42,6 +44,7 @@ export const DEFAULT_SETTINGS: InkwellSettings = {
     resources: "05 - Resources",
   },
   templates: {
+    home: "99 - System/Templates/Inkwell/Home.md",
     journal: "99 - System/Templates/Inkwell/Journal.md",
     exercise: "99 - System/Templates/Inkwell/Exercise.md",
     storyHub: "99 - System/Templates/Inkwell/Story.md",
@@ -49,6 +52,7 @@ export const DEFAULT_SETTINGS: InkwellSettings = {
     character: "99 - System/Templates/Inkwell/Character.md",
     location: "99 - System/Templates/Inkwell/Location.md",
   },
+  homeNote: "00 - Home/00 - Home.md",
   journalDateFormat: "YYYY-MM-DD",
   shortStatuses: ["idea", "drafting", "revising", "done"],
   // StoryLine's scene statuses
@@ -75,6 +79,7 @@ const FOLDER_LABELS: Record<FolderKey, string> = {
 };
 
 const TEMPLATE_LABELS: Record<TemplateKey, string> = {
+  home: "Home dashboard",
   journal: "Journal",
   exercise: "Exercise",
   storyHub: "Short story hub",
@@ -105,6 +110,16 @@ export class InkwellSettingTab extends PluginSettingTab {
           })
       );
     }
+
+    new Setting(containerEl)
+      .setName("Home note")
+      .setDesc("The dashboard opened by \"Open Home\". Created from the Home template if missing; never overwritten.")
+      .addText((t) =>
+        t.setValue(s.homeNote).onChange(async (v) => {
+          s.homeNote = v.trim() || DEFAULT_SETTINGS.homeNote;
+          await this.plugin.saveSettings();
+        })
+      );
 
     new Setting(containerEl)
       .setName("Templates")
