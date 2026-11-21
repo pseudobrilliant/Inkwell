@@ -1,10 +1,12 @@
-import { debounce, Plugin, TFile } from "obsidian";
+import { debounce, Menu, Plugin, TFile } from "obsidian";
 import { DEFAULT_SETTINGS, InkwellSettings, InkwellSettingTab } from "./settings";
 import { CaptureModal } from "./capture";
 import { writeDefaultTemplates } from "./templates";
 import { openTodaysJournal } from "./journal";
+import { InboxView, INBOX_VIEW, isInboxFile, triageMenu } from "./inbox";
+import { exerciseBecameStory, isExercise } from "./became";
 import { formatProgress, newCodexNote, newShortStory, showStoryProgress, storyForFile, storyProgress } from "./stories";
-import { createPromptsBase, newPrompt, RandomPromptModal } from "./prompts";
+import { createPromptsBase, newPrompt, RandomPromptModal, registerPromptBlock } from "./prompts";
 import { createExercise, newExercise } from "./exercise";
 
 export default class InkwellPlugin extends Plugin {
@@ -20,6 +22,34 @@ export default class InkwellPlugin extends Plugin {
     this.addCommand({ id: "quick-capture", name: "Quick capture", callback: capture });
     this.addRibbonIcon("feather", "Inkwell: quick capture", capture);
 
+    // Inbox
+    this.registerView(INBOX_VIEW, (leaf) => new InboxView(leaf, this));
+    this.addCommand({ id: "open-inbox", name: "Open inbox", callback: () => this.activateInbox() });
+    this.addRibbonIcon("inbox", "Inkwell: inbox", () => this.activateInbox());
+    this.addCommand({
+      id: "triage-capture",
+      name: "Triage this capture",
+      checkCallback: (checking) => {
+        const f = this.app.workspace.getActiveFile();
+        if (!isInboxFile(this, f)) return false;
+        if (!checking) {
+          const menu = new Menu();
+          triageMenu(this, f, menu);
+          const r = document.body.getBoundingClientRect();
+          menu.showAtPosition({ x: r.width / 2 - 100, y: r.height / 3 });
+        }
+        return true;
+      },
+    });
+    this.registerEvent(
+      this.app.workspace.on("file-menu", (menu, f) => {
+        if (f instanceof TFile && isInboxFile(this, f)) {
+          menu.addSeparator();
+          triageMenu(this, f, menu);
+        }
+      })
+    );
+
     // Practice
     this.addCommand({ id: "todays-journal", name: "Open today's journal", callback: () => openTodaysJournal(this) });
     this.addCommand({ id: "new-exercise", name: "New exercise", callback: () => newExercise(this) });
@@ -29,6 +59,17 @@ export default class InkwellPlugin extends Plugin {
       callback: () => new RandomPromptModal(this, (p) => void createExercise(this, p)).open(),
     });
     this.addCommand({ id: "new-prompt", name: "New prompt", callback: () => newPrompt(this) });
+    this.addCommand({
+      id: "became-story",
+      name: "This became a story",
+      checkCallback: (checking) => {
+        const f = this.app.workspace.getActiveFile();
+        if (!isExercise(this, f)) return false;
+        if (!checking) void exerciseBecameStory(this, f);
+        return true;
+      },
+    });
+    registerPromptBlock(this, (p) => void createExercise(this, p));
     this.addCommand({ id: "prompts-table", name: "Open prompts table", callback: () => createPromptsBase(this) });
 
     // Short form
@@ -53,6 +94,16 @@ export default class InkwellPlugin extends Plugin {
     this.registerEvent(this.app.vault.on("modify", (f) => f instanceof TFile && refresh()));
     this.registerEvent(this.app.metadataCache.on("changed", () => refresh()));
     this.app.workspace.onLayoutReady(() => this.refreshStatusBar());
+  }
+
+  async activateInbox() {
+    const ws = this.app.workspace;
+    let leaf = ws.getLeavesOfType(INBOX_VIEW)[0];
+    if (!leaf) {
+      leaf = ws.getRightLeaf(false)!;
+      await leaf.setViewState({ type: INBOX_VIEW, active: true });
+    }
+    await ws.revealLeaf(leaf);
   }
 
   async refreshStatusBar() {

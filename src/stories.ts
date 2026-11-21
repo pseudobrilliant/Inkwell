@@ -50,42 +50,73 @@ export function storyForFile(plugin: InkwellPlugin, file: TFile | null): Story |
   return folder instanceof TFolder ? storyFromFolder(plugin, folder) : null;
 }
 
-export async function newShortStory(plugin: InkwellPlugin): Promise<void> {
-  const { app, settings } = plugin;
-  const v = await askForm(app, "New short story", [
-    { key: "title", label: "Title", required: true },
-    { key: "logline", label: "Logline", placeholder: "optional" },
-    { key: "genre", label: "Genre", placeholder: "optional" },
-    { key: "target", label: "Target words", type: "number", value: String(settings.defaultShortTarget || "") },
+export interface StoryInput {
+  title: string;
+  logline: string;
+  genre: string;
+  target: number;
+}
+
+export async function askStoryDetails(
+  plugin: InkwellPlugin,
+  prefill: Partial<StoryInput> = {},
+  heading = "New short story"
+): Promise<StoryInput | null> {
+  const target = prefill.target ?? plugin.settings.defaultShortTarget;
+  const v = await askForm(plugin.app, heading, [
+    { key: "title", label: "Title", required: true, value: prefill.title ?? "" },
+    { key: "logline", label: "Logline", placeholder: "optional", value: prefill.logline ?? "" },
+    { key: "genre", label: "Genre", placeholder: "optional", value: prefill.genre ?? "" },
+    { key: "target", label: "Target words", type: "number", value: target ? String(target) : "" },
   ]);
-  if (!v) return;
+  if (!v) return null;
   const title = cleanName(v.title);
-  if (!title) return;
+  if (!title) return null;
+  return { title, logline: v.logline, genre: v.genre, target: parseInt(v.target, 10) || 0 };
+}
+
+/** Build the short-story layout. Returns null if the folder already exists. */
+export async function createShortStory(
+  plugin: InkwellPlugin,
+  input: StoryInput,
+  opts: { draftBody?: string; hubFields?: Record<string, unknown>; open?: boolean } = {}
+): Promise<Story | null> {
+  const { app, settings } = plugin;
+  const { title } = input;
   const folder = normalizePath(`${settings.folders.writing}/${title}`);
   if (app.vault.getAbstractFileByPath(folder)) {
     new Notice(`A story folder named "${title}" already exists.`);
-    return;
+    return null;
   }
   await ensureFolder(app, folder);
-  const vars = { title, logline: v.logline, genre: v.genre, date: moment().format("YYYY-MM-DD") };
+  const vars = { title, logline: input.logline, genre: input.genre, date: moment().format("YYYY-MM-DD") };
 
   const hubFields: Record<string, unknown> = {
     type: "story",
     status: settings.shortStatuses[0] ?? "idea",
-    logline: v.logline,
-    genre: v.genre,
+    logline: input.logline,
+    genre: input.genre,
     created: vars.date,
+    ...opts.hubFields,
   };
-  const target = parseInt(v.target, 10);
-  if (target > 0) hubFields.target_wordcount = target;
+  if (input.target > 0) hubFields.target_wordcount = input.target;
 
   const hub = await createNote(app, `${folder}/${title}.md`, render(await loadTemplate(app, settings, "storyHub"), vars), hubFields);
-  await createNote(app, `${folder}/${title} - Draft.md`, render(await loadTemplate(app, settings, "storyDraft"), vars), {
+  let draftText = render(await loadTemplate(app, settings, "storyDraft"), vars);
+  if (opts.draftBody) draftText = draftText.replace(/\s*$/, "\n\n") + opts.draftBody.trim() + "\n";
+  const draft = await createNote(app, `${folder}/${title} - Draft.md`, draftText, {
     type: "draft",
     project: `[[${title}]]`,
     version: 1,
   });
-  await app.workspace.getLeaf(false).openFile(hub);
+  if (opts.open !== false) await app.workspace.getLeaf(false).openFile(hub);
+  const f = app.vault.getAbstractFileByPath(folder) as TFolder;
+  return { name: title, folder: f, hub, draft };
+}
+
+export async function newShortStory(plugin: InkwellPlugin): Promise<void> {
+  const input = await askStoryDetails(plugin);
+  if (input) await createShortStory(plugin, input);
 }
 
 export interface Progress {

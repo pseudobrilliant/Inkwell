@@ -47,3 +47,16 @@ export async function createNote(
   });
   return file;
 }
+
+/** Move a file into a folder (optionally renaming), keeping links updated. */
+export async function moveFile(app: App, file: TFile, folder: string, newName?: string): Promise<TFile> {
+  await ensureFolder(app, folder);
+  const target = uniquePath(app, folder, newName ? cleanName(newName) || file.basename : file.basename);
+  await app.fileManager.renameFile(file, target);
+  return file;
+}
+
+/** Body text without frontmatter. */
+export function stripFrontmatter(text: string): string {
+  return text.replace(/^---\r?\n[\s\S]*?\r?\n---(\r?\n|$)/, "");
+}

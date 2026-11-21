@@ -25,6 +25,8 @@ export interface InkwellSettings {
   lastCaptureKind: "idea" | "line" | "link" | "prompt" | "research";
   exerciseMinutes: number;
   defaultShortTarget: number;
+  captureToJournal: boolean;
+  promptOfDay?: { date: string; path: string };
 }
 
 export const DEFAULT_SETTINGS: InkwellSettings = {
@@ -51,6 +53,7 @@ export const DEFAULT_SETTINGS: InkwellSettings = {
   lastCaptureKind: "idea",
   exerciseMinutes: 15,
   defaultShortTarget: 0,
+  captureToJournal: false,
 };
 
 type FolderKey = keyof InkwellSettings["folders"];
@@ -113,6 +116,17 @@ export class InkwellSettingTab extends PluginSettingTab {
           })
       );
     }
+
+    new Setting(containerEl).setName("Capture").setHeading();
+    new Setting(containerEl)
+      .setName("Also log captures in today's journal")
+      .setDesc("Adds a linked line under \"## Captures\" in today's journal.")
+      .addToggle((t) =>
+        t.setValue(s.captureToJournal).onChange(async (v) => {
+          s.captureToJournal = v;
+          await this.plugin.saveSettings();
+        })
+      );
 
     new Setting(containerEl).setName("Journal").setHeading();
     new Setting(containerEl)

@@ -14,6 +14,7 @@ export const BUILTIN_TEMPLATES: Record<TemplateKey, string> = {
 type: journal
 writing_min:
 ---
+{{prompt_of_the_day}}
 ## Today I wrote
 - 
 

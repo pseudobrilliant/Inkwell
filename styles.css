@@ -29,3 +29,48 @@
   font-family: var(--font-text);
   line-height: 1.5;
 }
+
+/* Inbox panel */
+.inkwell-inbox-header {
+  display: flex;
+  align-items: center;
+  gap: var(--size-4-2);
+  margin-bottom: var(--size-4-3);
+}
+.inkwell-inbox-title { font-weight: var(--font-semibold); font-size: var(--font-ui-medium); }
+.inkwell-inbox-count {
+  background: var(--background-modifier-hover);
+  border-radius: var(--radius-l);
+  padding: 0 var(--size-4-2);
+  font-size: var(--font-ui-small);
+  color: var(--text-muted);
+}
+.inkwell-inbox-header .clickable-icon { margin-left: auto; }
+.inkwell-inbox-empty { color: var(--text-muted); text-align: center; padding: var(--size-4-8) 0; }
+.inkwell-inbox-item {
+  padding: var(--size-4-2);
+  border-radius: var(--radius-m);
+  border: 1px solid var(--background-modifier-border);
+  margin-bottom: var(--size-4-2);
+  cursor: pointer;
+}
+.inkwell-inbox-item:hover { background: var(--background-modifier-hover); }
+.inkwell-inbox-meta { display: flex; align-items: center; gap: var(--size-4-2); font-size: var(--font-ui-smaller); color: var(--text-muted); }
+.inkwell-kind {
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--text-accent);
+  font-weight: var(--font-semibold);
+}
+.inkwell-inbox-actions { margin-left: auto; display: flex; }
+.inkwell-inbox-preview { margin-top: var(--size-4-1); font-size: var(--font-ui-small); white-space: pre-wrap; overflow-wrap: anywhere; }
+
+/* Prompt block */
+.inkwell-prompt-block {
+  border: 1px solid var(--background-modifier-border);
+  border-radius: var(--radius-m);
+  padding: var(--size-4-3);
+}
+.inkwell-prompt-label { font-size: var(--font-ui-smaller); color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.04em; }
+.inkwell-prompt-block .inkwell-prompt-text { cursor: pointer; margin: var(--size-4-2) 0; }
+.inkwell-prompt-actions { display: flex; gap: var(--size-4-2); }

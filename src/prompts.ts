@@ -1,4 +1,4 @@
-import { App, Modal, moment, normalizePath, Notice, Setting, TFile, TFolder } from "obsidian";
+import { App, MarkdownRenderChild, Modal, moment, normalizePath, Notice, Setting, TFile, TFolder } from "obsidian";
 import type InkwellPlugin from "./main";
 import { askForm } from "./modals";
 import { cleanName, createNote, ensureFolder, slugWords, uniquePath } from "./util";
@@ -157,4 +157,50 @@ views:
 `;
   const file = await plugin.app.vault.create(path, base);
   await plugin.app.workspace.getLeaf(false).openFile(file);
+}
+
+/** Same prompt all day (stored in settings); does not count as "used" until exercised. */
+export async function promptOfTheDay(plugin: InkwellPlugin): Promise<Prompt | null> {
+  const today = moment().format("YYYY-MM-DD");
+  const all = listPrompts(plugin);
+  const saved = plugin.settings.promptOfDay;
+  if (saved?.date === today) {
+    const p = all.find((x) => x.file.path === saved.path);
+    if (p) return p;
+  }
+  const top = rankPrompts(all)[0];
+  if (!top) return null;
+  plugin.settings.promptOfDay = { date: today, path: top.file.path };
+  await plugin.saveSettings();
+  return top;
+}
+
+/** ```inkwell-prompt``` — prompt of the day with Start / Another buttons. */
+export function registerPromptBlock(plugin: InkwellPlugin, onStart: (p: Prompt) => void): void {
+  plugin.registerMarkdownCodeBlockProcessor("inkwell-prompt", (_src, el, ctx) => {
+    const child = new MarkdownRenderChild(el);
+    ctx.addChild(child);
+    let offset = 0;
+    const draw = async () => {
+      el.empty();
+      const box = el.createDiv({ cls: "inkwell-prompt-block" });
+      const today = await promptOfTheDay(plugin);
+      if (!today) {
+        box.createEl("p", { text: "No prompts yet — add some with \"Inkwell: New prompt\"." });
+        return;
+      }
+      const ranked = [today, ...rankPrompts(listPrompts(plugin)).filter((p) => p.file.path !== today.file.path)];
+      const p = ranked[offset % ranked.length];
+      box.createDiv({ cls: "inkwell-prompt-label", text: offset === 0 ? "Prompt of the day" : "Another prompt" });
+      const text = box.createEl("p", { cls: "inkwell-prompt-text", text: await promptText(plugin.app, p.file) });
+      text.onclick = () => plugin.app.workspace.getLeaf(false).openFile(p.file);
+      const row = box.createDiv({ cls: "inkwell-prompt-actions" });
+      row.createEl("button", { text: "Start exercise", cls: "mod-cta" }).onclick = () => onStart(p);
+      row.createEl("button", { text: "Another" }).onclick = () => {
+        offset++;
+        void draw();
+      };
+    };
+    void draw();
+  });
 }

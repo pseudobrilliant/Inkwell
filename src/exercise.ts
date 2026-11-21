@@ -20,14 +20,18 @@ export async function newExercise(plugin: InkwellPlugin): Promise<void> {
   await createExercise(plugin, c.random ? ranked[0] : c.prompt);
 }
 
-export async function createExercise(plugin: InkwellPlugin, prompt: Prompt | null): Promise<void> {
+export async function createExercise(
+  plugin: InkwellPlugin,
+  prompt: Prompt | null,
+  opts: { text?: string } = {}
+): Promise<TFile | null> {
   const { app, settings } = plugin;
-  const text = prompt ? await promptText(app, prompt.file) : "";
+  const text = opts.text ?? (prompt ? await promptText(app, prompt.file) : "");
   const v = await askForm(app, "New exercise", [
     { key: "title", label: "Title", value: text ? slugWords(text, 8, 60) : "", required: true },
     { key: "minutes", label: "Timer goal (minutes)", type: "number", value: String(settings.exerciseMinutes) },
   ]);
-  if (!v) return;
+  if (!v) return null;
   const date = moment().format("YYYY-MM-DD");
   const title = cleanName(v.title) || "Exercise";
   const path = uniquePath(app, settings.folders.exercises, `${date} ${title}`);
@@ -41,4 +45,5 @@ export async function createExercise(plugin: InkwellPlugin, prompt: Prompt | nul
   });
   if (prompt) await markPromptUsed(app, prompt.file);
   await app.workspace.getLeaf(false).openFile(file);
+  return file;
 }

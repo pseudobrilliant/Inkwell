@@ -1,5 +1,6 @@
 import { App, Modal, moment, Notice, Platform, Setting } from "obsidian";
 import type InkwellPlugin from "./main";
+import { appendToJournal } from "./journal";
 import { createNote, slugWords, uniquePath } from "./util";
 
 export const CAPTURE_KINDS = ["idea", "line", "link", "prompt", "research"] as const;
@@ -18,12 +19,20 @@ export async function saveCapture(plugin: InkwellPlugin, kind: CaptureKind, text
   const words = slugWords(text) || kind;
   const name = `${now.format("YYYY-MM-DD HHmm")} ${words}`;
   const path = uniquePath(plugin.app, plugin.settings.folders.inbox, name);
-  await createNote(plugin.app, path, text.trim() + "\n", {
+  const file = await createNote(plugin.app, path, text.trim() + "\n", {
     type: "capture",
     kind,
     created: now.format("YYYY-MM-DDTHH:mm"),
     source: Platform.isMobile ? "mobile" : "desktop",
   });
+  if (plugin.settings.captureToJournal) {
+    try {
+      const link = plugin.app.fileManager.generateMarkdownLink(file, plugin.settings.folders.journal);
+      await appendToJournal(plugin, "Captures", `- ${now.format("HH:mm")} ${link} (${kind})`);
+    } catch (e) {
+      console.error("Inkwell: could not log capture in journal", e);
+    }
+  }
 }
 
 export class CaptureModal extends Modal {
