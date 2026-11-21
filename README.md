@@ -2,23 +2,23 @@
 
 **A writing-practice plugin for Obsidian.**
 
-Inkwell helps you build a steady writing habit and gives you structure for the small and medium-sized work that comes out of it: daily journals, timed exercises, prompts, captured ideas, short stories, and other personal projects.
+Inkwell helps you build a steady writing habit and gives you structure for the small and medium-sized work that comes out of it: daily journals, timed exercises, prompts, captured ideas, short stories, and longer projects.
 
 ## What Inkwell is for
 
-Most writing tools are built around a finished manuscript: compiling chapters, formatting, exporting. Inkwell isn't. It's for the everyday part of writing:
+Many writing tools are built around publishing a finished manuscript: compiling, formatting, exporting. Inkwell isn't. It's for the everyday part of writing:
 
 - **Showing up.** A daily journal, prompts, and exercises give you something to write today, even when you have no project.
 - **Catching ideas.** Quick capture sends a thought to your Inbox with one keystroke, from desktop or phone. You sort it later.
 - **Turning practice into stories.** When an exercise turns into something more, you can promote it to a short story, and Inkwell keeps a link back to where it started.
-- **Keeping projects organized.** Each short story gets a simple folder with a hub note, a draft, its characters and places, and a record of past revisions.
+- **Keeping projects organized.** Each short story gets a simple folder with a hub note, a draft, its characters and places, and a record of past revisions. Longer work gets a long-form project with scenes and a codex for characters and locations.
 - **Seeing your progress.** A Home dashboard shows your inbox, what's in progress, the prompt of the day, and your writing activity.
 
 ## What Inkwell is not
 
-Inkwell is **not** a manuscript-writing or export tool. It won't compile chapters into a book, format submissions, or export to DOCX/PDF, and those features aren't planned.
+Inkwell is **not** a publishing or export tool. It won't compile a manuscript, format submissions, or export to DOCX/PDF, and those features aren't planned.
 
-When a story grows past what a single draft can hold, Inkwell can split it into scenes and set it up as a long-form project that StoryLine (or another manuscript tool) can open. After that handoff, the long-form work belongs to that tool.
+Inkwell helps you organize and write long-form projects, but it stops short of publishing them. Because everything is plain Markdown, you can take a finished project to whatever tool you use to compile and publish.
 
 ## Principles
 
@@ -50,7 +50,11 @@ When a story grows past what a single draft can hold, Inkwell can split it into 
 - **Story panel:** a sidebar with the hub summary, draft word count, characters, notes, and next step.
 - **Progress:** status (idea → drafting → revising → done), word count against a target, and when you last worked on it.
 - **Revisions:** snapshot the draft as v2, v3, … with old versions moved to `Archive/`.
-- **Promote to long form:** the handoff described above.
+
+### Long-form projects
+- **Project layout:** a project note, a `Scenes/` folder, and a `Codex/` for characters and locations, plus `Notes/` and `Archive/`.
+- **Progress on Home:** long-form projects show up in the in-progress list with their total word count.
+- **Promote a short story:** if a short story outgrows one draft, Inkwell can split it into scenes at headings or `***` breaks and move its characters and locations into the codex. The original draft is archived first.
 
 ### Home
 - A built-in **Home** dashboard (command + ribbon).
