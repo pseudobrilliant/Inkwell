@@ -206,3 +206,4 @@ Date	Version	Change
 2026-11-21	0.3	Home dashboard added to Inkwell: built-in Home template (identical to 00 - Home with default folders), Open Home command, home.css styles bundled in the plugin.
 2026-11-21	0.3	Home template uses Inkwell blocks: inkwell-in-progress (pick up where you left off), inkwell-inbox (Inbox column), inkwell-prompt (Practice column); Practice list excludes prompts; "New…" picker command for ⌘⇧N.
 2026-11-21	0.3	Home: Inbox and Practice are full-width rows instead of two columns.
+2026-11-21	0.3	Home: "Learning from" is an inline base (resources with status in-progress) instead of embedding Resources.base, so Home works in any vault.

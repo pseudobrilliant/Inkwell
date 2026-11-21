@@ -66,7 +66,19 @@ title: none
 > \`\`\`
 
 ## 📚 Learning from
-![[Resources.base#In progress]]
+\`\`\`base
+filters:
+  and:
+    - type == "resource"
+    - status == "in-progress"
+views:
+  - type: table
+    name: In progress
+    order:
+      - file.name
+      - kind
+      - author
+\`\`\`
 
 > [!footer]
 > 🗂 Boards: [[Writing.base|Writing]] · [[Practice.base|Practice]] · [[Resources.base|Resources]] · [[Prompts.base|Prompts]]  ·  📖 [[How this vault works]]
