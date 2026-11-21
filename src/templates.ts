@@ -12,8 +12,9 @@ export type TemplateKey = keyof InkwellSettings["templates"];
 export const BUILTIN_TEMPLATES: Record<TemplateKey, string> = {
   journal: `---
 type: journal
+writing_min:
 ---
-{{prompt_block}}## Today I wrote
+## Today I wrote
 - 
 
 ## Ideas, observations, scraps

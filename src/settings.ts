@@ -23,6 +23,8 @@ export interface InkwellSettings {
   shortStatuses: string[];
   longStatuses: string[];
   lastCaptureKind: "idea" | "line" | "link" | "prompt" | "research";
+  exerciseMinutes: number;
+  defaultShortTarget: number;
 }
 
 export const DEFAULT_SETTINGS: InkwellSettings = {
@@ -47,6 +49,8 @@ export const DEFAULT_SETTINGS: InkwellSettings = {
   shortStatuses: ["idea", "drafting", "revising", "done"],
   longStatuses: ["idea", "outlining", "drafting", "revising", "done"],
   lastCaptureKind: "idea",
+  exerciseMinutes: 15,
+  defaultShortTarget: 0,
 };
 
 type FolderKey = keyof InkwellSettings["folders"];
@@ -120,6 +124,25 @@ export class InkwellSettingTab extends PluginSettingTab {
           await this.plugin.saveSettings();
         })
       );
+
+    new Setting(containerEl).setName("Defaults").setHeading();
+    new Setting(containerEl).setName("Exercise timer goal (minutes)").addText((t) => {
+      t.inputEl.type = "number";
+      t.setValue(String(s.exerciseMinutes)).onChange(async (v) => {
+        s.exerciseMinutes = parseInt(v, 10) || DEFAULT_SETTINGS.exerciseMinutes;
+        await this.plugin.saveSettings();
+      });
+    });
+    new Setting(containerEl)
+      .setName("Short story word target")
+      .setDesc("Pre-filled when creating a story. 0 = none.")
+      .addText((t) => {
+        t.inputEl.type = "number";
+        t.setValue(String(s.defaultShortTarget)).onChange(async (v) => {
+          s.defaultShortTarget = Math.max(0, parseInt(v, 10) || 0);
+          await this.plugin.saveSettings();
+        });
+      });
 
     new Setting(containerEl).setName("Statuses").setHeading();
     const statusSetting = (name: string, key: "shortStatuses" | "longStatuses") =>

@@ -15,3 +15,17 @@
   resize: vertical;
   font-size: var(--font-text-size);
 }
+
+/* Story progress */
+.inkwell-progress {
+  width: 100%;
+  height: 8px;
+  margin-bottom: var(--size-4-2);
+}
+
+/* Random prompt */
+.inkwell-prompt-text {
+  font-size: var(--font-ui-larger);
+  font-family: var(--font-text);
+  line-height: 1.5;
+}
