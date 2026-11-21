@@ -1,0 +1,17 @@
+/* Inkwell — quick capture */
+.inkwell-capture-kinds {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--size-4-2);
+  margin-bottom: var(--size-4-3);
+}
+.inkwell-capture-kinds button.is-active {
+  background-color: var(--interactive-accent);
+  color: var(--text-on-accent);
+}
+.inkwell-capture-input {
+  width: 100%;
+  min-height: 6em;
+  resize: vertical;
+  font-size: var(--font-text-size);
+}
