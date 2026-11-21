@@ -4,7 +4,7 @@ import type { InkwellSettings } from "./settings";
 
 export type TemplateKey = keyof InkwellSettings["templates"];
 
-/** Home dashboard. {{inbox}} and {{practice}} come from the folder settings. */
+/** Home dashboard. {{practice}} comes from the folder settings. */
 const HOME_TEMPLATE = `---
 aliases:
   - Home
@@ -17,7 +17,7 @@ cssclasses:
 > - **⌘N** Capture an idea
 > - **⌘⇧D** Today's journal
 > - **⌘⇧N** New story, exercise…
-> - **StoryLine** Long projects (ribbon)
+> - **Ribbon** Inbox · Story panel · StoryLine
 > - **⌘P** Everything else
 
 \`\`\`ktr-heatmap
@@ -34,48 +34,26 @@ CURRENT_WEEK, WORDS
 CURRENT_MONTH, WORDS, AVG
 \`\`\`
 ## ▶ Pick up where you left off
-\`\`\`base
-filters:
-  or:
-    - status == "drafting"
-    - status == "revising"
-    - status == "in-progress"
-views:
-  - type: cards
-    name: In progress
-    cardSize: 220
-    order:
-      - file.name
-      - note.status
-    sort:
-      - property: file.mtime
-        direction: DESC
-    limit: 6
+\`\`\`inkwell-in-progress
+title: none
 \`\`\`
 
 > [!columns]
 > > [!inbox] 📥 Inbox (to sort)
-> > \`\`\`base
-> > filters:
-> >   and:
-> >     - file.inFolder("{{inbox}}")
-> > views:
-> >   - type: list
-> >     name: Inbox
-> >     order:
-> >       - file.name
-> >       - file.mtime
-> >     sort:
-> >       - property: file.mtime
-> >         direction: DESC
-> >     limit: 7
+> > \`\`\`inkwell-inbox
+> > title: none
+> > limit: 7
 > > \`\`\`
 >
-> > [!practice] 📓 Recent practice
+> > [!practice] 📓 Practice
+> > \`\`\`inkwell-prompt
+> > \`\`\`
 > > \`\`\`base
 > > filters:
 > >   and:
 > >     - file.inFolder("{{practice}}")
+> >     - file.ext == "md"
+> >     - type != "prompt"
 > > views:
 > >   - type: list
 > >     name: Practice
@@ -92,7 +70,7 @@ views:
 ![[Resources.base#In progress]]
 
 > [!footer]
-> 🗂 Boards: [[Writing.base|Writing]] · [[Practice.base|Practice]] · [[Resources.base|Resources]]  ·  📖 [[How this vault works]]
+> 🗂 Boards: [[Writing.base|Writing]] · [[Practice.base|Practice]] · [[Resources.base|Resources]] · [[Prompts.base|Prompts]]  ·  📖 [[How this vault works]]
 `;
 
 /**

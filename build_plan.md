@@ -204,3 +204,4 @@ Date	Version	Change
 2026-11-21	—	Distribution decided: BRAT from GitHub releases (§7, §8); phone testing deferred.
 2026-11-21	0.3	Built 0.3 (story panel, revision snapshots, promote short → long, Home blocks, KTR words-this-week and heatmap). §3 gains story next/from, draft snapshot, storyline promoted; long-form statuses default to StoryLine's; inkwell-prompt block moved to 0.2.
 2026-11-21	0.3	Home dashboard added to Inkwell: built-in Home template (identical to 00 - Home with default folders), Open Home command, home.css styles bundled in the plugin.
+2026-11-21	0.3	Home template uses Inkwell blocks: inkwell-in-progress (pick up where you left off), inkwell-inbox (Inbox column), inkwell-prompt (Practice column); Practice list excludes prompts; "New…" picker command for ⌘⇧N.

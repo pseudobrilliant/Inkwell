@@ -225,3 +225,8 @@
 
 /* space above the shortcut pills, below the stats */
 .home-page .block-language-ktr-slots { margin-bottom: 14px; }
+
+/* Inkwell blocks inside Home callouts: the callout is already the card */
+.home-page .callout .inkwell-block { border: none; padding: 0; }
+.home-page .callout .inkwell-prompt-block { border: none; padding: 0 0 var(--size-4-3); border-bottom: 1px solid var(--background-modifier-border); margin-bottom: var(--size-4-2); border-radius: 0; }
+.home-page .inkwell-block-head:empty { display: none; }

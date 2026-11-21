@@ -37,15 +37,16 @@ class LiveBlock extends MarkdownRenderChild {
 const openFile = (plugin: InkwellPlugin, f: TFile) => plugin.app.workspace.getLeaf(false).openFile(f);
 
 export function registerHomeBlocks(plugin: InkwellPlugin): void {
-  // ```inkwell-inbox```  (option: limit: 5)
+  // ```inkwell-inbox```  (options: limit: 5, title: <text>|none)
   plugin.registerMarkdownCodeBlockProcessor("inkwell-inbox", (src, el, ctx) => {
-    const limit = parseInt(opts(src).limit, 10) || 5;
+    const o = opts(src);
+    const limit = parseInt(o.limit, 10) || 5;
     ctx.addChild(
       new LiveBlock(el, plugin, async (box) => {
         box.addClass("inkwell-block");
         const files = listInbox(plugin);
         const head = box.createDiv({ cls: "inkwell-block-head" });
-        head.createSpan({ text: "Inbox" });
+        if (o.title !== "none") head.createSpan({ text: o.title || "Inbox" });
         head.createSpan({ cls: "inkwell-inbox-count", text: String(files.length) });
         const open = head.createEl("button", { text: "Open inbox" });
         open.onclick = () => void plugin.activateInbox();
@@ -67,7 +68,7 @@ export function registerHomeBlocks(plugin: InkwellPlugin): void {
     );
   });
 
-  // ```inkwell-in-progress```  (options: include: short|long|all, show-done: true)
+  // ```inkwell-in-progress```  (options: include: short|long|all, show-done: true, title: <text>|none)
   plugin.registerMarkdownCodeBlockProcessor("inkwell-in-progress", (src, el, ctx) => {
     const o = opts(src);
     const include = (o.include ?? "all").toLowerCase();
@@ -75,7 +76,7 @@ export function registerHomeBlocks(plugin: InkwellPlugin): void {
     ctx.addChild(
       new LiveBlock(el, plugin, async (box) => {
         box.addClass("inkwell-block");
-        box.createDiv({ cls: "inkwell-block-head", text: "In progress" });
+        if (o.title !== "none") box.createDiv({ cls: "inkwell-block-head", text: o.title || "In progress" });
         const s = plugin.settings;
         const notActive = new Set([s.shortStatuses[0], s.shortStatuses[s.shortStatuses.length - 1], "idea", "done", "final", "abandoned"]);
         const rows: { name: string; hub: TFile | null; status: string; words: number; target: number; week: number | null; last: number }[] = [];

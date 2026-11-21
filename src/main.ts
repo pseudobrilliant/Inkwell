@@ -11,6 +11,7 @@ import { snapshotDraft } from "./revisions";
 import { promoteToLongForm } from "./promote";
 import { registerHomeBlocks } from "./homeblocks";
 import { openHome } from "./home";
+import { pick } from "./modals";
 import { formatProgress, newCodexNote, newShortStory, showStoryProgress, Story, storyForFile, storyProgress } from "./stories";
 import { createPromptsBase, newPrompt, RandomPromptModal, registerPromptBlock } from "./prompts";
 import { createExercise, newExercise } from "./exercise";
@@ -107,6 +108,26 @@ export default class InkwellPlugin extends Plugin {
 
     this.addCommand({ id: "new-character", name: "New character", callback: () => newCodexNote(this, "character") });
     this.addCommand({ id: "new-location", name: "New location", callback: () => newCodexNote(this, "location") });
+
+    // One key for everything new (⌘⇧N on Home)
+    this.addCommand({
+      id: "new",
+      name: "New…",
+      callback: async () => {
+        const choices: [string, () => unknown][] = [
+          ["Short story", () => newShortStory(this)],
+          ["Exercise", () => newExercise(this)],
+          ["Exercise from a random prompt", () => new RandomPromptModal(this, (p) => void createExercise(this, p)).open()],
+          ["Prompt", () => newPrompt(this)],
+          ["Character", () => newCodexNote(this, "character")],
+          ["Location", () => newCodexNote(this, "location")],
+          ["Today's journal", () => openTodaysJournal(this)],
+          ["Capture", () => new CaptureModal(this.app, this).open()],
+        ];
+        const c = await pick(this.app, choices, (x) => x[0], "New…");
+        if (c) await c[1]();
+      },
+    });
 
     // Setup
     this.addCommand({
