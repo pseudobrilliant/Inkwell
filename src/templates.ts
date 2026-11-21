@@ -38,33 +38,32 @@ CURRENT_MONTH, WORDS, AVG
 title: none
 \`\`\`
 
-> [!columns]
-> > [!inbox] 📥 Inbox (to sort)
-> > \`\`\`inkwell-inbox
-> > title: none
-> > limit: 7
-> > \`\`\`
->
-> > [!practice] 📓 Practice
-> > \`\`\`inkwell-prompt
-> > \`\`\`
-> > \`\`\`base
-> > filters:
-> >   and:
-> >     - file.inFolder("{{practice}}")
-> >     - file.ext == "md"
-> >     - type != "prompt"
-> > views:
-> >   - type: list
-> >     name: Practice
-> >     order:
-> >       - file.name
-> >       - note.type
-> >     sort:
-> >       - property: file.mtime
-> >         direction: DESC
-> >     limit: 7
-> > \`\`\`
+> [!inbox] 📥 Inbox (to sort)
+> \`\`\`inkwell-inbox
+> title: none
+> limit: 7
+> \`\`\`
+
+> [!practice] 📓 Practice
+> \`\`\`inkwell-prompt
+> \`\`\`
+> \`\`\`base
+> filters:
+>   and:
+>     - file.inFolder("{{practice}}")
+>     - file.ext == "md"
+>     - type != "prompt"
+> views:
+>   - type: list
+>     name: Practice
+>     order:
+>       - file.name
+>       - note.type
+>     sort:
+>       - property: file.mtime
+>         direction: DESC
+>     limit: 7
+> \`\`\`
 
 ## 📚 Learning from
 ![[Resources.base#In progress]]
