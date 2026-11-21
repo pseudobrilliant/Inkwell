@@ -176,7 +176,7 @@ Manuscript view, DOCX/PDF export, Scrivener import	Manuscript view 0.8+; export/
 Series mode, relationship map, story graph, image galleries, custom fields	Not planned
 7. Development & release
 Source code lives in its own git repo outside this vault (the vault stays writing-only). Only the build output (main.js, manifest.json, styles.css) goes into .obsidian/plugins/inkwell/.
-Getting it to the phone: either the vault sync carries .obsidian/plugins/inkwell/ to mobile, or publish GitHub releases and install with BRAT. Decide before 0.1 ships.
+Getting it to the phone: BRAT (decided 2026-11-21). Inkwell's GitHub repo publishes a release per version with main.js, manifest.json and styles.css attached; the tag must equal the manifest version (no "v" prefix). npm version <x.y.z> bumps package.json, manifest.json and versions.json; pushing the tag runs the release workflow, which creates a draft release to review and publish. BRAT on the phone (and desktop) then installs/updates from that repo. Phone testing is deferred for now and doesn't block a release.
 Testing: develop against a throwaway test vault with sample notes; only copy a build into this vault once it works there. Test quick capture on the phone every release.
 Safety: any command that moves, splits or rewrites notes saves the original to Archive/ or uses Obsidian's trash first.
 8. Decisions (2026-11-20)
@@ -190,6 +190,7 @@ Submission tracking: not needed; dropped.
 Scheduling: the roadmap (§4) is the single source of truth; features carry version numbers, not MVP/Next/Later.
 Order: short-form depth (0.3) comes before long-form views; long-form views (0.4–0.6) are gated on StoryLine falling short.
 Field names: target_wordcount and type: location everywhere.
+2026-11-21 — Distribution: BRAT from GitHub releases (not vault sync). Phone testing deferred for now.
 2026-11-21 — Keep the Rhythm: optional dependency. Inkwell keeps no word log, streaks or heatmap of its own; it reads KTR's daily log and embeds its blocks (§5).
 9. Ideas / parking lot
 New ideas go here first; move them into §2 with a version once decided.
@@ -199,3 +200,4 @@ StoryLine gaps (evidence for 0.4–0.6)
 Date	Version	Change
 2026-11-20	—	Plan reviewed: versions replace MVP/Next/Later, roadmap reordered (short form before long form), data-model names fixed, dev & release section added.
 2026-11-21	—	Keep the Rhythm made an optional dependency: §2F words-this-week reads KTR's daily log and a new 0.3 item embeds its heatmap/totals; §3 notes KTR 0.2.16 compatibility; §5 adds the integration table, rules and device-history risk; §8 records the decision. Also logged: Place template now writes type: location (2026-11-20).
+2026-11-21	—	Distribution decided: BRAT from GitHub releases (§7, §8); phone testing deferred.

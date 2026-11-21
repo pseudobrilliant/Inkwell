@@ -6,7 +6,8 @@
   "scripts": {
     "dev": "node esbuild.config.mjs",
     "build": "tsc -noEmit -skipLibCheck && node esbuild.config.mjs production",
-    "deploy:test": "npm run build && scripts/deploy.sh test-vault"
+    "deploy:test": "npm run build && scripts/deploy.sh test-vault",
+    "version": "node version-bump.mjs && git add manifest.json versions.json"
   },
   "license": "MIT",
   "devDependencies": {
