@@ -3,7 +3,7 @@
   "name": "Inkwell",
   "version": "0.0.1",
   "minAppVersion": "1.12.7",
-  "description": "Capture, practice, short stories and long-form projects in one plugin.",
+  "description": "A writing-practice toolkit: capture, prompts, exercises, and story project organization.",
   "author": "cblythe",
   "isDesktopOnly": false
 }

@@ -1,7 +1,7 @@
 {
   "name": "inkwell",
   "version": "0.0.1",
-  "description": "Capture, practice, short stories and long-form projects in one Obsidian plugin.",
+  "description": "A writing-practice toolkit: capture, prompts, exercises, and story project organization.",
   "main": "main.js",
   "scripts": {
     "dev": "node esbuild.config.mjs",
