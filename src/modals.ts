@@ -14,7 +14,8 @@ export function askForm(
   app: App,
   title: string,
   fields: FormField[],
-  submitText = "Create"
+  submitText = "Create",
+  description = ""
 ): Promise<Record<string, string> | null> {
   return new Promise((resolve) => {
     const modal = new (class extends Modal {
@@ -22,6 +23,9 @@ export function askForm(
       done = false;
       onOpen() {
         this.setTitle(title);
+        if (description) {
+          for (const para of description.split("\n\n")) this.contentEl.createEl("p", { text: para });
+        }
         let first: HTMLInputElement | null = null;
         for (const f of fields) {
           this.values[f.key] = f.value ?? "";

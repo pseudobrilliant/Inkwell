@@ -74,3 +74,30 @@
 .inkwell-prompt-label { font-size: var(--font-ui-smaller); color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.04em; }
 .inkwell-prompt-block .inkwell-prompt-text { cursor: pointer; margin: var(--size-4-2) 0; }
 .inkwell-prompt-actions { display: flex; gap: var(--size-4-2); }
+
+/* Story panel */
+.inkwell-story-head { display: flex; align-items: center; gap: var(--size-4-2); }
+.inkwell-story-title { margin: 0; flex: 1; cursor: pointer; }
+.inkwell-story-logline { color: var(--text-muted); font-style: italic; margin: var(--size-4-2) 0; }
+.inkwell-story-section { margin: var(--size-4-3) 0; }
+.inkwell-story-section ul { margin: var(--size-4-1) 0; padding-left: var(--size-4-5); }
+.inkwell-story-section a, .inkwell-story-list a { cursor: pointer; }
+.inkwell-label {
+  display: flex; align-items: center; justify-content: space-between;
+  font-size: var(--font-ui-smaller); color: var(--text-muted);
+  text-transform: uppercase; letter-spacing: 0.04em;
+}
+.inkwell-story-stats { font-size: var(--font-ui-small); }
+.inkwell-muted { color: var(--text-muted); font-size: var(--font-ui-small); }
+.inkwell-next { width: 100%; }
+.inkwell-story-actions { display: flex; flex-wrap: wrap; gap: var(--size-4-2); }
+.inkwell-story-actions button { display: inline-flex; align-items: center; gap: var(--size-2-1); }
+.inkwell-story-actions svg { width: var(--icon-s); height: var(--icon-s); }
+
+/* Home blocks */
+.inkwell-block { border: 1px solid var(--background-modifier-border); border-radius: var(--radius-m); padding: var(--size-4-3); }
+.inkwell-block-head { display: flex; align-items: center; gap: var(--size-4-2); font-weight: var(--font-semibold); margin-bottom: var(--size-4-2); }
+.inkwell-block-head button { margin-left: auto; }
+.inkwell-block a { cursor: pointer; }
+.inkwell-progress-table { width: 100%; font-size: var(--font-ui-small); }
+.inkwell-progress-table .inkwell-progress { height: 4px; margin: 0; }

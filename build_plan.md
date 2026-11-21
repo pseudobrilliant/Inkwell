@@ -92,7 +92,7 @@ Shared cast: one set of characters/places used by several related stories	0.8+
 F. Home & progress
 Feature	Version
 Home keeps working with Bases + Keep the Rhythm (no rewrite needed)	0.1
-Plugin adds code blocks for Home: inkwell-inbox, inkwell-in-progress, inkwell-prompt	0.3
+Plugin adds code blocks for Home: inkwell-inbox, inkwell-in-progress, inkwell-heatmap (KTR heatmap of drafts + scenes only); inkwell-prompt shipped early in 0.2	0.3
 Per-story word targets and "words this week on this story" (read from Keep the Rhythm's daily log, drafts/scenes only; see §5)	0.3
 Embed Keep the Rhythm's heatmap and totals blocks (ktr-heatmap, ktr-slots) on Home and in the story panel instead of building our own	0.3
 Streaks/goals/word log: keep using Keep the Rhythm; Inkwell keeps no word log, streaks or heatmap of its own	—
@@ -100,7 +100,7 @@ G. Settings
 Feature	Version
 Folder locations (defaults match this vault: 00 - Inbox, 01 - Writing, 02 - Long Projects, 04 - Practice, 05 - Resources)	0.1
 Template file path for each note type (files live in 99 - System/Templates)	0.1
-Status lists for short and long form	0.1
+Status lists for short and long form (long form defaults to StoryLine's scene statuses: idea, outlined, draft, written, revised, final)	0.1
 Default word targets	0.3
 3. Data model (frontmatter type: values)
 type	Where	Key fields
@@ -108,9 +108,9 @@ capture	00 - Inbox	kind, created, source
 journal	04 - Practice/Journal	created, writing_min
 exercise	04 - Practice/Exercises	prompt (link to prompt note), minutes, became (link)
 prompt	04 - Practice/Prompts (one note each; Bases table)	tags, used (count), last_used (date)
-story	01 - Writing/<Title>	status, logline, genre, target_wordcount
-draft	01 - Writing/<Title>	project, version
-storyline	02 - Long Projects/<Title>	StoryLine fields + status, logline
+story	01 - Writing/<Title>	status, logline, genre, target_wordcount, next (next step), from (link to exercise it came from)
+draft	01 - Writing/<Title> (snapshots in Archive/)	project, version; snapshots also have snapshot (date)
+storyline	02 - Long Projects/<Title>	StoryLine fields (title, bookId, language) + status, logline, target_wordcount, promoted (date)
 scene	…/Scenes	StoryLine fields (sequence, act, chapter, status, pov, characters, location, target_wordcount, notes)
 character / location	story folder or Codex	name, tagline, role, goal, …
 resource	05 - Resources	kind, status, author, url
@@ -201,3 +201,4 @@ Date	Version	Change
 2026-11-20	—	Plan reviewed: versions replace MVP/Next/Later, roadmap reordered (short form before long form), data-model names fixed, dev & release section added.
 2026-11-21	—	Keep the Rhythm made an optional dependency: §2F words-this-week reads KTR's daily log and a new 0.3 item embeds its heatmap/totals; §3 notes KTR 0.2.16 compatibility; §5 adds the integration table, rules and device-history risk; §8 records the decision. Also logged: Place template now writes type: location (2026-11-20).
 2026-11-21	—	Distribution decided: BRAT from GitHub releases (§7, §8); phone testing deferred.
+2026-11-21	0.3	Built 0.3 (story panel, revision snapshots, promote short → long, Home blocks, KTR words-this-week and heatmap). §3 gains story next/from, draft snapshot, storyline promoted; long-form statuses default to StoryLine's; inkwell-prompt block moved to 0.2.

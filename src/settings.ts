@@ -25,6 +25,8 @@ export interface InkwellSettings {
   lastCaptureKind: "idea" | "line" | "link" | "prompt" | "research";
   exerciseMinutes: number;
   defaultShortTarget: number;
+  defaultLongTarget: number;
+  defaultSceneTarget: number;
   captureToJournal: boolean;
   promptOfDay?: { date: string; path: string };
 }
@@ -49,10 +51,13 @@ export const DEFAULT_SETTINGS: InkwellSettings = {
   },
   journalDateFormat: "YYYY-MM-DD",
   shortStatuses: ["idea", "drafting", "revising", "done"],
-  longStatuses: ["idea", "outlining", "drafting", "revising", "done"],
+  // StoryLine's scene statuses
+  longStatuses: ["idea", "outlined", "draft", "written", "revised", "final"],
   lastCaptureKind: "idea",
   exerciseMinutes: 15,
   defaultShortTarget: 0,
+  defaultLongTarget: 0,
+  defaultSceneTarget: 800,
   captureToJournal: false,
 };
 
@@ -158,6 +163,26 @@ export class InkwellSettingTab extends PluginSettingTab {
         });
       });
 
+    const num = (name: string, desc: string, key: "defaultLongTarget" | "defaultSceneTarget") =>
+      new Setting(containerEl)
+        .setName(name)
+        .setDesc(desc)
+        .addText((t) => {
+          t.inputEl.type = "number";
+          t.setValue(String(s[key])).onChange(async (v) => {
+            s[key] = Math.max(0, parseInt(v, 10) || 0);
+            await this.plugin.saveSettings();
+          });
+        });
+    num("Long project word target", "Pre-filled when promoting to long form. 0 = none.", "defaultLongTarget");
+    num("Scene word target", "target_wordcount for scenes created by promotion. 0 = none.", "defaultSceneTarget");
+
+    new Setting(containerEl).setName("Keep the Rhythm").setHeading();
+    const ktr = this.plugin.ktr.status();
+    new Setting(containerEl)
+      .setName(ktr.ok ? "Connected" : "Not connected")
+      .setDesc(ktr.message + " Inkwell only reads it; word stats are hidden without it.");
+
     new Setting(containerEl).setName("Statuses").setHeading();
     const statusSetting = (name: string, key: "shortStatuses" | "longStatuses") =>
       new Setting(containerEl)
@@ -171,6 +196,6 @@ export class InkwellSettingTab extends PluginSettingTab {
           })
         );
     statusSetting("Short form", "shortStatuses");
-    statusSetting("Long form", "longStatuses");
+    statusSetting("Long form (scenes)", "longStatuses");
   }
 }

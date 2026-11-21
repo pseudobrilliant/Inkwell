@@ -5,16 +5,23 @@ import { writeDefaultTemplates } from "./templates";
 import { openTodaysJournal } from "./journal";
 import { InboxView, INBOX_VIEW, isInboxFile, triageMenu } from "./inbox";
 import { exerciseBecameStory, isExercise } from "./became";
-import { formatProgress, newCodexNote, newShortStory, showStoryProgress, storyForFile, storyProgress } from "./stories";
+import { KeepTheRhythm } from "./integrations/keep-the-rhythm";
+import { StoryView, STORY_VIEW } from "./storyview";
+import { snapshotDraft } from "./revisions";
+import { promoteToLongForm } from "./promote";
+import { registerHomeBlocks } from "./homeblocks";
+import { formatProgress, newCodexNote, newShortStory, showStoryProgress, Story, storyForFile, storyProgress } from "./stories";
 import { createPromptsBase, newPrompt, RandomPromptModal, registerPromptBlock } from "./prompts";
 import { createExercise, newExercise } from "./exercise";
 
 export default class InkwellPlugin extends Plugin {
   settings!: InkwellSettings;
+  ktr!: KeepTheRhythm;
   private statusEl: HTMLElement | null = null;
 
   async onload() {
     await this.loadSettings();
+    this.ktr = new KeepTheRhythm(this.app);
     this.addSettingTab(new InkwellSettingTab(this.app, this));
 
     // Capture
@@ -75,6 +82,24 @@ export default class InkwellPlugin extends Plugin {
     // Short form
     this.addCommand({ id: "new-short-story", name: "New short story", callback: () => newShortStory(this) });
     this.addCommand({ id: "story-progress", name: "Story progress", callback: () => showStoryProgress(this) });
+    this.registerView(STORY_VIEW, (leaf) => new StoryView(leaf, this));
+    this.addCommand({ id: "open-story-panel", name: "Open story panel", callback: () => this.activateView(STORY_VIEW) });
+    this.addRibbonIcon("book-open", "Inkwell: story panel", () => this.activateView(STORY_VIEW));
+    const storyCommand = (id: string, name: string, fn: (s: Story) => unknown) =>
+      this.addCommand({
+        id,
+        name,
+        checkCallback: (checking) => {
+          const s = storyForFile(this, this.app.workspace.getActiveFile());
+          if (!s) return false;
+          if (!checking) void fn(s);
+          return true;
+        },
+      });
+    storyCommand("snapshot-draft", "Snapshot draft (new revision)", (s) => snapshotDraft(this, s));
+    storyCommand("promote-long-form", "Promote story to long form", (s) => promoteToLongForm(this, s));
+    registerHomeBlocks(this);
+
     this.addCommand({ id: "new-character", name: "New character", callback: () => newCodexNote(this, "character") });
     this.addCommand({ id: "new-location", name: "New location", callback: () => newCodexNote(this, "location") });
 
@@ -96,12 +121,16 @@ export default class InkwellPlugin extends Plugin {
     this.app.workspace.onLayoutReady(() => this.refreshStatusBar());
   }
 
-  async activateInbox() {
+  activateInbox() {
+    return this.activateView(INBOX_VIEW);
+  }
+
+  async activateView(type: string) {
     const ws = this.app.workspace;
-    let leaf = ws.getLeavesOfType(INBOX_VIEW)[0];
+    let leaf = ws.getLeavesOfType(type)[0];
     if (!leaf) {
       leaf = ws.getRightLeaf(false)!;
-      await leaf.setViewState({ type: INBOX_VIEW, active: true });
+      await leaf.setViewState({ type, active: true });
     }
     await ws.revealLeaf(leaf);
   }
