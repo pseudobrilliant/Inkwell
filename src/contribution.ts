@@ -47,7 +47,7 @@ export function allNotes(plugin: InkwellPlugin): Note[] {
 export function modeMatchers(plugin: InkwellPlugin) {
   const f = plugin.settings.folders;
   return {
-    practice: (p: string) => under(p, f.journal) || under(p, f.exercises),
+    practice: (p: string) => under(p, f.journal) || under(p, f.writings),
     stories: (p: string) => under(p, f.writing) && p.endsWith(" - Draft.md") && !p.includes("/Archive/"),
     projects: (p: string) => under(p, f.longProjects) && p.includes("/Scenes/"),
     all: (_p: string) => true,

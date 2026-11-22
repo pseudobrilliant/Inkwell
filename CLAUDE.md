@@ -43,9 +43,9 @@ Inkwell is organized around **Capture**, which feeds everything, and **three mod
 
 ### Mode 1: Practice. Show up.
 - **Purpose:** low-stakes, daily writing. Quantity over polish. Always gives you something to write today, even with no project.
-- **Structure:** `01 - Practice/` → `Journal/` (`type: journal`), `Exercises/` (`type: exercise`), `Prompts/` (`type: prompt`, one note per prompt).
-- **Tools:** today's journal, new exercise (with a time goal), new prompt, random prompt (least used and oldest first), prompt of the day (`inkwell-prompt` block), prompts table (Bases), writing timer. See `src/journal.ts`, `src/exercise.ts`, `src/prompts.ts`, `src/timer.ts`.
-- **Writing timer:** one timer at a time. Creating an exercise (any route, including random prompt) or opening today's journal arms it; it starts on the first keystroke in that note, pauses by itself after idle minutes (counting only up to the last keystroke) and resumes on typing. Stop adds whole minutes to the note's `writing_min`. A new exercise logs and replaces a timer in use; opening the journal never replaces one. Status bar on desktop, a header button on the timed note (the only UI on mobile). State is timestamps in settings (`timer`), so it survives backgrounding and reloads.
+- **Structure:** `01 - Practice/` → `Journal/` (`type: journal`), `Writings/` (`type: exercise`: the writing you did), `Exercises/` (the material you practice from: `Prompts/` with `type: prompt`, one note per prompt, and `Drills/` with `type: drill`, one note per drill, from the drill template).
+- **Tools:** today's journal, new exercise (with a time goal), new prompt, random prompt (least used and oldest first), new drill, exercise from a drill (the open drill note, or a pick; the drill's `minutes` sets the timer goal), add starter drills (five common drills, skips existing), prompt of the day (`inkwell-prompt` block), prompts table (Bases), writing timer. See `src/journal.ts`, `src/exercise.ts`, `src/prompts.ts`, `src/drills.ts`, `src/timer.ts`.
+- **Writing timer:** one timer at a time. Creating an exercise (any route, including random prompt or a drill) or opening today's journal arms it; it starts on the first keystroke in that note, pauses by itself after idle minutes (counting only up to the last keystroke) and resumes on typing. Stop adds whole minutes to the note's `writing_min`. A new exercise logs and replaces a timer in use; opening the journal never replaces one. Status bar on desktop, a header button on the timed note (the only UI on mobile). State is timestamps in settings (`timer`), so it survives backgrounding and reloads.
 - **Progress signal:** did I write today? Journal entries, exercises done, minutes written, prompts used.
 
 ### Mode 2: Short form. Finish small things.
@@ -102,8 +102,9 @@ Contribution is tracked at four levels. Each answers a different question.
 |---|---|---|
 | `capture` | Inbox | `kind`, `created`, `captured` (date; kept through triage so it still counts as contribution), `source` |
 | `journal` | Practice/Journal | `created`, `writing_min` (minutes logged by the timer) |
-| `exercise` | Practice/Exercises | `prompt` (link), `minutes` (goal), `writing_min` (minutes logged by the timer), `became` (link) |
-| `prompt` | Practice/Prompts | `tags`, `used` (count), `last_used` (date) |
+| `exercise` | Practice/Writings | `prompt` (link), `drill` (link), `minutes` (goal), `writing_min` (minutes logged by the timer), `became` (link) |
+| `prompt` | Practice/Exercises/Prompts | `tags`, `used` (count), `last_used` (date) |
+| `drill` | Practice/Exercises/Drills | `tags`, `skill`, `minutes` (suggested time) |
 | `story` | Stories/<Title> | `status`, `logline`, `genre`, `target_wordcount`, `next`, `from` |
 | `draft` | Stories/<Title> (snapshots in `Archive/`) | `project`, `version`, `snapshot` (snapshots only) |
 | `storyline` | Projects/<Title> | StoryLine fields (`title`, `bookId`, `language`) + `status`, `logline`, `target_wordcount`, `promoted` |

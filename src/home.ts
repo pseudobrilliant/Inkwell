@@ -3,7 +3,7 @@ import type InkwellPlugin from "./main";
 import { loadTemplate, render } from "./templates";
 import { ensureFolder } from "./util";
 
-/** Closest common parent of two folder paths ("01 - Practice/Journal" + "01 - Practice/Exercises" → "01 - Practice"). */
+/** Closest common parent of two folder paths ("01 - Practice/Journal" + "01 - Practice/Writings" → "01 - Practice"). */
 function commonFolder(a: string, b: string): string {
   const x = a.split("/");
   const y = b.split("/");
@@ -26,7 +26,7 @@ export async function openHome(plugin: InkwellPlugin): Promise<void> {
     const tpl = await loadTemplate(app, settings, "home");
     const text = render(tpl, {
       inbox: settings.folders.inbox,
-      practice: commonFolder(settings.folders.journal, settings.folders.exercises),
+      practice: commonFolder(settings.folders.journal, settings.folders.writings),
     });
     await ensureFolder(app, path.split("/").slice(0, -1).join("/"));
     file = await app.vault.create(path, text);

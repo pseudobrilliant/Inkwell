@@ -129,6 +129,21 @@ tags:
 
 ## What I noticed
 `,
+  drill: `---
+type: drill
+tags:
+skill:
+minutes: 10
+---
+## How to do it
+1. 
+
+## Variations
+- 
+
+## Why it works
+
+`,
   storyHub: `---
 type: story
 tags:
@@ -251,6 +266,7 @@ export const TEMPLATE_FILE_NAMES: Record<TemplateKey, string> = {
   home: "Home",
   journal: "Journal",
   exercise: "Exercise",
+  drill: "Drill",
   storyHub: "Story",
   storyDraft: "Story Draft",
   projectHub: "Project",

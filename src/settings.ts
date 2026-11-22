@@ -8,14 +8,18 @@ export interface InkwellSettings {
     writing: string;
     longProjects: string;
     journal: string;
-    exercises: string;
+    /** Exercise notes: the writing done in practice. */
+    writings: string;
+    /** Prompts and drills live under Exercises. */
     prompts: string;
+    drills: string;
     resources: string;
   };
   templates: {
     home: string;
     journal: string;
     exercise: string;
+    drill: string;
     storyHub: string;
     storyDraft: string;
     projectHub: string;
@@ -44,8 +48,9 @@ export const DEFAULT_SETTINGS: InkwellSettings = {
   folders: {
     inbox: "00 - Inbox",
     journal: "01 - Practice/Journal",
-    exercises: "01 - Practice/Exercises",
-    prompts: "01 - Practice/Prompts",
+    writings: "01 - Practice/Writings",
+    prompts: "01 - Practice/Exercises/Prompts",
+    drills: "01 - Practice/Exercises/Drills",
     writing: "02 - Stories",
     longProjects: "03 - Projects",
     resources: "05 - Resources",
@@ -54,6 +59,7 @@ export const DEFAULT_SETTINGS: InkwellSettings = {
     home: "99 - System/Templates/Inkwell/Home.md",
     journal: "99 - System/Templates/Inkwell/Journal.md",
     exercise: "99 - System/Templates/Inkwell/Exercise.md",
+    drill: "99 - System/Templates/Inkwell/Drill.md",
     storyHub: "99 - System/Templates/Inkwell/Story.md",
     storyDraft: "99 - System/Templates/Inkwell/Story Draft.md",
     projectHub: "99 - System/Templates/Inkwell/Project.md",
@@ -82,8 +88,9 @@ type TemplateKey = keyof InkwellSettings["templates"];
 const FOLDER_LABELS: Record<FolderKey, string> = {
   inbox: "Inbox",
   journal: "Journal",
-  exercises: "Exercises",
+  writings: "Writings",
   prompts: "Prompts",
+  drills: "Drills",
   writing: "Stories",
   longProjects: "Projects",
   resources: "Resources",
@@ -93,6 +100,7 @@ const TEMPLATE_LABELS: Record<TemplateKey, string> = {
   home: "Home dashboard",
   journal: "Journal",
   exercise: "Exercise",
+  drill: "Drill",
   storyHub: "Short story hub",
   storyDraft: "Short story draft",
   projectHub: "Project",

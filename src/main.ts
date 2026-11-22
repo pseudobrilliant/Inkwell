@@ -3,6 +3,7 @@ import { DEFAULT_SETTINGS, InkwellSettings, InkwellSettingTab } from "./settings
 import { CaptureModal } from "./capture";
 import { writeDefaultTemplates } from "./templates";
 import { openTodaysJournal } from "./journal";
+import { addStarterDrills, newDrill } from "./drills";
 import { InboxView, INBOX_VIEW, isInboxFile, triageMenu } from "./inbox";
 import { exerciseBecameStory, isExercise } from "./became";
 import { KeepTheRhythm } from "./integrations/keep-the-rhythm";
@@ -15,7 +16,7 @@ import { openHome } from "./home";
 import { pick } from "./modals";
 import { formatProgress, newCodexNote, newShortStory, showStoryProgress, Story, storyForFile, storyProgress } from "./stories";
 import { createPromptsBase, newPrompt, RandomPromptModal, registerPromptBlock } from "./prompts";
-import { createExercise, newExercise } from "./exercise";
+import { createExercise, exerciseFromDrill, newExercise } from "./exercise";
 import { newProject, newScene, projectForFile, projectProgress } from "./projects";
 import { WritingTimer } from "./timer";
 
@@ -77,6 +78,9 @@ export default class InkwellPlugin extends Plugin {
       callback: () => new RandomPromptModal(this, (p) => void createExercise(this, p)).open(),
     });
     this.addCommand({ id: "new-prompt", name: "New prompt", callback: () => newPrompt(this) });
+    this.addCommand({ id: "new-drill", name: "New drill", callback: () => newDrill(this) });
+    this.addCommand({ id: "exercise-from-drill", name: "Exercise from a drill", callback: () => exerciseFromDrill(this) });
+    this.addCommand({ id: "add-starter-drills", name: "Add starter drills", callback: () => addStarterDrills(this) });
     this.addCommand({
       id: "became-story",
       name: "This became a story",
@@ -128,7 +132,9 @@ export default class InkwellPlugin extends Plugin {
           ["Scene", () => newScene(this)],
           ["Exercise", () => newExercise(this)],
           ["Exercise from a random prompt", () => new RandomPromptModal(this, (p) => void createExercise(this, p)).open()],
+          ["Exercise from a drill", () => exerciseFromDrill(this)],
           ["Prompt", () => newPrompt(this)],
+          ["Drill", () => newDrill(this)],
           ["Character", () => newCodexNote(this, "character")],
           ["Location", () => newCodexNote(this, "location")],
           ["Today's journal", () => openTodaysJournal(this)],
@@ -191,10 +197,14 @@ export default class InkwellPlugin extends Plugin {
 
   async loadSettings() {
     const data = ((await this.loadData()) ?? {}) as Partial<InkwellSettings>;
+    // Older versions kept exercise notes under `folders.exercises`. Keep that folder as Writings so
+    // existing vaults keep working; nothing is moved.
+    const { exercises, ...folders } = (data.folders ?? {}) as Partial<InkwellSettings["folders"]> & { exercises?: string };
+    if (exercises && !folders.writings) folders.writings = exercises;
     this.settings = {
       ...DEFAULT_SETTINGS,
       ...data,
-      folders: { ...DEFAULT_SETTINGS.folders, ...data.folders },
+      folders: { ...DEFAULT_SETTINGS.folders, ...folders },
       templates: { ...DEFAULT_SETTINGS.templates, ...data.templates },
     };
   }

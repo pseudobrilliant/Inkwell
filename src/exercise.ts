@@ -1,6 +1,7 @@
 import { moment, TFile } from "obsidian";
 import type InkwellPlugin from "./main";
 import { askForm, pick } from "./modals";
+import { pickDrill, type Drill } from "./drills";
 import { listPrompts, markPromptUsed, Prompt, promptText, rankPrompts } from "./prompts";
 import { loadTemplate, render } from "./templates";
 import { cleanName, createNote, slugWords, uniquePath } from "./util";
@@ -23,24 +24,27 @@ export async function newExercise(plugin: InkwellPlugin): Promise<void> {
 export async function createExercise(
   plugin: InkwellPlugin,
   prompt: Prompt | null,
-  opts: { text?: string } = {}
+  opts: { text?: string; drill?: Drill } = {}
 ): Promise<TFile | null> {
   const { app, settings } = plugin;
-  const text = opts.text ?? (prompt ? await promptText(app, prompt.file) : "");
+  const drill = opts.drill;
+  const drillText = drill ? `Drill: [[${drill.file.basename}]]${drill.skill ? ` (${drill.skill})` : ""}` : "";
+  const text = opts.text ?? (prompt ? await promptText(app, prompt.file) : drillText);
   const v = await askForm(app, "New exercise", [
-    { key: "title", label: "Title", value: text ? slugWords(text, 8, 60) : "", required: true },
-    { key: "minutes", label: "Timer goal (minutes)", type: "number", value: String(settings.exerciseMinutes) },
+    { key: "title", label: "Title", value: drill ? drill.file.basename : text ? slugWords(text, 8, 60) : "", required: true },
+    { key: "minutes", label: "Timer goal (minutes)", type: "number", value: String(drill?.minutes || settings.exerciseMinutes) },
   ]);
   if (!v) return null;
   const date = moment().format("YYYY-MM-DD");
   const title = cleanName(v.title) || "Exercise";
-  const path = uniquePath(app, settings.folders.exercises, `${date} ${title}`);
+  const path = uniquePath(app, settings.folders.writings, `${date} ${title}`);
   const tpl = await loadTemplate(app, settings, "exercise");
   const minutes = parseInt(v.minutes, 10) || 0;
   const file: TFile = await createNote(app, path, render(tpl, { title, date, prompt_text: text }), {
     type: "exercise",
     created: date,
     prompt: prompt ? `[[${prompt.file.basename}]]` : "",
+    ...(drill ? { drill: `[[${drill.file.basename}]]` } : {}),
     minutes: minutes || null,
     became: "",
   });
@@ -48,4 +52,10 @@ export async function createExercise(
   await app.workspace.getLeaf(false).openFile(file);
   await plugin.timer.arm(file, minutes, true);
   return file;
+}
+
+/** Start an exercise from a drill: the active drill note, or one picked from the list. */
+export async function exerciseFromDrill(plugin: InkwellPlugin): Promise<void> {
+  const drill = await pickDrill(plugin);
+  if (drill) await createExercise(plugin, null, { drill });
 }
