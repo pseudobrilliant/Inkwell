@@ -128,6 +128,7 @@ Contribution is tracked at four levels. Each answers a different question.
   - Per-piece numbers count only draft and scene files.
   - Inkwell keeps no word log, streak, or heatmap of its own. Known risk: KTR history is stored per device and may undercount across phone and desktop.
 - **Settings** hold folders, template paths, status lists, and default targets (`src/settings.ts`). Never hard-code folder names.
+- **Settings tab is declarative** (Obsidian 1.13+, so `minAppVersion` is 1.13.0). Add a setting by adding a definition in `getSettingDefinitions()`, which makes it appear in Obsidian's settings search. Don't add a `display()` method. Nested settings use dotted control keys (`folders.inbox`). Every key must be handled in both `getControlValue` and `setControlValue`, where values are normalized (trimmed, with defaults as fallback).
 
 ### Build, test, release
 ```sh
@@ -154,5 +155,4 @@ New key concepts land here first. Move them up once they're settled.
 - **Shared cast:** one set of characters and locations used across related stories.
 - **Manuscript view:** read all of a project's scenes as one continuous document (reading, not export).
 - **Long-form views (gated):** corkboard, kanban, beat-sheet scaffolds, scene inspector. Build these only if StoryLine falls short in real use, and write down the gap first.
-- **Declarative settings (Obsidian 1.13+):** `PluginSettingTab.getSettingDefinitions()` makes settings show up in Obsidian's settings search. Adopting it means raising `minAppVersion` to 1.13.0 and rewriting `src/settings.ts` (nested `folders.*`/`templates.*` keys need `getControlValue`/`setControlValue` overrides). Lint warns until then.
 - **Inkwell's own word log:** only if KTR's per-device history proves unreliable. It would go behind the same one-file interface.

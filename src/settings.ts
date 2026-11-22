@@ -1,4 +1,4 @@
-import { App, PluginSettingTab, Setting } from "obsidian";
+import { App, PluginSettingTab, type SettingDefinition, type SettingDefinitionItem } from "obsidian";
 import type InkwellPlugin from "./main";
 
 export interface InkwellSettings {
@@ -91,129 +91,177 @@ const TEMPLATE_LABELS: Record<TemplateKey, string> = {
   location: "Location",
 };
 
+/** Keys of the settings tab's controls. Nested settings use dotted paths (`folders.inbox`). */
+type ControlKey =
+  | `folders.${FolderKey}`
+  | `templates.${TemplateKey}`
+  | "homeNote"
+  | "captureToJournal"
+  | "journalDateFormat"
+  | "exerciseMinutes"
+  | "defaultShortTarget"
+  | "defaultLongTarget"
+  | "defaultSceneTarget"
+  | "shortStatuses"
+  | "longStatuses";
+
+const STATUS_KEYS = ["shortStatuses", "longStatuses"] as const;
+const TARGET_KEYS = ["defaultShortTarget", "defaultLongTarget", "defaultSceneTarget"] as const;
+
+const asText = (v: unknown) => (typeof v === "string" ? v.trim() : "");
+const asCount = (v: unknown) => (typeof v === "number" && Number.isFinite(v) ? Math.max(0, Math.round(v)) : 0);
+
+/**
+ * Declarative settings tab (Obsidian 1.13+), so every Inkwell setting shows up in Obsidian's settings search.
+ * Values are read and written through getControlValue/setControlValue, which keep the normalization rules:
+ * text is trimmed, empty paths fall back to defaults, and status lists are edited as comma-separated text.
+ */
 export class InkwellSettingTab extends PluginSettingTab {
   constructor(app: App, private plugin: InkwellPlugin) {
     super(app, plugin);
   }
 
-  display(): void {
-    const { containerEl } = this;
-    containerEl.empty();
-    const s = this.plugin.settings;
-
-    new Setting(containerEl).setName("Folders").setHeading();
-    for (const key of Object.keys(FOLDER_LABELS) as FolderKey[]) {
-      new Setting(containerEl).setName(FOLDER_LABELS[key]).addText((t) =>
-        t
-          .setPlaceholder(DEFAULT_SETTINGS.folders[key])
-          .setValue(s.folders[key])
-          .onChange(async (v) => {
-            s.folders[key] = v.trim() || DEFAULT_SETTINGS.folders[key];
-            await this.plugin.saveSettings();
-          })
-      );
-    }
-
-    new Setting(containerEl)
-      .setName("Home note")
-      .setDesc("The dashboard note that the open home command opens. It is created from the home template if missing and never overwritten.")
-      .addText((t) =>
-        t.setValue(s.homeNote).onChange(async (v) => {
-          s.homeNote = v.trim() || DEFAULT_SETTINGS.homeNote;
-          await this.plugin.saveSettings();
-        })
-      );
-
-    new Setting(containerEl)
-      .setName("Templates")
-      .setDesc("Paths to template notes. If a file is missing, Inkwell uses its built-in version. The write default templates command creates editable copies.")
-      .setHeading();
-    for (const key of Object.keys(TEMPLATE_LABELS) as TemplateKey[]) {
-      new Setting(containerEl).setName(TEMPLATE_LABELS[key]).addText((t) =>
-        t
-          .setPlaceholder("Path to a template note")
-          .setValue(s.templates[key])
-          .onChange(async (v) => {
-            s.templates[key] = v.trim();
-            await this.plugin.saveSettings();
-          })
-      );
-    }
-
-    new Setting(containerEl).setName("Capture").setHeading();
-    new Setting(containerEl)
-      .setName("Also log captures in today's journal")
-      .setDesc("Adds a linked line under the captures heading in today's journal.")
-      .addToggle((t) =>
-        t.setValue(s.captureToJournal).onChange(async (v) => {
-          s.captureToJournal = v;
-          await this.plugin.saveSettings();
-        })
-      );
-
-    new Setting(containerEl).setName("Journal").setHeading();
-    new Setting(containerEl)
-      .setName("Date format")
-      .setDesc("Moment.js format for journal note names.")
-      .addText((t) =>
-        t.setValue(s.journalDateFormat).onChange(async (v) => {
-          s.journalDateFormat = v.trim() || DEFAULT_SETTINGS.journalDateFormat;
-          await this.plugin.saveSettings();
-        })
-      );
-
-    new Setting(containerEl).setName("Defaults").setHeading();
-    new Setting(containerEl).setName("Exercise timer goal (minutes)").addText((t) => {
-      t.inputEl.type = "number";
-      t.setValue(String(s.exerciseMinutes)).onChange(async (v) => {
-        s.exerciseMinutes = parseInt(v, 10) || DEFAULT_SETTINGS.exerciseMinutes;
-        await this.plugin.saveSettings();
-      });
-    });
-    new Setting(containerEl)
-      .setName("Short story word target")
-      .setDesc("Pre-filled when creating a story. 0 = none.")
-      .addText((t) => {
-        t.inputEl.type = "number";
-        t.setValue(String(s.defaultShortTarget)).onChange(async (v) => {
-          s.defaultShortTarget = Math.max(0, parseInt(v, 10) || 0);
-          await this.plugin.saveSettings();
-        });
-      });
-
-    const num = (name: string, desc: string, key: "defaultLongTarget" | "defaultSceneTarget") =>
-      new Setting(containerEl)
-        .setName(name)
-        .setDesc(desc)
-        .addText((t) => {
-          t.inputEl.type = "number";
-          t.setValue(String(s[key])).onChange(async (v) => {
-            s[key] = Math.max(0, parseInt(v, 10) || 0);
-            await this.plugin.saveSettings();
-          });
-        });
-    num("Project word target", "Pre-filled when creating a project or promoting a story. 0 = none.", "defaultLongTarget");
-    num("Scene word target", "target_wordcount for new scenes. 0 = none.", "defaultSceneTarget");
-
-    new Setting(containerEl).setName("Keep the Rhythm").setHeading();
+  getSettingDefinitions(): SettingDefinitionItem<ControlKey>[] {
     const ktr = this.plugin.ktr.status();
-    new Setting(containerEl)
-      .setName(ktr.ok ? "Connected" : "Not connected")
-      .setDesc(ktr.message + " Inkwell only reads it; word stats are hidden without it.");
+    const number = (name: string, desc: string, key: ControlKey, min = 0): SettingDefinition<ControlKey> => ({
+      name,
+      desc,
+      control: { type: "number", key, min, step: 1 },
+    });
+    return [
+      {
+        type: "group",
+        heading: "Folders",
+        items: (Object.keys(FOLDER_LABELS) as FolderKey[]).map((key) => ({
+          name: FOLDER_LABELS[key],
+          control: { type: "folder", key: `folders.${key}`, placeholder: DEFAULT_SETTINGS.folders[key] },
+        })),
+      },
+      {
+        type: "group",
+        heading: "Home",
+        items: [
+          {
+            name: "Home note",
+            desc: "The dashboard note that the open home command opens. It is created from the home template if missing and never overwritten.",
+            control: { type: "file", key: "homeNote", placeholder: DEFAULT_SETTINGS.homeNote, filter: (f) => f.extension === "md" },
+          },
+        ],
+      },
+      {
+        type: "group",
+        heading: "Templates",
+        items: [
+          {
+            name: "Missing templates",
+            desc: "If a template file is missing, Inkwell uses its built-in version. The write default templates command creates editable copies.",
+          },
+          ...(Object.keys(TEMPLATE_LABELS) as TemplateKey[]).map(
+            (key): SettingDefinition<ControlKey> => ({
+              name: TEMPLATE_LABELS[key],
+              aliases: ["template"],
+              control: { type: "file", key: `templates.${key}`, placeholder: "Path to a template note", filter: (f) => f.extension === "md" },
+            })
+          ),
+        ],
+      },
+      {
+        type: "group",
+        heading: "Capture",
+        items: [
+          {
+            name: "Also log captures in today's journal",
+            desc: "Adds a linked line under the captures heading in today's journal.",
+            control: { type: "toggle", key: "captureToJournal" },
+          },
+        ],
+      },
+      {
+        type: "group",
+        heading: "Journal",
+        items: [
+          {
+            name: "Date format",
+            desc: "Moment.js format for journal note names.",
+            control: { type: "text", key: "journalDateFormat", placeholder: DEFAULT_SETTINGS.journalDateFormat },
+          },
+        ],
+      },
+      {
+        type: "group",
+        heading: "Defaults",
+        items: [
+          number("Exercise timer goal (minutes)", "Pre-filled when creating an exercise.", "exerciseMinutes", 1),
+          number("Short story word target", "Pre-filled when creating a story. 0 = none.", "defaultShortTarget"),
+          number("Project word target", "Pre-filled when creating a project or promoting a story. 0 = none.", "defaultLongTarget"),
+          number("Scene word target", "The word target for new scenes. 0 = none.", "defaultSceneTarget"),
+        ],
+      },
+      {
+        type: "group",
+        heading: "Keep the Rhythm",
+        items: [
+          {
+            name: ktr.ok ? "Connected" : "Not connected",
+            desc: ktr.message + " Inkwell only reads it; word stats are hidden without it.",
+            aliases: ["word count", "streak", "heatmap"],
+          },
+        ],
+      },
+      {
+        type: "group",
+        heading: "Statuses",
+        items: [
+          {
+            name: "Short form",
+            desc: "Comma-separated, in order.",
+            control: { type: "text", key: "shortStatuses", placeholder: DEFAULT_SETTINGS.shortStatuses.join(", ") },
+          },
+          {
+            name: "Long form (scenes)",
+            desc: "Comma-separated, in order.",
+            control: { type: "text", key: "longStatuses", placeholder: DEFAULT_SETTINGS.longStatuses.join(", ") },
+          },
+        ],
+      },
+    ];
+  }
 
-    new Setting(containerEl).setName("Statuses").setHeading();
-    const statusSetting = (name: string, key: "shortStatuses" | "longStatuses") =>
-      new Setting(containerEl)
-        .setName(name)
-        .setDesc("Comma-separated, in order.")
-        .addText((t) =>
-          t.setValue(s[key].join(", ")).onChange(async (v) => {
-            const list = v.split(",").map((x) => x.trim()).filter(Boolean);
-            s[key] = list.length ? list : DEFAULT_SETTINGS[key];
-            await this.plugin.saveSettings();
-          })
-        );
-    statusSetting("Short form", "shortStatuses");
-    statusSetting("Long form (scenes)", "longStatuses");
+  getControlValue(key: string): unknown {
+    const s = this.plugin.settings;
+    const [group, sub] = key.split(".");
+    if (group === "folders" && sub && sub in s.folders) return s.folders[sub as FolderKey];
+    if (group === "templates" && sub && sub in s.templates) return s.templates[sub as TemplateKey];
+    if (key === "shortStatuses" || key === "longStatuses") return s[key].join(", ");
+    if (key in s) return s[key as keyof InkwellSettings];
+    return undefined;
+  }
+
+  async setControlValue(key: string, value: unknown): Promise<void> {
+    const s = this.plugin.settings;
+    const [group, sub] = key.split(".");
+    if (group === "folders" && sub && sub in s.folders) {
+      const k = sub as FolderKey;
+      s.folders[k] = asText(value) || DEFAULT_SETTINGS.folders[k];
+    } else if (group === "templates" && sub && sub in s.templates) {
+      s.templates[sub as TemplateKey] = asText(value);
+    } else if (key === "homeNote") {
+      s.homeNote = asText(value) || DEFAULT_SETTINGS.homeNote;
+    } else if (key === "journalDateFormat") {
+      s.journalDateFormat = asText(value) || DEFAULT_SETTINGS.journalDateFormat;
+    } else if (key === "captureToJournal") {
+      s.captureToJournal = value === true;
+    } else if (key === "exerciseMinutes") {
+      s.exerciseMinutes = asCount(value) || DEFAULT_SETTINGS.exerciseMinutes;
+    } else if ((TARGET_KEYS as readonly string[]).includes(key)) {
+      s[key as (typeof TARGET_KEYS)[number]] = asCount(value);
+    } else if ((STATUS_KEYS as readonly string[]).includes(key)) {
+      const k = key as (typeof STATUS_KEYS)[number];
+      const list = asText(value).split(",").map((x) => x.trim()).filter(Boolean);
+      s[k] = list.length ? list : [...DEFAULT_SETTINGS[k]];
+    } else {
+      return;
+    }
+    await this.plugin.saveSettings();
   }
 }

@@ -2,7 +2,7 @@
   "id": "inkwell",
   "name": "Inkwell",
   "version": "0.0.1",
-  "minAppVersion": "1.12.7",
+  "minAppVersion": "1.13.0",
   "description": "A writing-practice toolkit: capture, prompts, exercises, and story project organization.",
   "author": "cblythe",
   "isDesktopOnly": false
