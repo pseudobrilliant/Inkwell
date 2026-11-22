@@ -3,7 +3,7 @@ import type InkwellPlugin from "./main";
 import { loadTemplate, render } from "./templates";
 import { ensureFolder } from "./util";
 
-/** Closest common parent of two folder paths ("01 - Practice/Journal" + "01 - Practice/Writings" → "01 - Practice"). */
+/** Closest common parent of two folder paths ("01 - Practice/Journal" + "01 - Practice/Exercises/Writing" → "01 - Practice"). */
 function commonFolder(a: string, b: string): string {
   const x = a.split("/");
   const y = b.split("/");

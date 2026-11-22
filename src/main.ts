@@ -197,7 +197,7 @@ export default class InkwellPlugin extends Plugin {
 
   async loadSettings() {
     const data = ((await this.loadData()) ?? {}) as Partial<InkwellSettings>;
-    // Older versions kept exercise notes under `folders.exercises`. Keep that folder as Writings so
+    // Older versions kept exercise notes under `folders.exercises`. Keep that folder as the exercise writing folder so
     // existing vaults keep working; nothing is moved.
     const { exercises, ...folders } = (data.folders ?? {}) as Partial<InkwellSettings["folders"]> & { exercises?: string };
     if (exercises && !folders.writings) folders.writings = exercises;

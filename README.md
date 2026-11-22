@@ -89,7 +89,7 @@ All of these can be changed in settings.
 | Folder | Holds |
 |---|---|
 | `00 - Inbox` | Captures |
-| `01 - Practice` | `Journal/`, `Writings/` (your exercises), and `Exercises/` with `Prompts/` and `Drills/` |
+| `01 - Practice` | `Journal/`, and `Exercises/` with `Prompts/`, `Drills/`, and `Writing/` (your exercises) |
 | `02 - Stories` | Short stories |
 | `03 - Projects` | Long-form projects |
 | `05 - Resources` | Filed resources |

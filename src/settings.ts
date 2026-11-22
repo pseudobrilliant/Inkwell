@@ -8,9 +8,8 @@ export interface InkwellSettings {
     writing: string;
     longProjects: string;
     journal: string;
-    /** Exercise notes: the writing done in practice. */
+    /** Exercise notes (the writing done in practice), under Exercises next to prompts and drills. */
     writings: string;
-    /** Prompts and drills live under Exercises. */
     prompts: string;
     drills: string;
     resources: string;
@@ -48,7 +47,7 @@ export const DEFAULT_SETTINGS: InkwellSettings = {
   folders: {
     inbox: "00 - Inbox",
     journal: "01 - Practice/Journal",
-    writings: "01 - Practice/Writings",
+    writings: "01 - Practice/Exercises/Writing",
     prompts: "01 - Practice/Exercises/Prompts",
     drills: "01 - Practice/Exercises/Drills",
     writing: "02 - Stories",
@@ -88,7 +87,7 @@ type TemplateKey = keyof InkwellSettings["templates"];
 const FOLDER_LABELS: Record<FolderKey, string> = {
   inbox: "Inbox",
   journal: "Journal",
-  writings: "Writings",
+  writings: "Exercise writing",
   prompts: "Prompts",
   drills: "Drills",
   writing: "Stories",
