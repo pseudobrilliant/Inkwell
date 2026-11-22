@@ -44,7 +44,8 @@ Inkwell is organized around **Capture**, which feeds everything, and **three mod
 ### Mode 1: Practice. Show up.
 - **Purpose:** low-stakes, daily writing. Quantity over polish. Always gives you something to write today, even with no project.
 - **Structure:** `01 - Practice/` → `Journal/` (`type: journal`), `Exercises/` (`type: exercise`), `Prompts/` (`type: prompt`, one note per prompt).
-- **Tools:** today's journal, new exercise (with a time goal), new prompt, random prompt (least used and oldest first), prompt of the day (`inkwell-prompt` block), prompts table (Bases). See `src/journal.ts`, `src/exercise.ts`, `src/prompts.ts`.
+- **Tools:** today's journal, new exercise (with a time goal), new prompt, random prompt (least used and oldest first), prompt of the day (`inkwell-prompt` block), prompts table (Bases), writing timer. See `src/journal.ts`, `src/exercise.ts`, `src/prompts.ts`, `src/timer.ts`.
+- **Writing timer:** one timer at a time. Creating an exercise (any route, including random prompt) or opening today's journal arms it; it starts on the first keystroke in that note, pauses by itself after idle minutes (counting only up to the last keystroke) and resumes on typing. Stop adds whole minutes to the note's `writing_min`. A new exercise logs and replaces a timer in use; opening the journal never replaces one. Status bar on desktop, a header button on the timed note (the only UI on mobile). State is timestamps in settings (`timer`), so it survives backgrounding and reloads.
 - **Progress signal:** did I write today? Journal entries, exercises done, minutes written, prompts used.
 
 ### Mode 2: Short form. Finish small things.
@@ -76,7 +77,7 @@ Contribution is tracked at four levels. Each answers a different question.
 
 | Level | Question it answers | What exists now | Status |
 |---|---|---|---|
-| **Session / day** | Did I show up today? | `inkwell-practice` (`src/contribution.ts`): days showed up this week, streak, exercises, prompts used, journal entries, practice words. Also KTR's `ktr-entries` in the journal. Not yet: real minutes written (`writing_min` is never filled, and exercise `minutes` is only the goal) | built |
+| **Session / day** | Did I show up today? | `inkwell-practice` (`src/contribution.ts`): days showed up this week, streak, exercises, prompts used, journal entries, minutes written (`writing_min`, from the writing timer), practice words. Also KTR's `ktr-entries` in the journal | built |
 | **Piece** | Is this story or project moving? | Words against `target_wordcount`, words this week, status, last worked on, status bar, Home in-progress list | built |
 | **Mode** | Where is my writing going: capture, practice, stories, or projects? | `inkwell-contribution` (`src/contribution.ts`): counts per objective for a week, month, year, or all time (captures, exercises, journals, prompts, stories started or grown from practice, revisions, projects, scenes) plus KTR words per mode | built |
 | **Lifetime / streak** | What has all this added up to? | KTR heatmap (`inkwell-heatmap`), KTR streak in `inkwell-practice`, all-time view of `inkwell-contribution`. Not yet: a dedicated writing-life view (milestones, pieces finished) | partial |
@@ -100,8 +101,8 @@ Contribution is tracked at four levels. Each answers a different question.
 | `type` | Where | Key fields |
 |---|---|---|
 | `capture` | Inbox | `kind`, `created`, `captured` (date; kept through triage so it still counts as contribution), `source` |
-| `journal` | Practice/Journal | `created`, `writing_min` |
-| `exercise` | Practice/Exercises | `prompt` (link), `minutes`, `became` (link) |
+| `journal` | Practice/Journal | `created`, `writing_min` (minutes logged by the timer) |
+| `exercise` | Practice/Exercises | `prompt` (link), `minutes` (goal), `writing_min` (minutes logged by the timer), `became` (link) |
 | `prompt` | Practice/Prompts | `tags`, `used` (count), `last_used` (date) |
 | `story` | Stories/<Title> | `status`, `logline`, `genre`, `target_wordcount`, `next`, `from` |
 | `draft` | Stories/<Title> (snapshots in `Archive/`) | `project`, `version`, `snapshot` (snapshots only) |
@@ -117,7 +118,7 @@ Contribution is tracked at four levels. Each answers a different question.
 ### Rules
 - **Frontmatter writes** go through `app.fileManager.processFrontMatter` (avoids clobbering edits and sync conflicts). Type the callback parameter as `Frontmatter`.
 - **Frontmatter reads** go through `fmOf(app, file)` (typed `Record<string, unknown>`), and values become text through `fmStr()`. Never `String(fm.x)`: a YAML list or object would show as `[object Object]` (`src/util.ts`).
-- **Obsidian plugin guidelines** (enforced by lint): sentence case for all UI text, including command names and notices. Don't disable `obsidianmd/*` rules inline (the config forbids it), so reword the text instead. Use `instanceof`/`getFileByPath`/`getFolderByPath` rather than casting to `TFile`/`TFolder`. Use `activeDocument`/`activeWindow`, not `document`/`window` globals (for popout windows). Build DOM with `createEl`, never `innerHTML`. Styles go in `styles.css` with Obsidian CSS variables, never `el.style`. No default hotkeys. Use the Vault API, not `vault.adapter`. The one exception is reading another plugin's file under `configDir`, which the vault doesn't index. TypeScript is `strict` with `noUncheckedIndexedAccess`.
+- **Obsidian plugin guidelines** (enforced by lint): sentence case for all UI text, including command names and notices. Don't disable `obsidianmd/*` rules inline (the config forbids it), so reword the text instead. Use `instanceof`/`getFileByPath`/`getFolderByPath` rather than casting to `TFile`/`TFolder`. Use `activeDocument`/`activeWindow`, not `document`/`window` globals (for popout windows), except timers: lint requires `window.setInterval`/`window.setTimeout`. Build DOM with `createEl`, never `innerHTML`. Styles go in `styles.css` with Obsidian CSS variables, never `el.style`. No default hotkeys. Use the Vault API, not `vault.adapter`. The one exception is reading another plugin's file under `configDir`, which the vault doesn't index. TypeScript is `strict` with `noUncheckedIndexedAccess`.
 - **Scene order:** `sequence` uses gaps of 10 (10, 20, 30…), so a reorder usually rewrites one file. Scene file names follow StoryLine: `<act>-<sequence> <title>`.
 - **StoryLine compatibility:** long-form notes use StoryLine's frontmatter (tested against StoryLine 1.11.12). Long-form statuses default to StoryLine's (`idea, outlined, draft, written, revised, final`). Short-form statuses: `idea, drafting, revising, done`.
 - **Keep the Rhythm (KTR):**
@@ -151,7 +152,7 @@ New key concepts land here first. Move them up once they're settled.
 - **Weekly review:** a checklist covering inbox zero, picking an exercise, and checking stalled stories. It ties Capture and the modes together.
 - **Mode trends:** `inkwell-contribution` shows totals per period. A trend over time (this month vs. last) is still open.
 - **Writing life:** milestones and pieces finished. Finishing needs a date: status changes don't record when a piece reached `done`.
-- **Timed sprints:** a 10, 15, or 25-minute timer on any note that logs minutes to it (session/day level).
+- **Timer beyond practice:** the writing timer covers exercises and journals only. Timing drafts and scenes would need its own rule, since piece progress is words, not minutes.
 - **Shared cast:** one set of characters and locations used across related stories.
 - **Manuscript view:** read all of a project's scenes as one continuous document (reading, not export).
 - **Long-form views (gated):** corkboard, kanban, beat-sheet scaffolds, scene inspector. Build these only if StoryLine falls short in real use, and write down the gap first.

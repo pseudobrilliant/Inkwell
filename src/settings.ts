@@ -1,5 +1,6 @@
 import { App, PluginSettingTab, type SettingDefinition, type SettingDefinitionItem } from "obsidian";
 import type InkwellPlugin from "./main";
+import type { TimerState } from "./timer";
 
 export interface InkwellSettings {
   folders: {
@@ -27,11 +28,16 @@ export interface InkwellSettings {
   longStatuses: string[];
   lastCaptureKind: "idea" | "line" | "link" | "prompt" | "research";
   exerciseMinutes: number;
+  journalMinutes: number;
+  timerAutoStart: boolean;
+  timerIdleMinutes: number;
   defaultShortTarget: number;
   defaultLongTarget: number;
   defaultSceneTarget: number;
   captureToJournal: boolean;
   promptOfDay?: { date: string; path: string };
+  /** The running writing timer (src/timer.ts), kept here so it survives a reload. */
+  timer?: TimerState;
 }
 
 export const DEFAULT_SETTINGS: InkwellSettings = {
@@ -61,6 +67,9 @@ export const DEFAULT_SETTINGS: InkwellSettings = {
   longStatuses: ["idea", "outlined", "draft", "written", "revised", "final"],
   lastCaptureKind: "idea",
   exerciseMinutes: 15,
+  journalMinutes: 10,
+  timerAutoStart: true,
+  timerIdleMinutes: 5,
   defaultShortTarget: 0,
   defaultLongTarget: 0,
   defaultSceneTarget: 800,
@@ -99,6 +108,9 @@ type ControlKey =
   | "captureToJournal"
   | "journalDateFormat"
   | "exerciseMinutes"
+  | "journalMinutes"
+  | "timerAutoStart"
+  | "timerIdleMinutes"
   | "defaultShortTarget"
   | "defaultLongTarget"
   | "defaultSceneTarget"
@@ -189,9 +201,23 @@ export class InkwellSettingTab extends PluginSettingTab {
       },
       {
         type: "group",
+        heading: "Writing timer",
+        items: [
+          {
+            name: "Time practice writing",
+            desc: "New exercises (including ones from a random prompt) and today's journal get a timer that starts on your first keystroke. Stopping it adds the minutes to the note's writing_min.",
+            aliases: ["sprint", "minutes"],
+            control: { type: "toggle", key: "timerAutoStart" },
+          },
+          number("Exercise goal (minutes)", "Pre-filled when creating an exercise.", "exerciseMinutes", 1),
+          number("Journal goal (minutes)", "A notice appears when you reach it. 0 = no goal.", "journalMinutes"),
+          number("Pause after (minutes without typing)", "The timer pauses by itself and resumes when you type again. 0 = never.", "timerIdleMinutes"),
+        ],
+      },
+      {
+        type: "group",
         heading: "Defaults",
         items: [
-          number("Exercise timer goal (minutes)", "Pre-filled when creating an exercise.", "exerciseMinutes", 1),
           number("Short story word target", "Pre-filled when creating a story. 0 = none.", "defaultShortTarget"),
           number("Project word target", "Pre-filled when creating a project or promoting a story. 0 = none.", "defaultLongTarget"),
           number("Scene word target", "The word target for new scenes. 0 = none.", "defaultSceneTarget"),
@@ -253,6 +279,10 @@ export class InkwellSettingTab extends PluginSettingTab {
       s.captureToJournal = value === true;
     } else if (key === "exerciseMinutes") {
       s.exerciseMinutes = asCount(value) || DEFAULT_SETTINGS.exerciseMinutes;
+    } else if (key === "journalMinutes" || key === "timerIdleMinutes") {
+      s[key] = asCount(value);
+    } else if (key === "timerAutoStart") {
+      s.timerAutoStart = value === true;
     } else if ((TARGET_KEYS as readonly string[]).includes(key)) {
       s[key as (typeof TARGET_KEYS)[number]] = asCount(value);
     } else if ((STATUS_KEYS as readonly string[]).includes(key)) {

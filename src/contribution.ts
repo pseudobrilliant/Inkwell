@@ -64,6 +64,8 @@ export interface PracticeWeek {
   exercises: number;
   prompts: number;
   journals: number;
+  /** Minutes logged by the writing timer (`writing_min`) on this week's journals and exercises. */
+  minutes: number;
   practiceWords: number | null;
   streak: { current: number; highest: number } | null;
 }
@@ -101,6 +103,7 @@ export async function practiceWeek(plugin: InkwellPlugin): Promise<PracticeWeek>
     exercises: exercises.length,
     prompts: exercises.filter((x) => !!x.fm.prompt).length,
     journals: journals.length,
+    minutes: [...exercises, ...journals].reduce((sum, x) => sum + (Number(x.fm.writing_min) || 0), 0),
     practiceWords: await ktr.words(modeMatchers(plugin).practice, start, end),
     streak: await ktr.streak(),
   };
@@ -135,6 +138,7 @@ function renderPractice(box: HTMLElement, w: PracticeWeek, title: string | undef
     plural(w.prompts, "prompt") + " used",
     plural(w.journals, "journal entry", "journal entries"),
   ];
+  if (w.minutes > 0) parts.push(plural(w.minutes, "minute") + " written");
   if (w.practiceWords !== null) parts.push(`${n(w.practiceWords)} practice words`);
   box.createDiv({ cls: "inkwell-muted", text: parts.join(" · ") });
 }

@@ -17,16 +17,19 @@ import { formatProgress, newCodexNote, newShortStory, showStoryProgress, Story, 
 import { createPromptsBase, newPrompt, RandomPromptModal, registerPromptBlock } from "./prompts";
 import { createExercise, newExercise } from "./exercise";
 import { newProject, newScene, projectForFile, projectProgress } from "./projects";
+import { WritingTimer } from "./timer";
 
 export default class InkwellPlugin extends Plugin {
   settings!: InkwellSettings;
   ktr!: KeepTheRhythm;
+  timer!: WritingTimer;
   private statusEl: HTMLElement | null = null;
 
   async onload() {
     await this.loadSettings();
     this.ktr = new KeepTheRhythm(this.app);
     this.addSettingTab(new InkwellSettingTab(this.app, this));
+    this.timer = new WritingTimer(this);
 
     // Home
     this.addCommand({ id: "open-home", name: "Open home", callback: () => openHome(this) });

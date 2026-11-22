@@ -46,6 +46,7 @@ Inkwell helps you organize and write projects, but it stops short of publishing 
 - **Random prompt:** picks the prompts you've used least and longest ago first.
 - **Prompt of the day:** appears in the journal and on Home.
 - **Exercises:** start an exercise from a prompt with a time goal.
+- **Writing timer:** new exercises (including ones from a random prompt) and today's journal get a timer that starts when you begin typing. It pauses on its own when you stop typing for a while and picks up again when you type. Pause, reset, or stop it from the status bar, the timer button at the top of the note (on mobile too), or commands you can bind to hotkeys. Stopping adds the minutes to the note's `writing_min`, and **Practice this week** shows minutes written.
 - **This became a story:** promote an exercise into a short story, with a link back to it.
 
 ### Stories
@@ -65,7 +66,7 @@ Inkwell helps you organize and write projects, but it stops short of publishing 
 ### Home
 - A built-in **Home** dashboard (command + ribbon).
 - Code blocks you can use in any note: `inkwell-inbox`, `inkwell-in-progress`, `inkwell-prompt`, `inkwell-practice`, `inkwell-contribution`, `inkwell-heatmap`.
-- **Practice this week** (`inkwell-practice`): which days you showed up, your streak, and the exercises, prompts, journal entries, and practice words for the week.
+- **Practice this week** (`inkwell-practice`): which days you showed up, your streak, and the exercises, prompts, journal entries, minutes written, and practice words for the week.
 - **Your contribution** (`inkwell-contribution`): what you added to each part of your writing this week, month, year, or all time: ideas captured and sorted; exercises, journal entries, and prompts used; stories started, grown from practice, and revised; projects started or promoted and scenes added. Word counts per mode appear when Keep the Rhythm is installed.
 - A **New…** picker that creates any Inkwell note from one command.
 

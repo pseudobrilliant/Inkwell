@@ -263,3 +263,25 @@
 .inkwell-contribution-card .inkwell-label { margin-bottom: var(--size-2-2); }
 .inkwell-contribution-line { font-size: var(--font-ui-small); color: var(--text-muted); }
 .inkwell-contribution-num { font-weight: var(--font-semibold); color: var(--text-normal); }
+
+/* Writing timer */
+.inkwell-timer-status,
+.inkwell-timer-time {
+  font-variant-numeric: tabular-nums;
+}
+.inkwell-timer-status.is-paused,
+.inkwell-timer-action.is-paused {
+  color: var(--text-muted);
+}
+.inkwell-timer-action {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--size-2-1);
+  width: auto;
+}
+.inkwell-timer-time {
+  font-size: var(--font-ui-smaller);
+}
+.inkwell-timer-time:empty {
+  display: none;
+}

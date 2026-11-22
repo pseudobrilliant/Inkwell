@@ -36,14 +36,16 @@ export async function createExercise(
   const title = cleanName(v.title) || "Exercise";
   const path = uniquePath(app, settings.folders.exercises, `${date} ${title}`);
   const tpl = await loadTemplate(app, settings, "exercise");
+  const minutes = parseInt(v.minutes, 10) || 0;
   const file: TFile = await createNote(app, path, render(tpl, { title, date, prompt_text: text }), {
     type: "exercise",
     created: date,
     prompt: prompt ? `[[${prompt.file.basename}]]` : "",
-    minutes: parseInt(v.minutes, 10) || null,
+    minutes: minutes || null,
     became: "",
   });
   if (prompt) await markPromptUsed(app, prompt.file);
   await app.workspace.getLeaf(false).openFile(file);
+  await plugin.timer.arm(file, minutes, true);
   return file;
 }

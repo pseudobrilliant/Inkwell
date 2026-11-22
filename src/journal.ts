@@ -30,6 +30,7 @@ export async function ensureTodaysJournal(plugin: InkwellPlugin): Promise<TFile>
 export async function openTodaysJournal(plugin: InkwellPlugin): Promise<void> {
   const file = await ensureTodaysJournal(plugin);
   await plugin.app.workspace.getLeaf(false).openFile(file);
+  await plugin.timer.arm(file, plugin.settings.journalMinutes, false);
 }
 
 /** Append a line to a "## heading" section of today's journal (section created if missing). */
