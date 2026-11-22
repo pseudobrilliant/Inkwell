@@ -41,13 +41,13 @@ export async function appendToJournal(plugin: InkwellPlugin, heading: string, li
     if (h === -1) return text.replace(/\s*$/, "") + `\n\n## ${heading}\n${line}\n`;
     let end = lines.length;
     for (let i = h + 1; i < lines.length; i++) {
-      if (/^#{1,2}\s/.test(lines[i])) {
+      if (/^#{1,2}\s/.test(lines[i] ?? "")) {
         end = i;
         break;
       }
     }
     let at = end;
-    while (at > h + 1 && lines[at - 1].trim() === "") at--;
+    while (at > h + 1 && lines[at - 1]?.trim() === "") at--;
     lines.splice(at, 0, line);
     return lines.join("\n");
   });

@@ -1,10 +1,10 @@
 import { Notice, TFile } from "obsidian";
 import type InkwellPlugin from "./main";
 import { askStoryDetails, createShortStory } from "./stories";
-import { stripFrontmatter } from "./util";
+import { stripFrontmatter, fmOf, type Frontmatter, fmStr } from "./util";
 
 export function isExercise(plugin: InkwellPlugin, file: TFile | null): file is TFile {
-  return !!file && plugin.app.metadataCache.getFileCache(file)?.frontmatter?.type === "exercise";
+  return !!file && fmOf(plugin.app, file)?.type === "exercise";
 }
 
 /** The "## Work" section of an exercise, or the whole body if there isn't one. */
@@ -15,7 +15,7 @@ function workSection(text: string): string {
   if (start === -1) return body.trim();
   let end = lines.length;
   for (let i = start + 1; i < lines.length; i++) {
-    if (/^#{1,2}\s/.test(lines[i])) {
+    if (/^#{1,2}\s/.test(lines[i] ?? "")) {
       end = i;
       break;
     }
@@ -26,9 +26,9 @@ function workSection(text: string): string {
 /** Promote an exercise into a short story. The exercise is copied, never changed except for `became`. */
 export async function exerciseBecameStory(plugin: InkwellPlugin, exercise: TFile): Promise<void> {
   const { app } = plugin;
-  const fm = app.metadataCache.getFileCache(exercise)?.frontmatter;
+  const fm = fmOf(app, exercise);
   if (fm?.became) {
-    new Notice(`This exercise already became ${fm.became}`);
+    new Notice(`This exercise already became ${fmStr(fm.became)}`);
     return;
   }
   const input = await askStoryDetails(
@@ -43,6 +43,6 @@ export async function exerciseBecameStory(plugin: InkwellPlugin, exercise: TFile
     hubFields: { from: `[[${exercise.basename}]]` },
   });
   if (!story) return;
-  await app.fileManager.processFrontMatter(exercise, (f) => (f.became = `[[${input.title}]]`));
+  await app.fileManager.processFrontMatter(exercise, (f: Frontmatter) => (f.became = `[[${input.title}]]`));
   new Notice(`"${input.title}" created from the exercise`);
 }

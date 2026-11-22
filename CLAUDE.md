@@ -115,7 +115,9 @@ Contribution is tracked at four levels. Each answers a different question.
 - Templates set only optional extras. Inkwell writes required fields (`type`, `status`, `project`, …) itself (`src/templates.ts`).
 
 ### Rules
-- **Frontmatter writes** go through `app.fileManager.processFrontMatter` (avoids clobbering edits and sync conflicts).
+- **Frontmatter writes** go through `app.fileManager.processFrontMatter` (avoids clobbering edits and sync conflicts). Type the callback parameter as `Frontmatter`.
+- **Frontmatter reads** go through `fmOf(app, file)` (typed `Record<string, unknown>`), and values become text through `fmStr()`. Never `String(fm.x)`: a YAML list or object would show as `[object Object]` (`src/util.ts`).
+- **Obsidian plugin guidelines** (enforced by lint): sentence case for all UI text, including command names and notices. Don't disable `obsidianmd/*` rules inline (the config forbids it), so reword the text instead. Use `instanceof`/`getFileByPath`/`getFolderByPath` rather than casting to `TFile`/`TFolder`. Use `activeDocument`/`activeWindow`, not `document`/`window` globals (for popout windows). Build DOM with `createEl`, never `innerHTML`. Styles go in `styles.css` with Obsidian CSS variables, never `el.style`. No default hotkeys. Use the Vault API, not `vault.adapter`. The one exception is reading another plugin's file under `configDir`, which the vault doesn't index. TypeScript is `strict` with `noUncheckedIndexedAccess`.
 - **Scene order:** `sequence` uses gaps of 10 (10, 20, 30…), so a reorder usually rewrites one file. Scene file names follow StoryLine: `<act>-<sequence> <title>`.
 - **StoryLine compatibility:** long-form notes use StoryLine's frontmatter (tested against StoryLine 1.11.12). Long-form statuses default to StoryLine's (`idea, outlined, draft, written, revised, final`). Short-form statuses: `idea, drafting, revising, done`.
 - **Keep the Rhythm (KTR):**
@@ -132,10 +134,13 @@ Contribution is tracked at four levels. Each answers a different question.
 npm install
 npm run dev          # watch build
 npm run build        # type-check + production build
+npm run lint         # Obsidian's official ESLint rules (eslint-plugin-obsidianmd)
+npm run check        # lint + build; run before every commit
 npm run deploy:test  # build and copy into ./test-vault
 ```
 - Develop against `test-vault/`, not a real vault.
-- Release: `npm version x.y.z` bumps `package.json`, `manifest.json`, and `versions.json`. The tag equals the version with **no `v` prefix**. Pushing the tag creates a draft GitHub release, and users install via BRAT.
+- **Lint must pass with zero errors.** `eslint-plugin-obsidianmd` is the same rule set Obsidian's automated review runs on every release (since May 2026). A release that fails it is removed from the community directory search. CI runs lint and build on every push (`.github/workflows/lint.yml`).
+- Release: `npm version x.y.z` bumps `package.json`, `manifest.json`, and `versions.json`. The tag equals the version with **no `v` prefix**. Pushing the tag lints, builds, attests build provenance for `main.js` and `styles.css`, and creates a draft GitHub release. Users install via BRAT.
 
 ## Open questions & growing edges
 
@@ -149,4 +154,5 @@ New key concepts land here first. Move them up once they're settled.
 - **Shared cast:** one set of characters and locations used across related stories.
 - **Manuscript view:** read all of a project's scenes as one continuous document (reading, not export).
 - **Long-form views (gated):** corkboard, kanban, beat-sheet scaffolds, scene inspector. Build these only if StoryLine falls short in real use, and write down the gap first.
+- **Declarative settings (Obsidian 1.13+):** `PluginSettingTab.getSettingDefinitions()` makes settings show up in Obsidian's settings search. Adopting it means raising `minAppVersion` to 1.13.0 and rewriting `src/settings.ts` (nested `folders.*`/`templates.*` keys need `getControlValue`/`setControlValue` overrides). Lint warns until then.
 - **Inkwell's own word log:** only if KTR's per-device history proves unreliable. It would go behind the same one-file interface.

@@ -29,7 +29,7 @@ export default class InkwellPlugin extends Plugin {
     this.addSettingTab(new InkwellSettingTab(this.app, this));
 
     // Home
-    this.addCommand({ id: "open-home", name: "Open Home", callback: () => openHome(this) });
+    this.addCommand({ id: "open-home", name: "Open home", callback: () => openHome(this) });
     this.addRibbonIcon("home", "Inkwell: Home", () => openHome(this));
 
     // Capture
@@ -50,7 +50,7 @@ export default class InkwellPlugin extends Plugin {
         if (!checking) {
           const menu = new Menu();
           triageMenu(this, f, menu);
-          const r = document.body.getBoundingClientRect();
+          const r = activeDocument.body.getBoundingClientRect();
           menu.showAtPosition({ x: r.width / 2 - 100, y: r.height / 3 });
         }
         return true;
@@ -187,7 +187,7 @@ export default class InkwellPlugin extends Plugin {
   }
 
   async loadSettings() {
-    const data = (await this.loadData()) ?? {};
+    const data = ((await this.loadData()) ?? {}) as Partial<InkwellSettings>;
     this.settings = {
       ...DEFAULT_SETTINGS,
       ...data,

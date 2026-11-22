@@ -17,7 +17,7 @@ export async function newExercise(plugin: InkwellPlugin): Promise<void> {
   ];
   const c = await pick(plugin.app, choices, (x) => x.label, "Pick a prompt");
   if (!c) return;
-  await createExercise(plugin, c.random ? ranked[0] : c.prompt);
+  await createExercise(plugin, c.random ? (ranked[0] ?? null) : c.prompt);
 }
 
 export async function createExercise(

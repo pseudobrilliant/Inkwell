@@ -98,6 +98,7 @@ All of these can be changed in settings.
 npm install
 npm run dev          # watch build
 npm run build        # type-check + production build
+npm run lint         # Obsidian's official plugin lint rules
 npm run deploy:test  # build and copy into ./test-vault
 ```
 

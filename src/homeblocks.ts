@@ -3,14 +3,14 @@ import type InkwellPlugin from "./main";
 import { listInbox } from "./inbox";
 import { listLongProjects, projectWords } from "./projects";
 import { listStories, storyProgress } from "./stories";
-import { stripFrontmatter } from "./util";
+import { stripFrontmatter, fmOf, fmStr } from "./util";
 
 /** Block options: simple "key: value" lines. */
 export function opts(src: string): Record<string, string> {
   const o: Record<string, string> = {};
   for (const line of src.split("\n")) {
     const m = line.match(/^\s*([\w-]+)\s*:\s*(.*?)\s*$/);
-    if (m) o[m[1].toLowerCase()] = m[2];
+    if (m?.[1]) o[m[1].toLowerCase()] = m[2] ?? "";
   }
   return o;
 }
@@ -40,7 +40,7 @@ export function registerHomeBlocks(plugin: InkwellPlugin): void {
   // ```inkwell-inbox```  (options: limit: 5, title: <text>|none)
   plugin.registerMarkdownCodeBlockProcessor("inkwell-inbox", (src, el, ctx) => {
     const o = opts(src);
-    const limit = parseInt(o.limit, 10) || 5;
+    const limit = parseInt(o.limit ?? "", 10) || 5;
     ctx.addChild(
       new LiveBlock(el, plugin, async (box) => {
         box.addClass("inkwell-block");
@@ -56,7 +56,7 @@ export function registerHomeBlocks(plugin: InkwellPlugin): void {
         }
         const ul = box.createEl("ul");
         for (const f of files.slice(0, limit)) {
-          const kind = plugin.app.metadataCache.getFileCache(f)?.frontmatter?.kind ?? "";
+          const kind = fmStr(fmOf(plugin.app, f)?.kind);
           const body = stripFrontmatter(await plugin.app.vault.cachedRead(f)).trim().split("\n")[0] ?? "";
           const li = ul.createEl("li");
           if (kind) li.createSpan({ cls: "inkwell-kind", text: kind + " " });
@@ -99,8 +99,8 @@ export function registerHomeBlocks(plugin: InkwellPlugin): void {
         }
         if (include !== "short") {
           for (const lp of listLongProjects(plugin)) {
-            const fm = lp.hub ? plugin.app.metadataCache.getFileCache(lp.hub)?.frontmatter : undefined;
-            const status = String(fm?.status ?? "");
+            const fm = lp.hub ? fmOf(plugin.app, lp.hub) : undefined;
+            const status = fmStr(fm?.status);
             if (!showDone && notActive.has(status)) continue;
             const scenesPrefix = `${lp.folder.path}/Scenes/`;
             rows.push({
@@ -149,7 +149,7 @@ export function registerHomeBlocks(plugin: InkwellPlugin): void {
       el.createDiv({ cls: "inkwell-muted", text: st.message });
       return;
     }
-    const weeks = parseInt(opts(src).weeks, 10) || 24;
+    const weeks = parseInt(opts(src).weeks ?? "", 10) || 24;
     const w = JSON.stringify(plugin.settings.folders.writing + "/");
     const l = JSON.stringify(plugin.settings.folders.longProjects + "/");
     const filter = `(filePath starts_with ${w} && filePath contains " - Draft.md") || (filePath starts_with ${l} && filePath contains "/Scenes/")`;

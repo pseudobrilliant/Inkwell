@@ -2,7 +2,7 @@ import { App, Modal, moment, Notice, normalizePath, Setting, TFile, TFolder } fr
 import type InkwellPlugin from "./main";
 import { askForm, pick } from "./modals";
 import { loadTemplate, render } from "./templates";
-import { cleanName, createNote, ensureFolder, uniquePath } from "./util";
+import { cleanName, createNote, ensureFolder, uniquePath, fmOf, type Frontmatter, fmStr } from "./util";
 import { countWords } from "./wordcount";
 import { listLongProjects, LongProject, projectForFile } from "./projects";
 
@@ -14,7 +14,7 @@ export interface Story {
 }
 
 function typeOf(app: App, f: TFile): string | undefined {
-  return app.metadataCache.getFileCache(f)?.frontmatter?.type;
+  return fmStr(fmOf(app, f)?.type) || undefined;
 }
 
 /** All short-story folders under the writing root. */
@@ -33,7 +33,7 @@ export function storyFromFolder(plugin: InkwellPlugin, folder: TFolder): Story {
   const hub =
     files.find((f) => typeOf(app, f) === "story") ?? files.find((f) => f.basename === folder.name) ?? null;
   const drafts = files.filter((f) => typeOf(app, f) === "draft");
-  const version = (f: TFile) => Number(app.metadataCache.getFileCache(f)?.frontmatter?.version) || 1;
+  const version = (f: TFile) => Number(fmOf(app, f)?.version) || 1;
   const draft =
     drafts.sort((a, b) => version(b) - version(a))[0] ??
     files.find((f) => f.basename === `${folder.name} - Draft`) ??
@@ -111,7 +111,8 @@ export async function createShortStory(
     version: 1,
   });
   if (opts.open !== false) await app.workspace.getLeaf(false).openFile(hub);
-  const f = app.vault.getAbstractFileByPath(folder) as TFolder;
+  const f = app.vault.getFolderByPath(folder);
+  if (!f) throw new Error(`Story folder "${folder}" was not created`);
   return { name: title, folder: f, hub, draft };
 }
 
@@ -128,10 +129,10 @@ export interface Progress {
 }
 
 export async function storyProgress(plugin: InkwellPlugin, story: Story): Promise<Progress> {
-  const fm = story.hub ? plugin.app.metadataCache.getFileCache(story.hub)?.frontmatter : undefined;
+  const fm = story.hub ? fmOf(plugin.app, story.hub) : undefined;
   const words = story.draft ? countWords(await plugin.app.vault.cachedRead(story.draft)) : 0;
   return {
-    status: fm?.status ?? "",
+    status: fmStr(fm?.status),
     words,
     target: Number(fm?.target_wordcount) || 0,
     lastWorked: story.draft?.stat.mtime ?? null,
@@ -165,10 +166,10 @@ export class ProgressModal extends Modal {
       if (p.status && !statuses.includes(p.status)) statuses.unshift(p.status);
       new Setting(contentEl).setName("Status").addDropdown((d) => {
         statuses.forEach((s) => d.addOption(s, s));
-        d.setValue(p.status || statuses[0]);
+        d.setValue(p.status || (statuses[0] ?? ""));
         d.onChange(async (s) => {
-          await plugin.app.fileManager.processFrontMatter(hub, (fm) => (fm.status = s));
-          plugin.refreshStatusBar();
+          await plugin.app.fileManager.processFrontMatter(hub, (fm: Frontmatter) => (fm.status = s));
+          void plugin.refreshStatusBar();
         });
       });
     }
@@ -237,8 +238,8 @@ export async function newCodexNote(
 ): Promise<void> {
   const { app, settings } = plugin;
   const v = await askForm(app, kind === "character" ? "New character" : "New location", [
-    { key: "name", label: "Name", required: true },
-    ...(kind === "character" ? [{ key: "tagline", label: "Tagline", placeholder: "one line, optional" }] : []),
+    { key: "name" as const, label: "Name", required: true },
+    ...(kind === "character" ? [{ key: "tagline" as const, label: "Tagline", placeholder: "one line, optional" }] : []),
   ]);
   if (!v) return;
   const name = cleanName(v.name);

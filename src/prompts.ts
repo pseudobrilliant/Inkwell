@@ -1,7 +1,7 @@
 import { App, MarkdownRenderChild, Modal, moment, normalizePath, Notice, Setting, TFile, TFolder } from "obsidian";
 import type InkwellPlugin from "./main";
 import { askForm } from "./modals";
-import { cleanName, createNote, ensureFolder, slugWords, uniquePath } from "./util";
+import { cleanName, createNote, ensureFolder, slugWords, uniquePath, fmOf, type Frontmatter, fmStr } from "./util";
 
 export interface Prompt {
   file: TFile;
@@ -18,13 +18,13 @@ export function listPrompts(plugin: InkwellPlugin): Prompt[] {
     for (const c of f.children) {
       if (c instanceof TFolder) walk(c);
       else if (c instanceof TFile && c.extension === "md") {
-        const fm = app.metadataCache.getFileCache(c)?.frontmatter;
+        const fm = fmOf(app, c);
         if (fm?.type && fm.type !== "prompt") continue;
         const lu = fm?.last_used;
         out.push({
           file: c,
           used: Number(fm?.used) || 0,
-          lastUsed: lu ? moment(String(lu)).format("YYYY-MM-DD") : "",
+          lastUsed: fmStr(lu) ? moment(fmStr(lu)).format("YYYY-MM-DD") : "",
         });
       }
     }
@@ -49,7 +49,7 @@ export async function promptText(app: App, file: TFile): Promise<string> {
 }
 
 export async function markPromptUsed(app: App, file: TFile): Promise<void> {
-  await app.fileManager.processFrontMatter(file, (fm) => {
+  await app.fileManager.processFrontMatter(file, (fm: Frontmatter) => {
     fm.used = (Number(fm.used) || 0) + 1;
     fm.last_used = moment().format("YYYY-MM-DD");
   });
@@ -96,6 +96,7 @@ export class RandomPromptModal extends Modal {
       return;
     }
     const p = this.ranked[this.i % this.ranked.length];
+    if (!p) return;
     contentEl.createEl("p", { cls: "inkwell-prompt-text", text: await promptText(this.app, p.file) });
     contentEl.createEl("p", {
       cls: "setting-item-description",
@@ -191,6 +192,7 @@ export function registerPromptBlock(plugin: InkwellPlugin, onStart: (p: Prompt) 
       }
       const ranked = [today, ...rankPrompts(listPrompts(plugin)).filter((p) => p.file.path !== today.file.path)];
       const p = ranked[offset % ranked.length];
+      if (!p) return;
       box.createDiv({ cls: "inkwell-prompt-label", text: offset === 0 ? "Prompt of the day" : "Another prompt" });
       const text = box.createEl("p", { cls: "inkwell-prompt-text", text: await promptText(plugin.app, p.file) });
       text.onclick = () => plugin.app.workspace.getLeaf(false).openFile(p.file);

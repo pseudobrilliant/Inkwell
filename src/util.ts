@@ -42,7 +42,7 @@ export async function createNote(
 ): Promise<TFile> {
   await ensureFolder(app, path.split("/").slice(0, -1).join("/"));
   const file = await app.vault.create(path, body);
-  await app.fileManager.processFrontMatter(file, (fm) => {
+  await app.fileManager.processFrontMatter(file, (fm: Frontmatter) => {
     for (const [k, v] of Object.entries(fields)) fm[k] = v;
   });
   return file;
@@ -59,4 +59,22 @@ export async function moveFile(app: App, file: TFile, folder: string, newName?: 
 /** Body text without frontmatter. */
 export function stripFrontmatter(text: string): string {
   return text.replace(/^---\r?\n[\s\S]*?\r?\n---(\r?\n|$)/, "");
+}
+
+/** Frontmatter as Obsidian hands it over, typed so every field must be checked before use. */
+export type Frontmatter = Record<string, unknown>;
+
+/** Cached frontmatter of a note, or undefined if it has none. */
+export function fmOf(app: App, file: TFile | null | undefined): Frontmatter | undefined {
+  if (!file) return undefined;
+  const fm: Frontmatter | undefined = app.metadataCache.getFileCache(file)?.frontmatter;
+  return fm;
+}
+
+/** A frontmatter value as text: strings, numbers, booleans and dates as-is; lists, objects and null as "". */
+export function fmStr(v: unknown): string {
+  if (typeof v === "string") return v;
+  if (typeof v === "number" || typeof v === "boolean") return String(v);
+  if (v instanceof Date && !isNaN(v.getTime())) return v.toISOString();
+  return "";
 }

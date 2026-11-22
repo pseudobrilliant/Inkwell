@@ -56,7 +56,7 @@ export class KeepTheRhythm {
       const stat = await this.app.vault.adapter.stat(path);
       if (!stat) return null;
       if (this.cache?.mtime !== stat.mtime) {
-        this.cache = { mtime: stat.mtime, data: JSON.parse(await this.app.vault.adapter.read(path)) };
+        this.cache = { mtime: stat.mtime, data: JSON.parse(await this.app.vault.adapter.read(path)) as KtrData };
       }
       const d = this.cache.data;
       if (d.schema !== TESTED_SCHEMA || !Array.isArray(d.stats?.dailyActivity)) return null;

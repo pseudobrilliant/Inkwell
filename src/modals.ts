@@ -1,7 +1,7 @@
 import { App, Modal, Setting, SuggestModal } from "obsidian";
 
-export interface FormField {
-  key: string;
+export interface FormField<K extends string = string> {
+  key: K;
   label: string;
   placeholder?: string;
   value?: string;
@@ -9,14 +9,14 @@ export interface FormField {
   type?: "text" | "number";
 }
 
-/** A small form. Resolves to the values, or null if cancelled. */
-export function askForm(
+/** A small form. Resolves to the trimmed values (one per field key), or null if cancelled. */
+export function askForm<K extends string>(
   app: App,
   title: string,
-  fields: FormField[],
+  fields: FormField<K>[],
   submitText = "Create",
   description = ""
-): Promise<Record<string, string> | null> {
+): Promise<Record<K, string> | null> {
   return new Promise((resolve) => {
     const modal = new (class extends Modal {
       values: Record<string, string> = {};
@@ -52,8 +52,8 @@ export function askForm(
           if (f.required && !this.values[f.key]?.trim()) return;
         }
         this.done = true;
-        const out: Record<string, string> = {};
-        for (const [k, v] of Object.entries(this.values)) out[k] = v.trim();
+        const out = {} as Record<K, string>;
+        for (const f of fields) out[f.key] = (this.values[f.key] ?? "").trim();
         resolve(out);
         this.close();
       }

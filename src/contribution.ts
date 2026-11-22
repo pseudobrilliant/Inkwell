@@ -8,6 +8,7 @@
  * Word numbers come from Keep the Rhythm and are hidden when it's unavailable.
  */
 import { moment, normalizePath, TFile } from "obsidian";
+import { fmOf, fmStr } from "./util";
 import type InkwellPlugin from "./main";
 import { LiveBlock, opts } from "./homeblocks";
 
@@ -16,7 +17,9 @@ const DAY = "YYYY-MM-DD";
 /** A frontmatter date (or datetime) as YYYY-MM-DD, or "" if missing/invalid. */
 export function fmDay(v: unknown): string {
   if (v === undefined || v === null || v === "") return "";
-  const m = moment(String(v));
+  const s = fmStr(v);
+  if (!s) return "";
+  const m = moment(s);
   return m.isValid() ? m.format(DAY) : "";
 }
 
@@ -33,9 +36,9 @@ export interface Note {
 export function allNotes(plugin: InkwellPlugin): Note[] {
   const out: Note[] = [];
   for (const file of plugin.app.vault.getMarkdownFiles()) {
-    const fm = plugin.app.metadataCache.getFileCache(file)?.frontmatter;
+    const fm = fmOf(plugin.app, file);
     if (!fm) continue;
-    out.push({ file, fm, type: String(fm.type ?? ""), created: fmDay(fm.created) });
+    out.push({ file, fm, type: fmStr(fm.type), created: fmDay(fm.created) });
   }
   return out;
 }

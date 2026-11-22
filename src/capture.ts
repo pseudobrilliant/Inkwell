@@ -93,7 +93,7 @@ export class CaptureModal extends Modal {
       await saveCapture(this.plugin, this.kind, this.text);
       this.plugin.settings.lastCaptureKind = this.kind;
       await this.plugin.saveSettings();
-      new Notice("Captured to Inbox");
+      new Notice("Captured to inbox");
       this.close();
     } catch (e) {
       console.error("Inkwell capture failed", e);

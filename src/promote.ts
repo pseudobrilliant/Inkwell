@@ -3,7 +3,7 @@ import type InkwellPlugin from "./main";
 import { askForm } from "./modals";
 import { PROJECT_FOLDERS, sceneFileName } from "./projects";
 import type { Story } from "./stories";
-import { createNote, ensureFolder, moveFile, slugWords, stripFrontmatter, uniquePath } from "./util";
+import { createNote, ensureFolder, moveFile, slugWords, stripFrontmatter, uniquePath, fmOf, type Frontmatter } from "./util";
 
 interface SceneText {
   title: string;
@@ -28,7 +28,7 @@ export function splitScenes(body: string): SceneText[] {
     const h = line.match(HEADING);
     if (h) {
       flush();
-      title = h[1].trim();
+      title = h[1]?.trim() ?? "";
     } else if (SEPARATOR.test(line)) {
       flush();
     } else {
@@ -56,7 +56,7 @@ export async function promoteToLongForm(plugin: InkwellPlugin, story: Story): Pr
   }
 
   const scenes = splitScenes(stripFrontmatter(await app.vault.read(draft)));
-  const hubFm = app.metadataCache.getFileCache(hub)?.frontmatter ?? {};
+  const hubFm = fmOf(app, hub) ?? {};
   const v = await askForm(
     app,
     `Promote "${title}" to long form`,
@@ -65,7 +65,7 @@ export async function promoteToLongForm(plugin: InkwellPlugin, story: Story): Pr
         key: "target",
         label: "Project word target",
         type: "number",
-        value: String(settings.defaultLongTarget || hubFm.target_wordcount || ""),
+        value: String(settings.defaultLongTarget || Number(hubFm.target_wordcount) || ""),
       },
     ],
     "Promote",
@@ -89,6 +89,7 @@ export async function promoteToLongForm(plugin: InkwellPlugin, story: Story): Pr
   for (let i = 0; i < scenes.length; i++) {
     const seq = (i + 1) * 10;
     const s = scenes[i];
+    if (!s) continue;
     const fields: Record<string, unknown> = {
       type: "scene",
       id: crypto.randomUUID(),
@@ -118,9 +119,9 @@ export async function promoteToLongForm(plugin: InkwellPlugin, story: Story): Pr
       continue;
     }
     if (!(c instanceof TFile)) continue;
-    const type = app.metadataCache.getFileCache(c)?.frontmatter?.type;
+    const type = fmOf(app, c)?.type;
     if (c.extension === "md" && (type === "character" || type === "location" || type === "place")) {
-      await app.fileManager.processFrontMatter(c, (fm) => {
+      await app.fileManager.processFrontMatter(c, (fm: Frontmatter) => {
         fm.project = projectLink;
         if (fm.type === "place") fm.type = "location";
       });
@@ -132,7 +133,7 @@ export async function promoteToLongForm(plugin: InkwellPlugin, story: Story): Pr
 
   // 4. The hub becomes the StoryLine project note (moved, so links follow it).
   await app.fileManager.renameFile(hub, `${dest}/${title}.md`);
-  await app.fileManager.processFrontMatter(hub, (fm) => {
+  await app.fileManager.processFrontMatter(hub, (fm: Frontmatter) => {
     fm.type = "storyline";
     fm.title = title;
     fm.language = fm.language ?? "en";

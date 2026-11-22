@@ -2,7 +2,7 @@ import { moment, normalizePath, Notice, TFile, TFolder } from "obsidian";
 import type InkwellPlugin from "./main";
 import { askForm, pick } from "./modals";
 import { loadTemplate, render } from "./templates";
-import { cleanName, createNote, ensureFolder, uniquePath } from "./util";
+import { cleanName, createNote, ensureFolder, uniquePath, fmOf, fmStr } from "./util";
 import { countWords } from "./wordcount";
 
 /** Sub-folders every project gets (StoryLine-compatible layout). */
@@ -15,21 +15,20 @@ export interface LongProject {
   scenes: TFile[];
 }
 
-const fmOf = (plugin: InkwellPlugin, f: TFile) => plugin.app.metadataCache.getFileCache(f)?.frontmatter;
 
 /** Read a project folder. Returns null if it has no project note (type: storyline). */
 export function projectFromFolder(plugin: InkwellPlugin, f: TFolder): LongProject | null {
   const files = f.children.filter((c): c is TFile => c instanceof TFile && c.extension === "md");
-  const hub = files.find((c) => fmOf(plugin, c)?.type === "storyline") ?? null;
+  const hub = files.find((c) => fmOf(plugin.app, c)?.type === "storyline") ?? null;
   if (!hub) return null;
   const scenesFolder = plugin.app.vault.getAbstractFileByPath(`${f.path}/Scenes`);
   const scenes =
     scenesFolder instanceof TFolder
       ? scenesFolder.children.filter(
-          (c): c is TFile => c instanceof TFile && c.extension === "md" && fmOf(plugin, c)?.type === "scene"
+          (c): c is TFile => c instanceof TFile && c.extension === "md" && fmOf(plugin.app, c)?.type === "scene"
         )
       : [];
-  const seq = (s: TFile) => Number(fmOf(plugin, s)?.sequence) || 0;
+  const seq = (s: TFile) => Number(fmOf(plugin.app, s)?.sequence) || 0;
   scenes.sort((a, b) => seq(a) - seq(b) || a.name.localeCompare(b.name));
   return { name: f.name, folder: f, hub, scenes };
 }
@@ -70,9 +69,9 @@ export interface ProjectProgress {
 }
 
 export async function projectProgress(plugin: InkwellPlugin, p: LongProject): Promise<ProjectProgress> {
-  const fm = p.hub ? fmOf(plugin, p.hub) : undefined;
+  const fm = p.hub ? fmOf(plugin.app, p.hub) : undefined;
   return {
-    status: String(fm?.status ?? ""),
+    status: fmStr(fm?.status),
     words: await projectWords(plugin, p),
     target: Number(fm?.target_wordcount) || 0,
     lastWorked: p.scenes.length ? Math.max(...p.scenes.map((f) => f.stat.mtime)) : null,
@@ -136,7 +135,9 @@ export async function createProject(
   const tpl = await loadTemplate(app, settings, "projectHub");
   const hub = await createNote(app, `${dest}/${title}.md`, render(tpl, { title, logline: input.logline, genre: input.genre, date }), fields);
   if (opts.open !== false) await app.workspace.getLeaf(false).openFile(hub);
-  return projectFromFolder(plugin, app.vault.getAbstractFileByPath(dest) as TFolder);
+  const projectFolder = app.vault.getFolderByPath(dest);
+  if (!projectFolder) throw new Error(`Project folder "${dest}" was not created`);
+  return projectFromFolder(plugin, projectFolder);
 }
 
 /** New project from scratch: project note plus the full folder layout. */
@@ -159,7 +160,7 @@ export async function createScene(
   opts: { body?: string; status?: string; fields?: Record<string, unknown>; open?: boolean } = {}
 ): Promise<TFile> {
   const { app, settings } = plugin;
-  const last = Math.max(0, ...project.scenes.map((s) => Number(fmOf(plugin, s)?.sequence) || 0));
+  const last = Math.max(0, ...project.scenes.map((s) => Number(fmOf(plugin.app, s)?.sequence) || 0));
   const seq = Math.floor(last / 10) * 10 + 10;
   const fields: Record<string, unknown> = {
     type: "scene",
@@ -190,7 +191,7 @@ export async function newScene(plugin: InkwellPlugin, project?: LongProject | nu
   if (!project) {
     const all = listLongProjects(plugin);
     if (!all.length) {
-      new Notice("No projects yet. Run \"New project\" first.");
+      new Notice("No projects yet. Create a project first.");
       return;
     }
     project = await pick(plugin.app, all, (p) => p.name, "Which project?");

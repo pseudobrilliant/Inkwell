@@ -116,7 +116,7 @@ export class InkwellSettingTab extends PluginSettingTab {
 
     new Setting(containerEl)
       .setName("Home note")
-      .setDesc("The dashboard opened by \"Open Home\". Created from the Home template if missing; never overwritten.")
+      .setDesc("The dashboard note that the open home command opens. It is created from the home template if missing and never overwritten.")
       .addText((t) =>
         t.setValue(s.homeNote).onChange(async (v) => {
           s.homeNote = v.trim() || DEFAULT_SETTINGS.homeNote;
@@ -126,12 +126,12 @@ export class InkwellSettingTab extends PluginSettingTab {
 
     new Setting(containerEl)
       .setName("Templates")
-      .setDesc("Paths to template notes. If a file is missing, Inkwell uses its built-in version. Run \"Write default templates\" to create editable copies.")
+      .setDesc("Paths to template notes. If a file is missing, Inkwell uses its built-in version. The write default templates command creates editable copies.")
       .setHeading();
     for (const key of Object.keys(TEMPLATE_LABELS) as TemplateKey[]) {
       new Setting(containerEl).setName(TEMPLATE_LABELS[key]).addText((t) =>
         t
-          .setPlaceholder("99 - System/Templates/…")
+          .setPlaceholder("Path to a template note")
           .setValue(s.templates[key])
           .onChange(async (v) => {
             s.templates[key] = v.trim();
@@ -143,7 +143,7 @@ export class InkwellSettingTab extends PluginSettingTab {
     new Setting(containerEl).setName("Capture").setHeading();
     new Setting(containerEl)
       .setName("Also log captures in today's journal")
-      .setDesc("Adds a linked line under \"## Captures\" in today's journal.")
+      .setDesc("Adds a linked line under the captures heading in today's journal.")
       .addToggle((t) =>
         t.setValue(s.captureToJournal).onChange(async (v) => {
           s.captureToJournal = v;

@@ -1,4 +1,5 @@
 import { Component, debounce, ItemView, MarkdownRenderer, moment, setIcon, TFile, TFolder, WorkspaceLeaf } from "obsidian";
+import { fmOf, type Frontmatter, fmStr } from "./util";
 import type InkwellPlugin from "./main";
 import { ktrString } from "./integrations/keep-the-rhythm";
 import { promoteToLongForm } from "./promote";
@@ -91,9 +92,8 @@ export class StoryView extends ItemView {
     const { plugin } = this;
     const story = this.story;
     const p = await storyProgress(plugin, story);
-    const fm = story.hub ? this.app.metadataCache.getFileCache(story.hub)?.frontmatter : undefined;
+    const fm = story.hub ? fmOf(this.app, story.hub) : undefined;
 
-    const head = el.createDiv({ cls: "inkwell-story-head" });
     this.renderHead(el, story.name, story.hub, p.status, fm?.logline);
 
     // Progress
@@ -126,7 +126,7 @@ export class StoryView extends ItemView {
 
     // Cast & places
     const files = story.folder.children.filter((c): c is TFile => c instanceof TFile && c.extension === "md");
-    const typeOf = (f: TFile) => this.app.metadataCache.getFileCache(f)?.frontmatter?.type;
+    const typeOf = (f: TFile) => fmStr(fmOf(this.app, f)?.type);
     const cast = files.filter((f) => typeOf(f) === "character");
     const places = files.filter((f) => ["location", "place"].includes(typeOf(f)));
     this.fileList(el, "Characters", cast, () => newCodexNote(plugin, "character", story.hub ?? story.draft));
@@ -152,7 +152,7 @@ export class StoryView extends ItemView {
         prev = words;
       };
       for (const r of revs) row(`v${r.version} · ${r.date}`, r.words, r.file);
-      const cur = Number(fm && draft ? this.app.metadataCache.getFileCache(draft)?.frontmatter?.version : 0) || revs.length + 1;
+      const cur = Number(fm && draft ? fmOf(this.app, draft)?.version : 0) || revs.length + 1;
       row(`v${cur} · current`, p.words, draft);
     }
 
@@ -186,10 +186,10 @@ export class StoryView extends ItemView {
       if (status && !statuses.includes(status)) statuses.unshift(status);
       const sel = head.createEl("select", { cls: "dropdown" });
       statuses.forEach((s) => sel.createEl("option", { text: s, value: s }));
-      sel.value = status || statuses[0];
-      sel.onchange = () => this.app.fileManager.processFrontMatter(hub, (f) => (f.status = sel.value));
+      sel.value = status || (statuses[0] ?? "");
+      sel.onchange = () => void this.app.fileManager.processFrontMatter(hub, (f: Frontmatter) => (f.status = sel.value));
     }
-    if (logline) el.createEl("p", { cls: "inkwell-story-logline", text: String(logline) });
+    if (logline) el.createEl("p", { cls: "inkwell-story-logline", text: fmStr(logline) });
   }
 
   /** Next step (hub frontmatter `next`). */
@@ -201,8 +201,8 @@ export class StoryView extends ItemView {
       cls: "inkwell-next",
       attr: { placeholder: "What's the next thing to do?" },
     });
-    input.value = value ? String(value) : "";
-    input.onchange = () => this.app.fileManager.processFrontMatter(hub, (f) => (f.next = input.value.trim()));
+    input.value = fmStr(value);
+    input.onchange = () => void this.app.fileManager.processFrontMatter(hub, (f: Frontmatter) => (f.next = input.value.trim()));
   }
 
   private actions(el: HTMLElement) {
@@ -227,7 +227,7 @@ export class StoryView extends ItemView {
   private async renderProject(el: HTMLElement, project: LongProject) {
     const { plugin } = this;
     const p = await projectProgress(plugin, project);
-    const fm = project.hub ? this.app.metadataCache.getFileCache(project.hub)?.frontmatter : undefined;
+    const fm = project.hub ? fmOf(this.app, project.hub) : undefined;
     this.renderHead(el, project.name, project.hub, p.status, fm?.logline);
 
     // Progress
@@ -263,11 +263,11 @@ export class StoryView extends ItemView {
     if (project.scenes.length) {
       const ol = sec.createEl("ol", { cls: "inkwell-scene-list" });
       for (const s of project.scenes) {
-        const sfm = this.app.metadataCache.getFileCache(s)?.frontmatter;
+        const sfm = fmOf(this.app, s);
         const li = ol.createEl("li");
-        li.createEl("a", { text: String(sfm?.title ?? s.basename) }).onclick = () => this.open(s);
+        li.createEl("a", { text: fmStr(sfm?.title) || s.basename }).onclick = () => this.open(s);
         const words = countWords(await this.app.vault.cachedRead(s));
-        li.createSpan({ cls: "inkwell-muted", text: ` — ${sfm?.status ?? "?"} · ${words.toLocaleString()} words` });
+        li.createSpan({ cls: "inkwell-muted", text: ` — ${fmStr(sfm?.status) || "?"} · ${words.toLocaleString()} words` });
       }
     }
 

@@ -5,7 +5,7 @@ import { createExercise } from "./exercise";
 import { askForm, pick } from "./modals";
 import { askProjectDetails, createProject } from "./projects";
 import { askStoryDetails, createShortStory } from "./stories";
-import { moveFile, slugWords, stripFrontmatter } from "./util";
+import { moveFile, slugWords, stripFrontmatter, fmOf, type Frontmatter, fmStr } from "./util";
 
 export const INBOX_VIEW = "inkwell-inbox";
 
@@ -16,8 +16,8 @@ export function listInbox(plugin: InkwellPlugin): TFile[] {
   const folder = plugin.app.vault.getAbstractFileByPath(normalizePath(plugin.settings.folders.inbox));
   if (!(folder instanceof TFolder)) return [];
   const created = (f: TFile) => {
-    const c = plugin.app.metadataCache.getFileCache(f)?.frontmatter?.created;
-    const m = c ? moment(String(c)) : null;
+    const c = fmOf(plugin.app, f)?.created;
+    const m = fmStr(c) ? moment(fmStr(c)) : null;
     return m?.isValid() ? m.valueOf() : f.stat.ctime;
   };
   return folder.children
@@ -65,9 +65,9 @@ async function sendToStory(plugin: InkwellPlugin, file: TFile): Promise<boolean>
   const d = await pick(plugin.app, destinations(plugin), (x) => x.name, "Send to which story or project?");
   if (!d) return false;
   // Research captures go to a project's Research/ folder; everything else to Notes/.
-  const kind = plugin.app.metadataCache.getFileCache(file)?.frontmatter?.kind;
+  const kind = fmOf(plugin.app, file)?.kind;
   const sub = d.isProject && kind === "research" ? "Research" : "Notes";
-  await plugin.app.fileManager.processFrontMatter(file, (fm) => (fm.project = `[[${d.hub}]]`));
+  await plugin.app.fileManager.processFrontMatter(file, (fm: Frontmatter) => (fm.project = `[[${d.hub}]]`));
   await moveFile(plugin.app, file, `${d.folder}/${sub}`);
   new Notice(`Sent to ${d.hub}/${sub}`);
   return true;
@@ -82,7 +82,7 @@ async function toExercise(plugin: InkwellPlugin, file: TFile): Promise<boolean> 
 
 async function toPrompt(plugin: InkwellPlugin, file: TFile): Promise<boolean> {
   const text = await bodyOf(plugin, file);
-  await plugin.app.fileManager.processFrontMatter(file, (fm) => {
+  await plugin.app.fileManager.processFrontMatter(file, (fm: Frontmatter) => {
     fm.type = "prompt";
     fm.tags = fm.tags ?? [];
     fm.used = 0;
@@ -106,7 +106,7 @@ async function toStory(plugin: InkwellPlugin, file: TFile): Promise<boolean> {
   const story = await createShortStory(plugin, input);
   if (!story) return false;
   // The capture becomes the story's first note.
-  await plugin.app.fileManager.processFrontMatter(file, (fm) => (fm.project = `[[${input.title}]]`));
+  await plugin.app.fileManager.processFrontMatter(file, (fm: Frontmatter) => (fm.project = `[[${input.title}]]`));
   await moveFile(plugin.app, file, `${story.folder.path}/Notes`);
   return true;
 }
@@ -122,8 +122,8 @@ async function toProject(plugin: InkwellPlugin, file: TFile): Promise<boolean> {
   const project = await createProject(plugin, input);
   if (!project) return false;
   // The capture becomes the project's first note (or research note).
-  const kind = plugin.app.metadataCache.getFileCache(file)?.frontmatter?.kind;
-  await plugin.app.fileManager.processFrontMatter(file, (fm) => (fm.project = `[[${input.title}]]`));
+  const kind = fmOf(plugin.app, file)?.kind;
+  await plugin.app.fileManager.processFrontMatter(file, (fm: Frontmatter) => (fm.project = `[[${input.title}]]`));
   await moveFile(plugin.app, file, `${project.folder.path}/${kind === "research" ? "Research" : "Notes"}`);
   return true;
 }
@@ -139,7 +139,7 @@ async function toResource(plugin: InkwellPlugin, file: TFile): Promise<boolean> 
     { key: "url", label: "URL", value: url },
   ], "File");
   if (!v) return false;
-  await plugin.app.fileManager.processFrontMatter(file, (fm) => {
+  await plugin.app.fileManager.processFrontMatter(file, (fm: Frontmatter) => {
     fm.type = "resource";
     fm.kind = kind;
     fm.status = "to-do";
@@ -153,7 +153,7 @@ async function toResource(plugin: InkwellPlugin, file: TFile): Promise<boolean> 
 }
 
 export function triageMenu(plugin: InkwellPlugin, file: TFile, menu: Menu): void {
-  const kind = plugin.app.metadataCache.getFileCache(file)?.frontmatter?.kind;
+  const kind = fmOf(plugin.app, file)?.kind;
   const item = (title: string, icon: string, fn: () => Promise<unknown>) =>
     menu.addItem((i) =>
       i.setTitle(title).setIcon(icon).onClick(() => {
@@ -221,11 +221,11 @@ export class InboxView extends ItemView {
 
     const list = el.createDiv({ cls: "inkwell-inbox-list" });
     for (const file of files) {
-      const fm = this.app.metadataCache.getFileCache(file)?.frontmatter;
+      const fm = fmOf(this.app, file);
       const row = list.createDiv({ cls: "inkwell-inbox-item" });
       const meta = row.createDiv({ cls: "inkwell-inbox-meta" });
-      meta.createSpan({ cls: "inkwell-kind", text: fm?.kind ?? fm?.type ?? "note" });
-      const created = fm?.created ? moment(String(fm.created)) : moment(file.stat.ctime);
+      meta.createSpan({ cls: "inkwell-kind", text: fmStr(fm?.kind) || fmStr(fm?.type) || "note" });
+      const created = fmStr(fm?.created) ? moment(fmStr(fm?.created)) : moment(file.stat.ctime);
       meta.createSpan({ cls: "inkwell-inbox-age", text: created.isValid() ? created.fromNow() : "" });
 
       const actions = meta.createDiv({ cls: "inkwell-inbox-actions" });
