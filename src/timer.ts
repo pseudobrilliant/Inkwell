@@ -1,8 +1,8 @@
 /**
  * Writing timer (session/day level). One timer at a time.
  *
- * Creating an exercise (including from a random prompt) or opening today's journal
- * arms the timer for that note. It starts on the first keystroke in the note, pauses
+ * Creating or opening an exercise (including from a random prompt or a drill) or opening
+ * today's journal arms the timer for that note. It starts on the first keystroke in the note, pauses
  * by itself after a stretch without typing, and resumes when you type again.
  * Stopping it adds the minutes to the note's `writing_min`.
  *
@@ -60,6 +60,13 @@ export class WritingTimer {
     if (s?.phase === "running") this.pause("idle", s.lastTypedAt);
 
     plugin.registerEvent(app.workspace.on("editor-change", (_editor, info) => this.onType(info.file)));
+    // Opening an exercise gets the timer ready for it, like the journal: never replaces a timer in use.
+    plugin.registerEvent(
+      app.workspace.on("file-open", (file) => {
+        const fm = fmOf(app, file);
+        if (file && fmStr(fm?.type) === "exercise") void this.arm(file, Number(fm?.minutes) || 0, false);
+      })
+    );
     plugin.registerEvent(app.workspace.on("layout-change", () => this.render()));
     plugin.registerEvent(app.workspace.on("active-leaf-change", () => this.render()));
     plugin.registerEvent(
