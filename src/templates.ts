@@ -35,7 +35,7 @@ CURRENT_WEEK, WORDS
 CURRENT_MONTH, WORDS, AVG
 \`\`\`
 
-## ▶ Pick up where you left off
+## ▶ Pick Up Where You Left Off
 \`\`\`inkwell-in-progress
 title: none
 \`\`\`
@@ -70,12 +70,12 @@ title: none
 >     limit: 7
 > \`\`\`
 
-## 🌱 Your contribution
+## 🌱 Your Contribution
 \`\`\`inkwell-contribution
 title: none
 \`\`\`
 
-## 📚 Learning from
+## 📚 Learning From
 \`\`\`base
 filters:
   and:
@@ -106,13 +106,13 @@ type: journal
 writing_min:
 ---
 {{prompt_of_the_day}}
-## Today I wrote
+## Daily Goals
 - 
 
-## Ideas, observations, scraps
+## Ideas, Observations, Reflections
 
 
-## Words written today
+## Words Written
 \`\`\`ktr-entries
 {{date}}
 \`\`\`
@@ -121,13 +121,16 @@ writing_min:
 type: exercise
 tags:
 ---
-## Prompt / goal
+## Prompt
 {{prompt_text}}
+
+## Goal
+
 
 ## Work
 
 
-## What I noticed
+## Reflection
 `,
   drill: `---
 type: drill
@@ -135,13 +138,13 @@ tags:
 skill:
 minutes: 10
 ---
-## How to do it
+## How to Do It
 1. 
 
 ## Variations
 - 
 
-## Why it works
+## Why It Works
 
 `,
   storyHub: `---
@@ -161,7 +164,7 @@ tags:
 → [[{{title}} - Draft]]
 
 ---
-## Project files
+## Project Files
 \`\`\`base
 filters:
   and:
@@ -199,7 +202,7 @@ tags:
 ### Act 3
 
 
-## Parking lot
+## Parking Lot
 - 
 
 ---
@@ -231,17 +234,17 @@ tags:
 
 ---
 ## Attributes
-### Physical description
+### Physical Description
 ### Personality
 ### Occupation
-### Habits / mannerisms
+### Habits / Mannerisms
 
 ---
 ## Story
 ### Background
 ### Goal
-### Internal conflicts
-### External conflicts
+### Internal Conflicts
+### External Conflicts
 
 ---
 ## Notes
@@ -252,10 +255,10 @@ tags:
 ---
 ## {{title}}
 
-### What it looks, sounds, smells like
-### Who lives / works here
+### What It Looks, Sounds, Smells Like
+### Who Lives / Works Here
 ### History
-### Why it matters to the story
+### Why It Matters to the Story
 
 ---
 ## Notes

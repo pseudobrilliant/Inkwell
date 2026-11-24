@@ -95,7 +95,7 @@ const STARTER_DRILLS: { name: string; tags: string[]; skill: string; minutes: nu
     tags: ["starter", "fluency"],
     skill: "Getting words down without judging them",
     minutes: 10,
-    body: `## How to do it
+    body: `## How to Do It
 1. Set a timer.
 2. Write without stopping until it ends. Don't reread, cross out, or fix spelling.
 3. If you get stuck, write "I don't know what to write" until something else comes.
@@ -105,7 +105,7 @@ const STARTER_DRILLS: { name: string; tags: string[]; skill: string; minutes: nu
 - Start from a single word or the last thing you heard someone say.
 - Loop: take the underlined line and freewrite again from it.
 
-## Why it works
+## Why It Works
 It separates drafting from editing. Turning off the inner critic for ten minutes builds speed and shows you what's on your mind.
 `,
   },
@@ -114,7 +114,7 @@ It separates drafting from editing. Turning off the inner critic for ten minutes
     tags: ["starter", "description"],
     skill: "Concrete sensory detail",
     minutes: 10,
-    body: `## How to do it
+    body: `## How to Do It
 1. Pick one place or object you can observe right now, or remember well.
 2. Write one paragraph for each sense: sight, sound, smell, touch, taste.
 3. Use no abstract words (beautiful, nice, strange). Name the specific thing.
@@ -124,7 +124,7 @@ It separates drafting from editing. Turning off the inner critic for ten minutes
 - Skip sight entirely.
 - Describe the same place at two different times of day.
 
-## Why it works
+## Why It Works
 Most drafts lean on sight. Forcing the other senses makes a setting feel physical and trains you to choose the detail that does the most work.
 `,
   },
@@ -133,7 +133,7 @@ Most drafts lean on sight. Forcing the other senses makes a setting feel physica
     tags: ["starter", "style"],
     skill: "Sentence rhythm and structure",
     minutes: 15,
-    body: `## How to do it
+    body: `## How to Do It
 1. Choose a paragraph you admire from a book.
 2. Copy it out word for word, by hand if you can.
 3. Write a new paragraph on a different subject that keeps the original's structure: same number of sentences, similar lengths, same moves.
@@ -143,7 +143,7 @@ Most drafts lean on sight. Forcing the other senses makes a setting feel physica
 - Imitate a writer whose style is very unlike yours.
 - Imitate only the dialogue tags and paragraph breaks.
 
-## Why it works
+## Why It Works
 Copying slows you down enough to notice choices you skim past when reading. Imitation lets you borrow a technique before it's yours.
 `,
   },
@@ -152,7 +152,7 @@ Copying slows you down enough to notice choices you skim past when reading. Imit
     tags: ["starter", "dialogue"],
     skill: "Character and subtext through speech",
     minutes: 10,
-    body: `## How to do it
+    body: `## How to Do It
 1. Pick two characters who want different things.
 2. Write their conversation as dialogue only: no tags, no action, no description.
 3. Neither of them may say directly what they want.
@@ -162,7 +162,7 @@ Copying slows you down enough to notice choices you skim past when reading. Imit
 - Write down a real conversation you overheard, then rewrite it as fiction.
 - One character only answers in questions.
 
-## Why it works
+## Why It Works
 Without tags and action, every line has to carry voice, tension, and subtext on its own.
 `,
   },
@@ -171,7 +171,7 @@ Without tags and action, every line has to carry voice, tension, and subtext on 
     tags: ["starter", "point-of-view"],
     skill: "Choosing and controlling point of view",
     minutes: 15,
-    body: `## How to do it
+    body: `## How to Do It
 1. Write a short scene (about 200 words) in first person.
 2. Rewrite it in close third person.
 3. Rewrite it once more from another character in the scene.
@@ -181,7 +181,7 @@ Without tags and action, every line has to carry voice, tension, and subtext on 
 - Switch tense instead: past to present.
 - Rewrite in second person.
 
-## Why it works
+## Why It Works
 Point of view decides what the reader knows and feels. Seeing one scene three ways makes the choice deliberate instead of a default.
 `,
   },
