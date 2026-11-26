@@ -1,0 +1,225 @@
+# Spec Delta
+
+## Purpose
+
+A writing block marks the writing in a note, apart from the prompt, goal and reflection around it, so Inkwell can help with it. Its first feature is review: write, see what changed while revising, then read the result, with the first draft kept in the same note.
+
+Decisions behind this spec: [ADR 0002](../../decisions/0002-rely-on-keep-the-rhythm-for-word-logs.md), [ADR 0006](../../decisions/0006-writing-block-first-draft-in-a-comment.md).
+
+## ADDED Requirements
+
+### Requirement: Block format
+Inkwell SHALL treat a callout of type `writing` (`> [!writing]`, with an optional title after it) as a writing block, in any note. The block's lines hold the writing as it is now. The block SHALL be plain Markdown that reads as a callout without Inkwell.
+
+#### Scenario: A writing callout is a writing block
+- **GIVEN** a note containing `> [!writing] Opening` followed by `> The chapel door had never had a lock.`
+- **WHEN** Inkwell reads the note
+- **THEN** it finds one writing block titled "Opening" whose text is "The chapel door had never had a lock."
+
+Test: none yet
+
+#### Scenario: Two blocks in one note
+- **GIVEN** a note with two writing callouts separated by other text
+- **WHEN** Inkwell reads the note
+- **THEN** it finds two blocks, each with its own text and mode
+
+Test: none yet
+
+### Requirement: New writing block
+WHEN the writer runs "New writing block", Inkwell SHALL insert an empty writing block at the cursor, or, IF text is selected, THEN wrap the selected lines in a writing block, keeping their words and paragraph breaks.
+
+#### Scenario: Empty block at the cursor
+- **WHEN** the writer runs "New writing block" with nothing selected
+- **THEN** `> [!writing]` and one empty block line are inserted at the cursor, with the cursor on the empty line
+
+Test: none yet
+
+#### Scenario: Wrapping a selection
+- **GIVEN** two selected paragraphs
+- **WHEN** the writer runs "New writing block"
+- **THEN** they become one writing block with the same words and both paragraphs
+
+Test: none yet
+
+### Requirement: Convert a tabbed block
+WHEN the writer runs "New writing block" with the cursor in a run of tab-indented lines and nothing selected, Inkwell SHALL convert that run into a writing block, removing the leading tabs, keeping every word and each line as its own paragraph.
+
+#### Scenario: Old tabbed writing becomes a block
+- **GIVEN** two lines that each start with a tab, as in today's indented writing
+- **WHEN** the writer puts the cursor in them and runs "New writing block"
+- **THEN** they become a writing block with two paragraphs and no leading tabs
+
+Test: none yet
+
+### Requirement: Look
+Inkwell SHALL show a writing block as a box with the editor's monospace font and a first-line indent on every paragraph, in Live Preview and reading view, with no callout icon.
+
+#### Scenario: Paragraphs are indented
+- **GIVEN** a writing block with two paragraphs
+- **WHEN** the writer views it in Live Preview or reading view
+- **THEN** both paragraphs start indented, in the monospace font
+
+Test: none yet [checked by hand in test-vault]
+
+### Requirement: Writing mode before review
+WHILE a writing block has never been reviewed, Inkwell SHALL show it in Writing mode: just the writing, which the writer edits normally. Nothing besides the block itself is written to the note.
+
+#### Scenario: A new block is in Writing mode
+- **WHEN** the writer creates a writing block and types in it
+- **THEN** the block is in Writing mode, and the note holds only the callout
+
+Test: none yet
+
+### Requirement: Entering review keeps the first draft
+WHEN a writing block enters Review for the first time, Inkwell SHALL save its current text as the first draft, in an Obsidian comment placed directly below the block, opening with `%% writing-block first-draft review` and closing with `%%`. Later mode changes SHALL NOT change the first draft.
+
+#### Scenario: First review saves the first draft
+- **GIVEN** a block in Writing mode with the text "I have been here before."
+- **WHEN** the writer switches it to Review
+- **THEN** a comment directly below the block holds "I have been here before." and the mode `review`
+- **AND** the block's own text is unchanged
+
+Test: none yet
+
+#### Scenario: The first draft never moves
+- **GIVEN** a reviewed block whose text has since been revised
+- **WHEN** the writer switches between Writing, Review and Edited several times
+- **THEN** the first draft in the comment is exactly what it was when review began
+
+Test: none yet
+
+### Requirement: Review mode
+WHILE a block is in Review, Inkwell SHALL show its current text with words added since the first draft highlighted and words removed since the first draft struck through, updating as the writer types. The writer SHALL be able to edit the text in Review.
+
+#### Scenario: Changes show while revising
+- **GIVEN** a block whose first draft is "I have been here before."
+- **WHEN** in Review the writer changes "been here" to "come back"
+- **THEN** "been here" shows struck through and "come back" shows highlighted
+
+Test: none yet [the diff is unit-tested; the drawing is checked by hand]
+
+#### Scenario: No changes yet
+- **GIVEN** a block that has just entered Review
+- **WHEN** the writer views it
+- **THEN** the text shows with no marks
+
+Test: none yet
+
+#### Scenario: Paragraph breaks count as changes
+- **WHEN** in Review the writer splits one paragraph into two
+- **THEN** the new break shows as a change
+
+Test: none yet
+
+### Requirement: Edited mode
+WHILE a block is in Edited mode, Inkwell SHALL show its current text clean, with no marks. The writer SHALL be able to edit the text in Edited mode.
+
+#### Scenario: Reading the revision
+- **GIVEN** a reviewed block with changes
+- **WHEN** the writer switches it to Edited
+- **THEN** the current text shows with no highlights or strike-throughs
+
+Test: none yet
+
+### Requirement: Writing mode after review
+WHILE a reviewed block is in Writing mode, Inkwell SHALL show the first draft in place of the current text, read-only. IF the writer tries to type in it, THEN Inkwell SHALL leave the note unchanged and show a notice to switch to Review or Edited to revise.
+
+#### Scenario: Looking back at the first draft
+- **GIVEN** a reviewed block whose text has been revised
+- **WHEN** the writer switches it to Writing
+- **THEN** the first draft shows, and typing in it changes nothing and shows the notice
+
+Test: none yet
+
+### Requirement: Switching modes
+WHEN the writer picks a mode from the buttons on a block or runs "Writing mode", "Review mode" or "Edited mode" with the cursor in a block, Inkwell SHALL change only the mode word in the block's comment. The writing SHALL be unchanged, the mode SHALL be kept in the note so it shows the same after reloading or on another device, and undo SHALL reverse the switch.
+
+#### Scenario: Switching changes only the mode word
+- **GIVEN** a reviewed block in Review
+- **WHEN** the writer switches it to Edited
+- **THEN** the comment's opening line reads `%% writing-block first-draft edited`, and nothing else in the note changes
+
+Test: none yet
+
+#### Scenario: Each block keeps its own mode
+- **GIVEN** two reviewed blocks in one note
+- **WHEN** the writer switches the first to Edited
+- **THEN** the second keeps its mode
+
+Test: none yet
+
+### Requirement: Comment marks in the writing
+IF the writing contains `%%`, THEN Inkwell SHALL refuse to enter Review and show a notice, leaving the note unchanged.
+
+#### Scenario: Writing that would end the comment early
+- **GIVEN** a block whose text contains `%%`
+- **WHEN** the writer switches it to Review
+- **THEN** a notice explains why, and the note is unchanged
+
+Test: none yet
+
+### Requirement: Missing or damaged first draft
+IF a block's comment is missing, or its opening line can't be read, THEN Inkwell SHALL treat the block as never reviewed, and SHALL NOT change or remove the comment.
+
+#### Scenario: Comment deleted by hand
+- **GIVEN** a reviewed block whose comment the writer deleted
+- **WHEN** the writer views the block
+- **THEN** it is in Writing mode, showing its current text
+
+Test: none yet
+
+### Requirement: Keep the Rhythm comment setting
+WHERE Keep the Rhythm is installed and its "Don't count comments" setting is off, WHEN a block enters Review for the first time, Inkwell SHALL show a notice that the first draft will be counted as new words unless that setting is turned on. Inkwell SHALL NOT change Keep the Rhythm's settings.
+
+#### Scenario: Setting off
+- **GIVEN** Keep the Rhythm with "Don't count comments" off
+- **WHEN** a block enters Review for the first time
+- **THEN** the notice appears, and review continues
+
+Test: none yet
+
+#### Scenario: Setting on, or Keep the Rhythm absent
+- **GIVEN** Keep the Rhythm with "Don't count comments" on, or not installed
+- **WHEN** a block enters Review for the first time
+- **THEN** no notice appears
+
+Test: none yet
+
+### Requirement: Word counts
+Inkwell's word counts SHALL count a writing block's current text only: neither the `[!writing]` header line nor the first draft.
+
+#### Scenario: Counting a reviewed block
+- **GIVEN** a reviewed block with a 5-word title, 10 words of current text and a 12-word first draft
+- **WHEN** Inkwell counts the note's words
+- **THEN** the block adds 10
+
+Test: none yet
+
+### Requirement: Moving work up
+WHEN the writer runs "This became a story" on an exercise, or "Promote story to long form" on a story, Inkwell SHALL carry each writing block forward as its current text, as plain paragraphs, without the callout or the first draft. Breaks and headings inside the first draft SHALL NOT split scenes.
+
+#### Scenario: A story starts from the revised text
+- **GIVEN** an exercise whose Work section has a reviewed block
+- **WHEN** the writer runs "This became a story"
+- **THEN** the new draft holds the block's current text as plain paragraphs
+- **AND** the exercise is unchanged except for `became`
+
+Test: none yet
+
+#### Scenario: Promoting keeps the first draft out of scenes
+- **GIVEN** a story draft with a reviewed block whose first draft contains `***`
+- **WHEN** the writer promotes the story
+- **THEN** the scenes hold only current text, split at breaks in the current text only
+- **AND** the original draft, with the block and its comment, is kept in the project's `Archive/`
+
+Test: none yet
+
+### Requirement: Exercise template
+Inkwell's built-in exercise template SHALL start its `## Work` section with an empty writing block. Template files the writer already has SHALL NOT be changed.
+
+#### Scenario: New exercise has a block
+- **GIVEN** no custom exercise template
+- **WHEN** the writer creates an exercise
+- **THEN** its Work section holds an empty writing block
+
+Test: none yet

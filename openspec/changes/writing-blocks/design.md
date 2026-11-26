@@ -1,0 +1,94 @@
+# Design
+
+## Context
+
+See proposal.md for why, and the `writing-blocks` spec for behaviour.
+
+Current state that shapes the approach:
+- **Keep the Rhythm 0.2.16** counts a note's whole raw text on every `editor-change` and logs the net difference (read from its `main.js`). Its "Don't count comments" setting (`settings.ignoreComments` in its `data.json`) strips `%% … %%` before counting. It is off in `test-vault`.
+- **`countWords`** (`src/wordcount.ts`) already strips `%% … %%`, but counts the `[!writing]` header line.
+- **`workSection`** (`src/became.ts`, private) returns the Work section raw. **`splitScenes`** (`src/promote.ts`) splits at `#`–`###` headings and `***`/`---`/`___` lines, including any inside comments.
+- The exercise template's `## Work` section is empty (`src/templates.ts`).
+- Inkwell has no CodeMirror code yet. `@codemirror/state`, `view` and `language` are already external in `esbuild.config.mjs`.
+
+## Goals / Non-Goals
+
+**Goals:**
+- All block logic in one pure module, unit-tested without Obsidian.
+- Typing is never rewritten or intercepted except where the spec makes the block read-only, so phone keyboards, autocorrect and dictation behave normally.
+- The block's format leaves room for later features (types of block, the timer inside blocks) without changing the format already in notes.
+
+**Non-Goals:**
+- Source mode gets no decorations: it shows the raw Markdown.
+- No support for writing blocks nested in lists or other callouts.
+
+## Decisions
+
+**1. Format: a callout, with the first draft in a comment below it** ([ADR 0006](../../decisions/0006-writing-block-first-draft-in-a-comment.md)).
+```
+> [!writing] Opening
+> I have come back before.
+
+%% writing-block first-draft review
+I have been here before.
+%%
+```
+- One blank line separates them. Without it, Markdown's lazy continuation would pull the comment into the callout.
+- The opening line carries the mode (`writing`, `review`, `edited`), so a mode switch only edits a word inside a comment. KTR counts nothing for it, and the note stays the source of truth across devices.
+- The first draft is stored as plain lines, one paragraph per line, as in the block.
+- Later block types can go in the callout's metadata (`[!writing|freewrite]`) without changing this format.
+- Alternatives (see the ADR): separate history notes, which the writer rejected; inline CriticMarkup, which KTR counts and which means intercepting keystrokes; depending on Simple Track Changes, which is too new.
+
+**2. Pure core: `src/writingblocks.ts`.** It finds blocks and their comments with line ranges, reads and sets the mode, builds the comment, wraps a selection or tabbed run, `unwrapBlocks(text)` (each block → its current prose, comment removed), `countable(text)` for word counts, and `diffSegments(before, after)`. Callers only apply its results: an editor transaction, `vault.process`, or a render.
+
+**3. Diff: `presentableDiff` from `@codemirror/merge`.** Run on the unwrapped prose of the first draft and the current text, then mapped to document positions through each line's prefix offset. It is character-based but aligns changes to word boundaries, which reads well for prose. A `scanLimit` and `timeout` bound the work on long, heavily rewritten blocks. Only `presentableDiff` is imported; task 1.4 measures the bundle. If tree-shaking leaves more than about 10 KB, use a small word-token diff instead and record that here. Alternative: write the diff ourselves. That's more code and more edge cases for the same result.
+
+**4. Live Preview: `src/writingblockeditor.ts`** (`registerEditorExtension`, gated on `editorLivePreviewField`).
+- **Cursor outside the block:** Obsidian renders the callout through post processors, so the reading-view code (decision 5) handles it.
+- **Cursor inside the block:** a `StateField` builds decorations from the pure parse.
+  - Review: inserted ranges get `Decoration.mark`, and removed text is a struck-through `Decoration.widget`. The diff is debounced (about 150 ms), and decorations are mapped through edits in between.
+  - Writing after review: the block is replaced by a block widget showing the first draft. A `transactionFilter` drops `input`/`delete` user events that touch that range and shows the notice. This is the only place typing is filtered.
+  - Every reviewed mode: the comment collapses to a small "First draft kept" widget.
+- Mode switches and the first review are single editor transactions with their own `userEvent`, so undo reverses them. The `> ` prefix stays visible: hiding it would make the cursor jump.
+
+**5. Reading view and rendered callouts: `src/writingblockview.ts`** (`registerMarkdownPostProcessor` for `.callout[data-callout="writing"]`).
+- Gets the full note text from `ctx.getSectionInfo(el)` and finds the comment below the section.
+- Adds three mode buttons to the callout title.
+- Review shows the diff. Writing after review renders the first draft.
+- Splits paragraphs at `<br>` so each line gets the first-line indent. With "Strict line breaks" on, Obsidian joins lines, so the block uses one paragraph per line regardless.
+- Mode buttons in reading view use `vault.process`. It re-finds the block by line number and checks the text matches before writing, and otherwise shows a notice and changes nothing. DOM via `createEl` only.
+
+**6. Commands** (`src/main.ts`, also on `editor-menu`): "New writing block", "Writing mode", "Review mode", "Edited mode". Mode commands use `editorCheckCallback` and show only with the cursor in a block. No default hotkeys.
+
+**7. KTR: `ignoresComments(): boolean | null`** in `src/integrations/keep-the-rhythm.ts`. It reads `settings.ignoreComments` from the same version-gated `data.json` read, and returns null when KTR is missing or untested (no notice). Read-only, as ADR 0002 requires.
+
+**8. Existing code:**
+- `countWords` drops writing header lines before counting; comments are already dropped.
+- `workSection` passes its result through `unwrapBlocks` and is exported for tests.
+- `promoteToLongForm` calls `unwrapBlocks` on the draft body before `splitScenes`. The original draft is still moved, untouched, into `Archive/` first.
+
+**Mobile and sync:**
+- **Mobile:** everything is in the note. No desktop-only APIs. Typing is never rewritten. The mode buttons on the block are the touch path, and the commands work from the palette and the editor menu.
+- **Sync:** modes and the first draft sync with the note. Two devices editing one block at once is an ordinary sync conflict on a text file; nothing else stores block state.
+
+**Tests:**
+- Unit (`tests/writingblocks.test.ts`): parse, modes, comment format, wrap and convert, unwrap, countable, diff segments. Invariant: rebuilding the first draft from the segments gives it back exactly.
+- Fake vault: "This became a story" (`tests/became.test.ts`) and promote (`tests/promote.test.ts`), including the original being kept first.
+- By hand in `test-vault` on desktop and a phone: Live Preview decorations, read-only Writing mode, reading view buttons.
+
+## Risks / Trade-offs
+
+- [Obsidian's Enter key in a callout may not add `> `, ending the block] → verify first (task 2.1). If it doesn't, add an Enter keymap inside writing blocks that continues the prefix; it applies only in blocks.
+- [The first draft counts as new KTR words if "Don't count comments" is off] → notice on first review; documented in the README. KTR doesn't recount old history when the setting changes.
+- [Decorations fight Obsidian's own callout rendering in Live Preview] → only decorate while the cursor is inside; otherwise rely on the post processor. Checked by hand.
+- [Long blocks make the diff slow] → debounce, `scanLimit`/`timeout`; checked with a 5,000-word block.
+- [Hand edits damage the comment] → treated as never reviewed and never rewritten (spec); the text stays in the note.
+- [Writing that contains `%%`] → review refused with a notice (spec).
+
+## Migration Plan
+
+Nothing to migrate: tabbed blocks convert on request with "New writing block". To roll back, remove the feature: blocks stay readable callouts, and first drafts stay hidden comments.
+
+## Open Questions
+
+- Exact colours for added and removed text: chosen in the CSS task with Obsidian's variables, checked in light and dark themes.
