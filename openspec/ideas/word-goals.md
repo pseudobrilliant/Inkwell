@@ -1,6 +1,6 @@
 # Daily and weekly word goals
 
-- **Status:** open (after block-word-log)
+- **Status:** open (after the block-word-log change)
 - **Likely capabilities:** practice-stats, contribution
 - **ADRs:** [ADR 0007](../decisions/0007-inkwell-keeps-its-own-word-log.md) (the count it is built on).
 
