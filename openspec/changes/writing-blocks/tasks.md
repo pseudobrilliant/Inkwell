@@ -46,9 +46,9 @@ These tests describe current code and pass before anything else changes.
 
   Set the Test lines for "A writing callout is a writing block", "Two blocks in one note", "Wrapping a selection", "Old tabbed writing becomes a block", "A new block is in Draft mode" and "Comment deleted by hand". Verify `npm test` passes.
 - [x] 2.3 Make `countWords` ignore writing header lines. Update the 1.1 test that pinned the header being counted, and add "counts only a block's current text" to `tests/wordcount.test.ts`; set the "Counting a reviewed block" Test line. Verify `npm test` passes.
-- [ ] 2.4 Add the "New writing block" command (`editorCallback`, plus `editor-menu` entry) in `src/main.ts`: an empty block with the cursor inside, a wrapped selection, or a converted tabbed run. Add "inserts an empty block with the cursor on its line" to `tests/writingblocks.test.ts` and set the "Empty block at the cursor" Test line. Verify `npm test`, then by hand in `test-vault`.
-- [ ] 2.5 Add writing block CSS to `styles.css`: hidden icon, box, `var(--font-monospace)`, first-line indent per paragraph. Use classes and Obsidian variables only. Add the `<br>`-splitting post processor in `src/writingblockview.ts`. Verify in `test-vault` against the screenshot's look, in Live Preview and reading view, light and dark, with Strict line breaks on and off.
-- [ ] 2.6 Create `src/writingblockeditor.ts` (`registerEditorExtension`, Live Preview only):
+- [x] 2.4 Add the "New writing block" command (`editorCallback`, plus `editor-menu` entry) in `src/main.ts`: an empty block with the cursor inside, a wrapped selection, or a converted tabbed run. Add "inserts an empty block with the cursor on its line" to `tests/writingblocks.test.ts` and set the "Empty block at the cursor" Test line. Verify `npm test`, then by hand in `test-vault`.
+- [x] 2.5 Add writing block CSS to `styles.css`: hidden icon, box, `var(--font-monospace)`, first-line indent per paragraph. Use classes and Obsidian variables only. Add the `<br>`-splitting post processor in `src/writingblockview.ts`. Verify in `test-vault` against the screenshot's look, in Live Preview and reading view, light and dark, with Strict line breaks on and off.
+- [x] 2.6 Create `src/writingblockeditor.ts` (`registerEditorExtension`, Live Preview only):
   - with the cursor in a block, line decorations with the same classes as 2.5's rendered block
   - the header text and each `> ` hidden as atomic ranges
   - a high-precedence keymap for Enter and Backspace inside blocks only
@@ -85,8 +85,8 @@ These tests describe current code and pass before anything else changes.
 
   Set the Test lines for "First review saves the first draft", "The first draft never moves", "Switching changes only the mode word", "Each block keeps its own mode" and "Writing that would end the comment early". Verify `npm test` passes.
 - [x] 3.2 Add `ignoresComments()` to `src/integrations/keep-the-rhythm.ts`, reading `settings.ignoreComments` behind the version gate. Add "reads whether comments are ignored, or null when unavailable" to `tests/keep-the-rhythm.test.ts`. Set both Keep the Rhythm scenario Test lines, with a note that the notice itself is checked by hand. Verify `npm test` passes.
-- [ ] 3.3 Add the "Draft mode", "Review mode" and "Edited mode" commands (`editorCheckCallback`, only with the cursor in a block, plus `editor-menu`). Each is a single editor transaction with its own `userEvent`. Show the KTR notice on first review when `ignoresComments()` is false. Verify by hand in `test-vault`: modes switch, undo reverses each, the mode survives reload, and the notice appears only with the setting off.
-- [ ] 3.4 Add the block toolbar (design decision 9):
+- [x] 3.3 Add the "Draft mode", "Review mode" and "Edited mode" commands (`editorCheckCallback`, only with the cursor in a block, plus `editor-menu`). Each is a single editor transaction with its own `userEvent`. Show the KTR notice on first review when `ignoresComments()` is false. Verify by hand in `test-vault`: modes switch, undo reverses each, the mode survives reload, and the notice appears only with the setting off.
+- [x] 3.4 Add the block toolbar (design decision 9):
   - a block type definition for the writing block (modes Draft, Review, Edited; no tools yet), read from the callout's metadata
   - one toolbar component, drawn in the callout title when rendered and as the header-line widget while editing, with the current mode marked
   - picking a mode: an editor transaction while editing, and `vault.process` in reading view, re-finding the block by line and checking its text first
@@ -107,13 +107,13 @@ These tests describe current code and pass before anything else changes.
   - "rebuilding the first draft from the segments gives it back exactly"
 
   Set the Test lines for "Changes show while revising", "No changes yet" and "Paragraph breaks count as changes". Verify `npm test` passes, and a 5,000-word heavily rewritten block diffs in under 100 ms in a test.
-- [ ] 4.2 In `src/writingblockeditor.ts`, with the cursor inside a block (the folded first draft is already done):
+- [x] 4.2 In `src/writingblockeditor.ts`, with the cursor inside a block (the folded first draft is already done):
   - Review marks: added text highlighted, removed text struck through as widgets, recomputed on each edit (bounded by the diff's timeout)
   - added or removed paragraph breaks not marked: the layout shows them
   - Edited shows clean text
 
   Verify by hand in `test-vault` while typing, pasting, splitting paragraphs, undoing and redoing, in split panes and on a phone with autocorrect, swipe and dictation.
-- [ ] 4.3 Draft mode after review:
+- [x] 4.3 Draft mode after review:
   - Live Preview: the block is locked: the cursor can't enter it (a selection landing inside moves below it), so Obsidian keeps it rendered and Inkwell draws the first draft in it. Edits touching it are refused with the notice.
   - reading view: the first draft rendered
 
@@ -129,12 +129,12 @@ These tests describe current code and pass before anything else changes.
 ## 5b. Keeping the block whole (from the review, 2026-11-26)
 
 - [x] 5b.1 Pure fixes with tests in `tests/writingblocks.test.ts` ("keeping the block whole"): the first draft ends at the first `%%`; whole-paragraph deletes and deletes to a line's start keep `>`; header edits refused (`breaksHeader`); the cursor never rests on the header or the fold's edges (`cursorStop`); the locked block's end is locked; typing under a block keeps a blank line (`keepApart`); Enter never leaves; Down leaves at the end of a note (`leaveAtEnd`); Backspace in an empty block leaves an empty line.
-- [ ] 5b.2 By hand in `test-vault`, desktop (done 2026-11-26) and phone (still to do): Left/Up from the first paragraph, Obsidian's edit-block button, triple-click and delete, Cmd+Backspace, Delete at the end of the heading above, arrowing past a reviewed block and a locked one, clicking "First draft kept", Enter twice, Down at the end of a note.
+- [x] 5b.2 By hand in `test-vault`, desktop (done 2026-11-26) and phone (checked by the writer, 2026-11-26): Left/Up from the first paragraph, Obsidian's edit-block button, triple-click and delete, Cmd+Backspace, Delete at the end of the heading above, arrowing past a reviewed block and a locked one, clicking "First draft kept", Enter twice, Down at the end of a note.
 
 ## 5c. Typewriter Mode while writing (2026-11-26)
 
 - [x] 5c.1 Pure `writingAt` in `src/writingblocks.ts`, a `writingWatch` view plugin in `src/writingblockeditor.ts` that reports through `WritingBlockHost.onWritingInBlock`, and `src/integrations/typewriter-mode.ts` (the only file that knows Typewriter Mode) running its enable and disable commands. Tests in `tests/writingblocks.test.ts` and `tests/typewriter-mode.test.ts`. Verify `npm test`.
-- [ ] 5c.2 By hand in the writing vault (Typewriter Mode 1.6.1), desktop (works, 2026-11-26) and phone (still to do): click into a block and out, arrow out, switch panes between blocks, close the note while in a block, open the command palette while in a block.
+- [x] 5c.2 By hand in the writing vault (Typewriter Mode 1.6.1), desktop (works, 2026-11-26) and phone (checked by the writer, 2026-11-26): click into a block and out, arrow out, switch panes between blocks, close the note while in a block, open the command palette while in a block.
 
 ## 6. Docs, ADR, check
 
@@ -146,7 +146,7 @@ These tests describe current code and pass before anything else changes.
 
   Verify both read correctly.
 - [x] 6.2 Mark ADR 0006 accepted and add it to `openspec/decisions/README.md`. Add the "Don't count comments" check to the `ktr-check` skill. Verify `npm run spec` passes.
-- [ ] 6.3 Run `npm run check` and verify it passes with zero lint errors. Run `npm run deploy:test` and walk through every scenario in the spec once in `test-vault` on desktop and phone.
+- [x] 6.3 Run `npm run check` and verify it passes with zero lint errors. Run `npm run deploy:test` and walk through every scenario in the spec once in `test-vault` on desktop and phone.
 
 ## Workflow follow-up
 
