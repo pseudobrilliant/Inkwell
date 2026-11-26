@@ -11,6 +11,7 @@ The [constitution](../../constitution.md) says Inkwell counts the writing itself
 - **Every word number moves onto the log:** words this week on a story or project (story panel, Home in-progress list), practice words, words per mode in `inkwell-contribution`, the streak, and the days showed up in `inkwell-practice`.
 - **The streak and "showed up" count block words only.** A day counts when the writer added words in writing blocks that day. Making an exercise or a journal alone no longer counts.
 - **Inkwell's own heatmap.** `inkwell-heatmap` and the story panel heatmaps are drawn from the log, not by embedding KTR's block. A new `inkwell-words` block (today, this week, this month, streak) replaces `ktr-slots` on Home.
+- **A word count on every block.** The block's toolbar shows its words, and once reviewed, the change since the first draft (6 words (+2)). It's a toolbar tool, like the timer.
 - **A week-start setting** (Monday by default) replaces reading KTR's `startOfTheWeek`.
 - **Blocks stay blocks when work moves up.** "This became a story" puts the exercise's current text in the new draft's writing block (without the first draft), and "Promote" puts each scene's text in a writing block. New drafts, scenes and journals start with a block. The story and project panels say when a draft or scene has no block, since its writing won't count, and offer to put it in one.
 - **Keep the Rhythm is removed.** `src/integrations/keep-the-rhythm.ts`, `KTR_TESTED_VERSIONS`, the settings section, the "Don't count comments" notice, the `ktr-check` skill, and the KTR blocks in the built-in Home and journal templates. The log starts fresh: KTR's history isn't imported. Nothing has been released, so there's no upgrade path to keep, but notes that already exist are never rewritten (safe by default).
@@ -27,7 +28,7 @@ Out of scope:
 - `word-log`: what counts as words written, how the log is kept on each device and added up across them, and the numbers built on it: words per day, week and mode, words this week on a piece, the streak and days showed up, the heatmap, and the `inkwell-words` block.
 
 ### Modified Capabilities
-- `writing-blocks`: the "Keep the Rhythm comment setting" requirement is removed. "Moving work up" changes so blocks stay blocks. A new requirement makes the built-in draft, scene and journal templates start with a block.
+- `writing-blocks`: the "Keep the Rhythm comment setting" requirement is removed. "Moving work up" changes so blocks stay blocks. New requirements make the built-in draft, scene and journal templates start with a block, offer "Put in a writing block", and put a word count on every block's toolbar.
 
 ## Impact
 

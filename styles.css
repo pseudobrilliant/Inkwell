@@ -470,6 +470,13 @@ body {
 .inkwell-timer-tool .is-hidden {
   display: none;
 }
+/* The word count: quiet text, so it never pulls the eye from the writing. */
+.inkwell-wordcount-tool {
+  color: var(--text-muted);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+  padding: 2px 4px;
+}
 /* The writing timer: a ring that fills toward the goal (or a timer icon with no goal), then the time. */
 .inkwell-wb-toolbar button.inkwell-timer-tool {
   display: inline-flex;

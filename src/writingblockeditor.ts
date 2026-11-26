@@ -34,7 +34,7 @@ import {
   type KeyEdit,
   type WritingBlock,
 } from "./writingblocks";
-import { renderToolbar, switchInView, type WritingBlockHost } from "./writingblocktoolbar";
+import { renderToolbar, switchInView, updateTools, type WritingBlockHost } from "./writingblocktoolbar";
 import { drawBlockBody } from "./writingblockview";
 import { BlockWordTally, countsAsWriting, INKWELL_EDIT, type BlockWordsReport } from "./writingblockwords";
 
@@ -65,19 +65,32 @@ class ToolbarWidget extends WidgetType {
     super();
   }
 
+  /** Where the block is and what it shows: a toolbar with the same place is updated in place, not redrawn. */
+  private get place(): string {
+    return `${this.block.start}:${this.block.end}:${this.block.mode}`;
+  }
+
   eq(other: ToolbarWidget): boolean {
-    return other.block.start === this.block.start && other.block.mode === this.block.mode && other.block.end === this.block.end;
+    return other.place === this.place && other.block.text === this.block.text && other.block.firstDraft?.text === this.block.firstDraft?.text;
   }
 
   toDOM(view: EditorView): HTMLElement {
     const line = view.dom.createDiv({ cls: "inkwell-wb-toolbar-line" });
     line.remove();
+    line.dataset.place = this.place;
     const sourcePath = sourcePathOf(view.state);
     renderToolbar(line, this.block, (mode) => switchInView(view, sourcePath, this.block.start, mode, this.host), {
       sourcePath,
       tools: this.host.tools,
     });
     return line;
+  }
+
+  /** Typing changed only the writing: refresh the tools that show it (the word count), keeping the toolbar. */
+  updateDOM(dom: HTMLElement, view: EditorView): boolean {
+    if (dom.dataset.place !== this.place) return false;
+    updateTools(dom, this.block, { sourcePath: sourcePathOf(view.state), tools: this.host.tools });
+    return true;
   }
 
   ignoreEvent(): boolean {

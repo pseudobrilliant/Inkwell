@@ -46,6 +46,23 @@ Test: tests/blocks.test.ts › "a new scene's body is an empty writing block, un
 
 Test: tests/blocks.test.ts › "today's journal holds an empty writing block and no ktr-entries block"
 
+### Requirement: Word count on the block
+Every writing block's toolbar SHALL show a word count tool with the words in what the block shows, counted as in the "Word counts" requirement, kept up to date while the writer types. Once the block has been reviewed, in Review and Edited it SHALL also show the change since the first draft, and in Draft mode, which shows the first draft, it SHALL count the first draft.
+
+#### Scenario: Writing a block
+- **GIVEN** a block that was never reviewed, holding "I have come back before." and "Again."
+- **WHEN** the toolbar shows
+- **THEN** the word count shows 6 words, and it goes up as the writer types
+
+Test: tests/writingblocks.test.ts › "counts the words in a block that was never reviewed" [updating while typing is checked by hand]
+
+#### Scenario: Revising a reviewed block
+- **GIVEN** a reviewed block whose first draft has 4 words and whose writing now has 6
+- **WHEN** it's in Review
+- **THEN** the word count shows 6 words (+2)
+
+Test: tests/writingblocks.test.ts › "a reviewed block shows its words and the change since the first draft"
+
 ### Requirement: Writing that won't count
 WHEN the story panel shows a story whose draft has no writing block, or the project panel shows scenes without one, Inkwell SHALL say their writing isn't counted and offer "Put in a writing block", which wraps the note's body, below its frontmatter, in one block.
 

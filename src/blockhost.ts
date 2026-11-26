@@ -5,20 +5,20 @@
 import type { App, TFile } from "obsidian";
 import type InkwellPlugin from "./main";
 import { blockAtLine, findBlocks, wrapBody, type BlockMode } from "./writingblocks";
-import { switchInEditor, type WritingBlockHost } from "./writingblocktoolbar";
+import { switchInEditor, wordCountTool, type WritingBlockHost } from "./writingblocktoolbar";
 import { newWritingBlock, writingBlockEditor } from "./writingblockeditor";
 import { registerWritingBlockView } from "./writingblockview";
 import { TypewriterMode } from "./integrations/typewriter-mode";
 
 /**
  * Typewriter Mode, if installed, is on only while the writer is writing in a block.
- * The writing timer is a toolbar tool, and a block's first review stops it (spec writing-timer).
+ * The toolbar's tools are the word count, then the writing timer; a block's first review stops the timer (spec writing-timer).
  * Words the writer types in blocks go to Inkwell's word log (spec word-log).
  */
 function blockHost(plugin: InkwellPlugin): WritingBlockHost {
   const typewriter = new TypewriterMode(plugin.app);
   return {
-    tools: [plugin.timer.tool],
+    tools: [wordCountTool, plugin.timer.tool],
     onWritingInBlock: (writing) => typewriter.writingInBlock(writing),
     onFirstDraftSaved: ({ sourcePath, text }) => void plugin.timer.blockReviewed(sourcePath, text),
     onBlockWords: (sourcePath, words) => plugin.words.add(sourcePath, words),

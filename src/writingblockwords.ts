@@ -2,7 +2,7 @@
  * Counting the words in writing blocks, and telling the writer's own edits from everything else (spec word-log).
  * Pure, and part of the block code: it imports only the block model, so the block can count without Inkwell.
  */
-import { findBlocks, isHeader } from "./writingblocks";
+import { findBlocks, isHeader, type WritingBlock } from "./writingblocks";
 
 /** Count prose words: ignores frontmatter, code blocks, comments (so a writing block's first draft), writing block headers, link targets. */
 export function countWords(text: string): number {
@@ -24,6 +24,25 @@ export function blockWords(text: string): number {
   let n = 0;
   for (const b of findBlocks(text)) n += countWords(b.text);
   return n;
+}
+
+const plural = (n: number) => `${n.toLocaleString()} ${n === 1 ? "word" : "words"}`;
+
+/**
+ * What the word count tool shows for a block: the words in what the block shows, and, once reviewed, how far the
+ * writing has moved from the first draft. A reviewed block in Draft mode shows its first draft, so it counts that.
+ */
+export function wordCountLabel(block: WritingBlock): { text: string; label: string } {
+  const now = countWords(block.text);
+  if (!block.firstDraft) return { text: plural(now), label: `${plural(now)} in this block` };
+  const first = countWords(block.firstDraft.text);
+  if (block.mode === "writing") return { text: plural(first), label: `${plural(first)} in the first draft` };
+  const change = now - first;
+  const sign = change > 0 ? "+" : change < 0 ? "−" : "±";
+  return {
+    text: `${plural(now)} (${sign}${Math.abs(change).toLocaleString()})`,
+    label: `${plural(now)} now, ${plural(first)} in the first draft`,
+  };
 }
 
 /** The user event on edits Inkwell's block keys make for the writer (Enter, Shift+Enter, Backspace, Delete in a block). */

@@ -38,7 +38,7 @@ import {
   type KeyEdit,
 } from "../src/writingblocks";
 import { blockTypeOf, WRITING_BLOCK } from "../src/writingblocktoolbar";
-import { BlockWordTally, blockWords, countsAsWriting } from "../src/writingblockwords";
+import { BlockWordTally, blockWords, countsAsWriting, wordCountLabel } from "../src/writingblockwords";
 
 const reviewed = (mode = "review") =>
   ["> [!writing] Opening", "> I have come back before.", "", `%% writing-block first-draft ${mode}`, "I have been here before.", "%%"].join("\n");
@@ -723,5 +723,31 @@ describe("counting the writer's words", () => {
     t.edit(true, null, () => note(words(1)));
     expect(t.counting).toBe(false);
     expect(t.settle(() => note(words(9)))).toBeNull();
+  });
+});
+
+describe("the word count tool", () => {
+  const block = (text: string) => findBlocks(text)[0]!;
+
+  it("counts the words in a block that was never reviewed", () => {
+    expect(wordCountLabel(block("> [!writing] Opening\n> I have come back before.\n>\n> Again."))).toEqual({
+      text: "6 words",
+      label: "6 words in this block",
+    });
+    expect(wordCountLabel(block("> [!writing]\n> One.")).text).toBe("1 word");
+    expect(wordCountLabel(block("> [!writing]\n> ")).text).toBe("0 words");
+  });
+
+  it("a reviewed block shows its words and the change since the first draft", () => {
+    const reviewedWith = (mode: BlockMode, now: string, first: string) =>
+      block(["> [!writing]", `> ${now}`, "", `%% writing-block first-draft ${mode}`, first, "%%"].join("\n"));
+    expect(wordCountLabel(reviewedWith("review", "I have come back before, twice.", "I have been here."))).toEqual({
+      text: "6 words (+2)",
+      label: "6 words now, 4 words in the first draft",
+    });
+    expect(wordCountLabel(reviewedWith("edited", "Back.", "I have been here.")).text).toBe("1 word (−3)");
+    expect(wordCountLabel(reviewedWith("review", "Same four words here.", "Four words were here.")).text).toBe("4 words (±0)");
+    // Draft mode after review shows the first draft, so it counts that.
+    expect(wordCountLabel(reviewedWith("writing", "Back.", "I have been here."))).toEqual({ text: "4 words", label: "4 words in the first draft" });
   });
 });

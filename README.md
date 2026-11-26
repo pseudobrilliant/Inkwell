@@ -56,6 +56,7 @@ A writing block is a box for the writing itself, apart from the prompt, goal and
   - **Draft** is where you write. Once you've reviewed, Draft shows your first draft, read-only.
   - **Review** shows what you've changed since the first draft while you keep revising: added words are highlighted and underlined, removed words are struck through.
   - **Edited** shows the revised text, clean.
+- **Word count:** every block's toolbar shows how many words it holds, as you type. Once you've reviewed, Review and Edited also show how far you've come from the first draft, such as **6 words (+2)**.
 - **Your first draft stays in the note.** The first time you review a block, Inkwell saves its text as the first draft, in a hidden comment just below it, folded to one line. Click it if you ever want to edit it by hand. Nothing ever needs accepting or rejecting.
 - **Typewriter Mode:** if you have the Typewriter Mode plugin, Inkwell turns it on while you write in a block and off when you leave, so its focus tools are there only while you write. Its own settings (folders, platforms, which features are on) still apply.
 - **Words you type in a block count** toward your day, your week and the piece (see **Words**). Words outside blocks don't.
