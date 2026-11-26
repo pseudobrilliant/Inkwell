@@ -128,14 +128,14 @@ These tests describe current code and pass before anything else changes.
 
 ## 6. Docs, ADR, check
 
-- [ ] 6.1 Update the README: writing blocks, the three modes, converting tabbed blocks, and turning on KTR's "Don't count comments". Update CLAUDE.md:
+- [x] 6.1 Update the README: writing blocks, the three modes, converting tabbed blocks, and turning on KTR's "Don't count comments". Update CLAUDE.md:
   - a short "Writing blocks" section: a core component used across Capture, Practice and the writing modes (not a mode), kept self-contained (design decision 10), linking the spec
   - Practice tools: exercises start with a writing block
   - Movement: the current text only carries forward
   - the KTR rules: the comment setting
 
   Verify both read correctly.
-- [ ] 6.2 Mark ADR 0006 accepted and add it to `openspec/decisions/README.md`. Add the "Don't count comments" check to the `ktr-check` skill. Verify `npm run spec` passes.
+- [x] 6.2 Mark ADR 0006 accepted and add it to `openspec/decisions/README.md`. Add the "Don't count comments" check to the `ktr-check` skill. Verify `npm run spec` passes.
 - [ ] 6.3 Run `npm run check` and verify it passes with zero lint errors. Run `npm run deploy:test` and walk through every scenario in the spec once in `test-vault` on desktop and phone.
 
 ## Workflow follow-up

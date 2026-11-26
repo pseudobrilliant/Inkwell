@@ -20,3 +20,4 @@ Architecture Decision Records (ADRs) for Inkwell, in the [MADR](https://adr.gith
 | [0002](0002-rely-on-keep-the-rhythm-for-word-logs.md) | Rely on Keep the Rhythm for word logs, streaks and heatmaps | accepted | 2026-11-21 |
 | [0003](0003-timer-state-in-device-local-storage.md) | Keep writing timer state in device-local storage | accepted | 2026-11-25 |
 | [0004](0004-storyline-compatible-long-form.md) | Make long form compatible with StoryLine | accepted | 2026-11-20 |
+| [0006](0006-writing-block-first-draft-in-a-comment.md) | Writing blocks are callouts, with the first draft in a comment | accepted | 2026-11-25 |

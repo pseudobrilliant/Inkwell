@@ -1,12 +1,12 @@
 # 0006. Writing blocks are callouts, with the first draft in a comment
 
-- **Status:** proposed
+- **Status:** accepted
 - **Date:** 2026-11-25
 - **Specs:** writing-blocks
 
 ## Context
 
-Writing blocks let the writer revise and see what changed since the first draft (Writing, Review, Edited). That means keeping two versions of the same text. Once notes hold blocks, their format is hard to change. Keep the Rhythm (ADR 0002) counts a note's whole raw text on every edit, so wherever the old version lives, it can distort word counts. Writers type on phones, where keyboards and dictation fight editors that rewrite keystrokes.
+Writing blocks let the writer revise and see what changed since the first draft (Draft, Review, Edited). That means keeping two versions of the same text. Once notes hold blocks, their format is hard to change. Keep the Rhythm (ADR 0002) counts a note's whole raw text on every edit, so wherever the old version lives, it can distort word counts. Writers type on phones, where keyboards and dictation fight editors that rewrite keystrokes.
 
 ## Decision drivers
 
@@ -36,4 +36,8 @@ We chose **option 4**:
 - Good: one plain note, nothing to accept or reject, honest word counts, and normal typing on phones.
 - Bad: KTR accuracy depends on a setting the writer must turn on. Inkwell warns but never changes it.
 - Bad: the writing can't contain `%%`, and a first draft damaged by hand edits is ignored.
+- Format details settled while building:
+  - A line break inside a paragraph (Shift+Enter) is a Markdown hard break, a `\` at the end of the line, hidden while editing.
+  - Lines without `>` that Markdown joins to the callout are part of the block, as Obsidian shows them.
+  - The stored mode word for Draft is `writing`, so a label never changes the format.
 - Follow-up: on each KTR version check (ktr-check), confirm "Don't count comments" still exists and still strips `%% … %%`. Revisit if KTR adds a way to exclude text without a user setting.
