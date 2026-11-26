@@ -376,14 +376,14 @@ WHERE Keep the Rhythm is installed and its "Don't count comments" setting is off
 - **WHEN** a block enters Review for the first time
 - **THEN** the notice appears, and review continues
 
-Test: tests/keep-the-rhythm.test.ts › "reads whether comments are ignored, or null when unavailable" [the notice is checked by hand]
+Test: none yet [its code and test are gone; the block-word-log change removes this requirement]
 
 #### Scenario: Setting on, or Keep the Rhythm absent
 - **GIVEN** Keep the Rhythm with "Don't count comments" on, or not installed
 - **WHEN** a block enters Review for the first time
 - **THEN** no notice appears
 
-Test: tests/keep-the-rhythm.test.ts › "reads whether comments are ignored, or null when unavailable" [the notice is checked by hand]
+Test: none yet [its code and test are gone; the block-word-log change removes this requirement]
 
 ### Requirement: Typewriter Mode while writing
 WHERE the Typewriter Mode plugin is installed and enabled, WHEN the cursor moves into a block's writing in the focused editor in Live Preview, Inkwell SHALL turn Typewriter Mode on, and WHEN the writer stops writing in a block (the cursor leaves it, another editor takes focus, or the note closes), Inkwell SHALL turn it off. Inkwell SHALL use Typewriter Mode's own enable and disable commands, so its other settings still apply. A reviewed block locked in Draft mode is not written in.

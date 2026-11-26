@@ -4,7 +4,7 @@ import type { InkwellSettings } from "./settings";
 
 export type TemplateKey = keyof InkwellSettings["templates"];
 
-/** Home dashboard. {{practice}} and {{not_resources}} come from the folder settings. */
+/** Home dashboard. {{practice}} comes from the folder settings. */
 const HOME_TEMPLATE = `---
 aliases:
   - Home
@@ -20,21 +20,12 @@ cssclasses:
 > - **Ribbon** Inbox · Story panel · StoryLine
 > - **⌘P** Everything else
 
-\`\`\`ktr-heatmap
-{{not_resources}}
-
-OPTIONS
-WEEKS 48
-COLORING_MODE liquid
-STOPS 100, 500, 1000
-CENTER
+\`\`\`inkwell-heatmap
+of: all
+weeks: 48
 \`\`\`
 
-\`\`\`ktr-slots
-CURRENT_DAY, WORDS
-CURRENT_STREAK
-CURRENT_WEEK, WORDS
-CURRENT_MONTH, WORDS, AVG
+\`\`\`inkwell-words
 \`\`\`
 
 ## ▶ Pick Up Where You Left Off

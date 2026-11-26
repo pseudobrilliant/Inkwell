@@ -185,11 +185,11 @@ Inkwell SHALL NOT read Keep the Rhythm's data or settings, or embed its blocks. 
 - **WHEN** the writer opens Home
 - **THEN** it's created with `inkwell-heatmap` and `inkwell-words` blocks and no `ktr-` blocks
 
-Test: none yet
+Test: tests/home.test.ts › "a new Home uses Inkwell's word blocks and no Keep the Rhythm blocks"
 
 #### Scenario: An existing Home
 - **GIVEN** a Home note that holds `ktr-heatmap` and `ktr-slots` blocks
 - **WHEN** the writer opens Home
 - **THEN** the note is unchanged
 
-Test: none yet
+Test: tests/home.test.ts › "an existing Home is opened unchanged"

@@ -183,7 +183,6 @@ export class InkwellSettingTab extends PluginSettingTab {
   }
 
   getSettingDefinitions(): SettingDefinitionItem<ControlKey>[] {
-    const ktr = this.plugin.ktr.status();
     const number = (name: string, desc: string, key: ControlKey, min = 0): SettingDefinition<ControlKey> => ({
       name,
       desc,
@@ -285,17 +284,6 @@ export class InkwellSettingTab extends PluginSettingTab {
               key: "weekStart",
               options: Object.fromEntries(WEEKDAYS.map((d) => [d, d.charAt(0).toUpperCase() + d.slice(1)])),
             },
-          },
-        ],
-      },
-      {
-        type: "group",
-        heading: "Keep the Rhythm",
-        items: [
-          {
-            name: ktr.ok ? "Connected" : "Not connected",
-            desc: ktr.message + " Inkwell only reads it; word stats are hidden without it.",
-            aliases: ["word count", "streak", "heatmap"],
           },
         ],
       },

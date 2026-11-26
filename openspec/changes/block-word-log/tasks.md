@@ -37,8 +37,8 @@ Test lines named below go in this change's `specs/word-log/spec.md` and `specs/w
 
 ## 6. Removing Keep the Rhythm
 
-- [ ] 6.1 The built-in Home template uses `inkwell-heatmap` (`of: all`, `weeks: 48`) and `inkwell-words` in place of `ktr-heatmap` and `ktr-slots`, and `src/home.ts` loses the KTR filter. Test that a new Home holds no `ktr-` blocks and that an existing Home isn't changed. Fill in the Test lines for "No Keep the Rhythm". Verify `npm test` passes.
-- [ ] 6.2 Delete `src/integrations/keep-the-rhythm.ts`, `tests/keep-the-rhythm.test.ts`, `plugin.ktr`, the "Keep the Rhythm" settings section and `.claude/skills/ktr-check/`. Verify that `grep -ri "rhythm\|ktr" src tests` finds nothing, and `npm run check` passes.
+- [x] 6.1 The built-in Home template uses `inkwell-heatmap` (`of: all`, `weeks: 48`) and `inkwell-words` in place of `ktr-heatmap` and `ktr-slots`, and `src/home.ts` loses the KTR filter. Test that a new Home holds no `ktr-` blocks and that an existing Home isn't changed. Fill in the Test lines for "No Keep the Rhythm". Verify `npm test` passes.
+- [x] 6.2 Delete `src/integrations/keep-the-rhythm.ts`, `tests/keep-the-rhythm.test.ts`, `plugin.ktr`, the "Keep the Rhythm" settings section and `.claude/skills/ktr-check/`. Verify that `grep -ri "rhythm\|ktr" src tests` finds nothing, and `npm run check` passes.
 
 ## 7. Docs, ADRs, check
 
