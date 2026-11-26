@@ -4,7 +4,7 @@
 
 All KTR access already sits behind one class, `KeepTheRhythm` in `src/integrations/keep-the-rhythm.ts`, reached as `plugin.ktr`. Its callers are `src/contribution.ts` (`weekStart`, `dailyWords`, `words`, `streak`), `src/homeblocks.ts` (`wordsThisWeek`, `heatmapBlock`), `src/storyview.ts` (`wordsThisWeek`, `heatmapBlock`), `src/home.ts` (a KTR filter for the Home template), `src/blockhost.ts` (`ignoresComments`) and `src/settings.ts` (`status`). Every method returns `null` when KTR is missing, and the callers hide the number.
 
-The writing block code (`src/writingblock*.ts`) imports only Obsidian, CodeMirror and itself, and talks to Inkwell through `WritingBlockHost` (`onFirstDraftSaved`, `onWritingInBlock`). `countWords` (`src/wordcount.ts`) already skips the header line and comments, so it counts a block's current text only.
+The writing block code (`src/writingblock*.ts`) imports only Obsidian, CodeMirror and itself, and talks to Inkwell through `WritingBlockHost`: `tools` (toolbar tools, so far the writing timer), `onFirstDraftSaved({ sourcePath, text })` (which stops the timer and shows the KTR notice) and `onWritingInBlock`. The editor finds a block's note with `sourcePathOf(state)`, from `editorInfoField`. `countWords` (`src/wordcount.ts`) already skips the header line and comments, so it counts a block's current text only.
 
 What gets built is in proposal.md and the specs (`word-log`, `writing-blocks`). This file covers how.
 
@@ -27,7 +27,7 @@ A CodeMirror view plugin in the block editor watches transactions. A transaction
 
 Counting every keystroke would be wasteful, so the plugin keeps a **baseline**: on the first counted transaction it records the block words of the state before it, and after 2 seconds idle, on blur, or when the editor closes or switches note, it reports `words now − baseline` and clears the baseline. If an uncounted transaction arrives while a baseline is open, the plugin first reports up to the state before it, then starts again after it, so a sync change never lands in a delta.
 
-The block code reports through a new host method, `onBlockWords(file, delta)`, using `editorInfoField` for the note. The count is a new pure `blockWords(text)` in `src/writingblocks.ts` (the sum of `countWords` over each block's current text), so the block code still doesn't depend on Inkwell.
+The block code reports through a new host method, `onBlockWords(sourcePath, delta)`, finding the note with the existing `sourcePathOf(state)`; an editor with no file reports nothing. A word count shown in the toolbar would be a `BlockTool` later, and isn't part of this change. The count is a new pure `blockWords(text)` in `src/writingblocks.ts` (the sum of `countWords` over each block's current text), so the block code still doesn't depend on Inkwell.
 
 - *Alternative: diff the file on `vault.on("modify")`.* It can't tell the writer's edit from sync or from Inkwell's own writes, which is the main way KTR goes wrong.
 - *Alternative: count only notes Inkwell created.* Too narrow: blocks work in any note.

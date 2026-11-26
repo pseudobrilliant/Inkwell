@@ -18,8 +18,8 @@ Test lines named below go in this change's `specs/word-log/spec.md` and `specs/w
 ## 3. Counting in the editor
 
 - [ ] 3.1 Add a pure `countsAsWriting(userEvent)` to the block code: `input.*`, `delete.*`, `move.*`, `undo`, `redo` and `INKWELL_EDIT` count, and no event doesn't. Test it in `tests/writingblocks.test.ts`. Verify `npm test` passes.
-- [ ] 3.2 Add the baseline view plugin to `writingBlockEditor` (design decision 1): open on the first counted transaction, report on 2 seconds idle, blur, close or note switch, and report then restart around an uncounted transaction. Add `onBlockWords(file, delta)` to `WritingBlockHost`, and have `src/blockhost.ts` pass it to `plugin.words`. Keep the block code free of Inkwell imports (lint enforces it). Test the baseline logic as a pure reducer over a list of transactions, covering typing, deleting, a sync change in the middle, and a mode switch. Fill in the Test lines for "What counts as words written" and "Changes Inkwell or sync makes don't count". Verify `npm run check` passes.
-- [ ] 3.3 Remove the KTR "Don't count comments" notice from `src/blockhost.ts`. Verify `npm run build` passes.
+- [ ] 3.2 Add the baseline view plugin to `writingBlockEditor` (design decision 1): open on the first counted transaction, report on 2 seconds idle, blur, close or note switch, and report then restart around an uncounted transaction. Add `onBlockWords(sourcePath, delta)` to `WritingBlockHost` (the note from `sourcePathOf`), and have `src/blockhost.ts` pass it to `plugin.words`. Keep the block code free of Inkwell imports (lint enforces it). Test the baseline logic as a pure reducer over a list of transactions, covering typing, deleting, a sync change in the middle, and a mode switch. Fill in the Test lines for "What counts as words written" and "Changes Inkwell or sync makes don't count". Verify `npm run check` passes.
+- [ ] 3.3 Remove the KTR "Don't count comments" notice from `onFirstDraftSaved` in `src/blockhost.ts`, keeping its call to `plugin.timer.blockReviewed`. Verify `npm run build` passes and the timer tests still pass.
 
 ## 4. Moving the numbers onto the log
 
