@@ -33,12 +33,12 @@ Inkwell is organized around **Capture** (feeding the well), which feeds everythi
 ### Capture: feed the well
 Feeding the well is the ethos behind Capture. It has two sides, and both go through the same quick capture popup:
 - **Your ideas** (Inbox): ideas, lines, prompts, links, and research, sorted later.
-- **Others' work** (Resources): poems, stories, essays, articles, books, craft books, authors, classes, videos, podcasts, sites. These go straight to the resources folder (`05 - Resources`) as a reading list. Picking the kind is the only sorting at capture time. Reading and notes come later.
+- **Others' work** (Resources): poems, stories, essays, articles, books, classes, and other (videos, podcasts, sites). A kind says what the thing is. Any kind can carry a URL, so where it lives is never a kind. These go straight to the resources folder (`05 - Resources`) as a reading list. Picking the kind is the only sorting at capture time. Reading and notes come later.
 
 - **Purpose:** catch ideas and the work you want to learn from the moment they appear, on desktop or phone, without opening a note. Sort them later.
 - **Structure:**
   - `type: capture` notes with `kind:` (`idea`, `line`, `link`, `prompt`, `research`) in the Inbox folder (`00 - Inbox`). Archived captures go to `00 - Inbox/Archive`. A capture is "unsorted" as long as it sits in the Inbox, so it needs no status field.
-  - `type: resource` notes with `kind:` (`poem`, `story`, `essay`, `article`, `book`, `craft-book`, `author`, `class`, `video`, `podcast`, `website`) and `status` (`to-do`, `in-progress`, `done`) in the resources folder, from the resource template. In the popup, line 1 is the title (`Title by Author` splits off the author), the first URL is the link, and the other lines are why you saved it. `from:` links the note you were in when you captured it.
+  - `type: resource` notes with `kind:` (`poem`, `story`, `essay`, `article`, `book`, `class`, `other`) and `status` (`to-do`, `in-progress`, `done`) in the resources folder, from the resource template. In the popup each kind asks for its own short fields (`RESOURCE_FIELDS` in `src/resources.ts`): a title, then the person (poet, author, or a class's teacher), where it's from (`where`: an article's site, a class's place), a class's dates (`start`, `end`, date pickers saved as `YYYY-MM-DD`), the poem itself for a poem (`text`, written as a `## Text` section through the template's `{{text}}`, never frontmatter), and a link. Enter moves to the next field and ⌘/Ctrl+Enter saves. A pasted `Title by Author` still fills an empty author, and a link pasted as the title moves to the link field. Only the kind's own fields are written to frontmatter, and the template's `{{source}}` lists the ones that were filled in. `from:` links the note you were in when you captured it.
   - **Research vs resource:** `research` belongs to a project and lands in its `Research/`. A `resource` is general learning and lands in Resources.
 - **Tools:** quick capture popup (command + ribbon, with a "Feed the well" row of resource kinds), capture a resource, Inbox panel, triage, append-to-today, resources table (Bases), exercise from a resource. See `src/capture.ts`, `src/resources.ts`, `src/inbox.ts`, `src/modals.ts`.
 - **Feeds every mode:** triage sends a capture to
@@ -119,7 +119,7 @@ Contribution is tracked at four levels. Each answers a different question.
 | `storyline` | Projects/<Title> | StoryLine fields (`title`, `bookId`, `language`) + `status`, `logline`, `target_wordcount`, `promoted` |
 | `scene` | …/Scenes | `id`, `title`, `sequence`, `act`, `chapter`, `status`, `pov`, `characters`, `location`, `target_wordcount` |
 | `character` / `location` | story folder or `Codex/` | `project`, `tagline`, … |
-| `resource` | Resources | `kind`, `status` (`to-do`, `in-progress`, `done`), `author`, `url`, `created`, `captured`, `from` (link to the note it was captured from). Older kinds `course` and `tool` read as `class` and `website` |
+| `resource` | Resources | `kind`, `status` (`to-do`, `in-progress`, `done`), `author` (or `teacher` for a class), `where`, `start`/`end` (a class's dates), `url`, `created`, `captured`, `from` (link to the note it was captured from). Older kinds read as aliases: `course` → `class`, `craft-book` → `book`, `link`/`website`/`video`/`podcast`/`tool` → `other` |
 
 - Use `target_wordcount` everywhere (StoryLine's name), so promotion needs no renaming.
 - Use `type: location`, not `place`. Still read `place` as an alias for older notes.

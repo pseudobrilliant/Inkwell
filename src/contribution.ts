@@ -50,7 +50,8 @@ export function modeMatchers(plugin: InkwellPlugin) {
     practice: (p: string) => under(p, f.journal) || under(p, f.writings),
     stories: (p: string) => under(p, f.writing) && p.endsWith(" - Draft.md") && !p.includes("/Archive/"),
     projects: (p: string) => under(p, f.longProjects) && p.includes("/Scenes/"),
-    all: (_p: string) => true,
+    // All your writing: everything except notes on what you read (resources).
+    all: (p: string) => !under(p, f.resources),
   };
 }
 

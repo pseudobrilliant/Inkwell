@@ -4,7 +4,7 @@ import type { InkwellSettings } from "./settings";
 
 export type TemplateKey = keyof InkwellSettings["templates"];
 
-/** Home dashboard. {{practice}} comes from the folder settings. */
+/** Home dashboard. {{practice}} and {{not_resources}} come from the folder settings. */
 const HOME_TEMPLATE = `---
 aliases:
   - Home
@@ -21,6 +21,8 @@ cssclasses:
 > - **⌘P** Everything else
 
 \`\`\`ktr-heatmap
+{{not_resources}}
+
 OPTIONS
 WEEKS 48
 COLORING_MODE liquid
@@ -267,13 +269,8 @@ tags:
 type: resource
 tags:
 ---
-## Why I Saved It
-{{why}}
-
-## Source
-- **{{kind}}:** {{title}}
-- **By:** {{author}}
-- **Link:** {{url}}
+{{text}}## Source
+{{source}}
 
 ## Notes
 

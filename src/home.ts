@@ -1,4 +1,5 @@
 import { normalizePath } from "obsidian";
+import { ktrString } from "./integrations/keep-the-rhythm";
 import type InkwellPlugin from "./main";
 import { loadTemplate, render } from "./templates";
 import { ensureFolder } from "./util";
@@ -27,6 +28,8 @@ export async function openHome(plugin: InkwellPlugin): Promise<void> {
     const text = render(tpl, {
       inbox: settings.folders.inbox,
       practice: commonFolder(settings.folders.journal, settings.folders.writings),
+      // A KTR filter: notes on what you read (the well) aren't your writing.
+      not_resources: `!(filePath starts_with ${ktrString(normalizePath(settings.folders.resources) + "/")})`,
     });
     await ensureFolder(app, path.split("/").slice(0, -1).join("/"));
     file = await app.vault.create(path, text);

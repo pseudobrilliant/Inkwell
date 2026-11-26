@@ -16,8 +16,26 @@
   letter-spacing: 0.05em;
   margin-bottom: var(--size-4-1);
 }
-.inkwell-capture-more {
+.inkwell-capture-fields {
+  display: grid;
+  grid-template-columns: max-content 1fr;
+  gap: var(--size-4-2) var(--size-4-3);
+  align-items: center;
+}
+.inkwell-capture-fields label {
   color: var(--text-muted);
+  font-size: var(--font-ui-small);
+}
+.inkwell-capture-fields input,
+.inkwell-capture-fields textarea {
+  width: 100%;
+}
+.inkwell-capture-text {
+  resize: vertical;
+}
+.is-mobile .inkwell-capture-fields {
+  grid-template-columns: 1fr;
+  gap: var(--size-4-1);
 }
 .inkwell-capture-input {
   width: 100%;

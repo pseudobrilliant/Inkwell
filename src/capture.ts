@@ -1,7 +1,15 @@
 import { App, Modal, moment, Notice, Platform, Setting } from "obsidian";
 import type InkwellPlugin from "./main";
 import { logCaptureInJournal } from "./journal";
-import { createResource, isResourceKind, MORE_RESOURCE_KINDS, RESOURCE_KINDS, RESOURCE_LABELS, type ResourceKind } from "./resources";
+import {
+  createResource,
+  isResourceKind,
+  RESOURCE_FIELDS,
+  RESOURCE_KINDS,
+  RESOURCE_LABELS,
+  type ResourceKind,
+  type ResourceValues,
+} from "./resources";
 import { createNote, slugWords, uniquePath } from "./util";
 
 export const CAPTURE_KINDS = ["idea", "line", "link", "prompt", "research"] as const;
@@ -37,12 +45,11 @@ export async function saveCapture(plugin: InkwellPlugin, kind: CaptureKind, text
   await logCaptureInJournal(plugin, file, kind);
 }
 
-const IDEA_PLACEHOLDER = "Type a thought…";
-const RESOURCE_PLACEHOLDER = "Title by author\nA link (optional)\nWhy you saved it (optional)";
-
 export class CaptureModal extends Modal {
   private kind: AnyCaptureKind;
   private text = "";
+  /** Resource fields, kept while switching kinds so a title typed under Book survives a switch to Poem. */
+  private values: ResourceValues = {};
 
   /** `resource: true` opens on the last resource kind (the "Capture a resource" command). */
   constructor(app: App, private plugin: InkwellPlugin, opts: { resource?: boolean } = {}) {
@@ -65,8 +72,7 @@ export class CaptureModal extends Modal {
         this.kind = k;
         buttons.forEach((x) => x.removeClass("is-active"));
         b.addClass("is-active");
-        input.setAttr("placeholder", isResourceKind(k) ? RESOURCE_PLACEHOLDER : IDEA_PLACEHOLDER);
-        input.focus();
+        this.renderInput(body);
       };
       buttons.push(b);
     };
@@ -76,46 +82,78 @@ export class CaptureModal extends Modal {
 
     contentEl.createDiv({ cls: "inkwell-capture-group", text: "Feed the well" });
     const well = contentEl.createDiv({ cls: "inkwell-capture-kinds" });
-    const showMore = MORE_RESOURCE_KINDS.includes(this.kind as ResourceKind);
-    for (const k of RESOURCE_KINDS) {
-      if (!showMore && MORE_RESOURCE_KINDS.includes(k)) continue;
-      chip(well, k, RESOURCE_LABELS[k]);
-    }
-    if (!showMore) {
-      const more = well.createEl("button", { text: "More…", cls: "inkwell-capture-more" });
-      more.onclick = () => {
-        more.remove();
-        for (const k of MORE_RESOURCE_KINDS) chip(well, k, RESOURCE_LABELS[k]);
-        input.focus();
-      };
-    }
+    for (const k of RESOURCE_KINDS) chip(well, k, RESOURCE_LABELS[k]);
 
-    const input = contentEl.createEl("textarea", {
-      cls: "inkwell-capture-input",
-      attr: { rows: "5", placeholder: isResourceKind(this.kind) ? RESOURCE_PLACEHOLDER : IDEA_PLACEHOLDER },
-    });
-    input.addEventListener("input", () => (this.text = input.value));
-    input.addEventListener("keydown", (e) => {
+    const body = contentEl.createDiv();
+    this.renderInput(body);
+
+    new Setting(contentEl)
+      .setDesc(Platform.isMobile ? "" : "⌘/Ctrl + Enter to save")
+      .addButton((b) => b.setButtonText("Save").setCta().onClick(() => void this.submit()));
+  }
+
+  /** ⌘/Ctrl + Enter saves from any field. */
+  private saveOnModEnter(el: HTMLElement) {
+    el.addEventListener("keydown", (e) => {
       if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) {
         e.preventDefault();
         void this.submit();
       }
     });
+  }
 
-    new Setting(contentEl)
-      .setDesc(Platform.isMobile ? "" : "⌘/Ctrl + Enter to save")
-      .addButton((b) => b.setButtonText("Save").setCta().onClick(() => void this.submit()));
-
-    window.setTimeout(() => input.focus(), 0);
+  /** A textarea for your own ideas; the kind's own fields for a resource. */
+  private renderInput(body: HTMLElement) {
+    body.empty();
+    let first: HTMLElement | null = null;
+    if (!isResourceKind(this.kind)) {
+      const input = body.createEl("textarea", {
+        cls: "inkwell-capture-input",
+        attr: { rows: "5", placeholder: "Type a thought…" },
+      });
+      input.value = this.text;
+      input.addEventListener("input", () => (this.text = input.value));
+      this.saveOnModEnter(input);
+      first = input;
+    } else {
+      const form = body.createDiv({ cls: "inkwell-capture-fields" });
+      for (const f of RESOURCE_FIELDS[this.kind]) {
+        const id = `inkwell-capture-${f.key}`;
+        form.createEl("label", { text: f.label, attr: { for: id } });
+        const attr = { id, placeholder: f.placeholder ?? "" };
+        const input =
+          f.multiline
+            ? form.createEl("textarea", { cls: "inkwell-capture-text", attr: { ...attr, rows: "6" } })
+            : form.createEl("input", { type: f.date ? "date" : f.key === "url" ? "url" : "text", attr });
+        input.value = this.values[f.key] ?? "";
+        input.addEventListener("input", () => (this.values[f.key] = input.value));
+        this.saveOnModEnter(input);
+        // Enter in a one-line field moves to the next field (or saves from the last one).
+        if (input instanceof HTMLInputElement) {
+          input.addEventListener("keydown", (e) => {
+            if (e.key !== "Enter" || e.metaKey || e.ctrlKey || e.isComposing) return;
+            e.preventDefault();
+            const fields = Array.from(form.querySelectorAll<HTMLElement>("input, textarea"));
+            const next = fields[fields.indexOf(input) + 1];
+            if (next) next.focus();
+            else void this.submit();
+          });
+        }
+        first ??= input;
+      }
+    }
+    window.setTimeout(() => first?.focus(), 0);
   }
 
   private async submit() {
-    if (!this.text.trim()) {
+    const resource = isResourceKind(this.kind);
+    const empty = resource ? !Object.values(this.values).some((v) => v?.trim()) : !this.text.trim();
+    if (empty) {
       this.close();
       return;
     }
     try {
-      if (isResourceKind(this.kind)) await createResource(this.plugin, this.kind, this.text);
+      if (isResourceKind(this.kind)) await createResource(this.plugin, this.kind, this.values);
       else await saveCapture(this.plugin, this.kind, this.text);
       this.plugin.settings.lastCaptureKind = this.kind;
       await this.plugin.saveSettings();
