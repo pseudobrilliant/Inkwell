@@ -134,7 +134,7 @@ These tests describe current code and pass before anything else changes.
 ## 5c. Typewriter Mode while writing (2026-11-26)
 
 - [x] 5c.1 Pure `writingAt` in `src/writingblocks.ts`, a `writingWatch` view plugin in `src/writingblockeditor.ts` that reports through `WritingBlockHost.onWritingInBlock`, and `src/integrations/typewriter-mode.ts` (the only file that knows Typewriter Mode) running its enable and disable commands. Tests in `tests/writingblocks.test.ts` and `tests/typewriter-mode.test.ts`. Verify `npm test`.
-- [ ] 5c.2 By hand in the writing vault (Typewriter Mode 1.6.1), desktop and phone: click into a block and out, arrow out, switch panes between blocks, close the note while in a block, open the command palette while in a block.
+- [ ] 5c.2 By hand in the writing vault (Typewriter Mode 1.6.1), desktop (works, 2026-11-26) and phone (still to do): click into a block and out, arrow out, switch panes between blocks, close the note while in a block, open the command palette while in a block.
 
 ## 6. Docs, ADR, check
 
