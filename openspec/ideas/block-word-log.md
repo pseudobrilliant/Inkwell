@@ -2,7 +2,7 @@
 
 - **Status:** planned (after the writing-blocks change)
 - **Likely capabilities:** word-log (new), contribution, piece-progress, practice-stats, writing-blocks
-- **ADRs:** Replaces [ADR 0002](../decisions/0002-rely-on-keep-the-rhythm-for-word-logs.md) (rely on Keep the Rhythm). The writer decided to replace KTR, which answers 0002's gate; picking this up means a new ADR that supersedes 0002. ADR 0006 (first draft in a comment) still applies.
+- **ADRs:** [ADR 0007](../decisions/0007-inkwell-keeps-its-own-word-log.md) (Inkwell keeps its own word log) supersedes [ADR 0002](../decisions/0002-rely-on-keep-the-rhythm-for-word-logs.md). ADR 0006 (first draft in a comment) still applies. Serves the [constitution](../constitution.md)'s design principles 4 and 5.
 
 ## Directive
 

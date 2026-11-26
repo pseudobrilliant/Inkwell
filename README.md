@@ -32,7 +32,7 @@ Inkwell helps you organize and write projects, but it stops short of publishing 
 - **Write first, organize later.** Capturing is instant. Sorting is optional and can wait for a weekly review.
 - **Keep it light.** A short story is one folder and one draft, not a whole system to maintain.
 - **Works on mobile.** Every feature works in Obsidian mobile.
-- **Build only what's missing.** Inkwell works alongside Bases and Keep the Rhythm (word counts, streaks, heatmaps) instead of rebuilding what they already do.
+- **Build what's core, use the rest.** Writing, word counts and goals are Inkwell's own. For tables it uses Bases instead of rebuilding them.
 
 ## Features
 

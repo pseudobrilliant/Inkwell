@@ -1,6 +1,6 @@
 # 0002. Rely on Keep the Rhythm for word logs, streaks and heatmaps
 
-- **Status:** accepted
+- **Status:** superseded by [0007](0007-inkwell-keeps-its-own-word-log.md)
 - **Date:** 2026-11-21
 - **Recorded:** 2026-11-25, after the fact
 - **Specs:** practice-stats, piece-progress, contribution, ktr-integration (not yet written)

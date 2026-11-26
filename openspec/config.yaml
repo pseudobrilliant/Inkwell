@@ -1,18 +1,21 @@
 schema: spec-driven
 
-# Project context for OpenSpec artifacts. Inkwell's tenets and engineering
-# rules live in CLAUDE.md: read them, don't copy them here.
+# Project context for OpenSpec artifacts. Inkwell's themes, design principles and
+# tenets live in openspec/constitution.md, and its engineering rules in CLAUDE.md:
+# read them, don't copy them here.
 context: |
   Inkwell is a writing-practice toolkit plugin for Obsidian (TypeScript, Obsidian 1.13+,
   esbuild, Vitest). Capture feeds three modes: Practice, Short form, Long form; Home shows them together.
-  CLAUDE.md holds the tenets and engineering rules. Follow them, in particular:
+  openspec/constitution.md holds the core themes, design principles and tenets, and every artifact answers
+  to it. CLAUDE.md holds the engineering rules. Follow them, in particular: the writing block is the heart
+  of the writing experience, Inkwell counts the writing itself, daily and weekly goals are core,
   plain Markdown notes only, works on mobile, nothing that moves or rewrites notes without saving the original
   first, and no publishing or export features.
   The reasons behind past decisions are ADRs in openspec/decisions/. Read the ones a change touches.
   A change that reverses or replaces an accepted ADR needs a new ADR that supersedes it.
   Capability names (flat, kebab-case): capture, resources, practice, writing-timer, short-form,
   long-form, movement, practice-stats (day level), piece-progress (piece level),
-  contribution (mode and lifetime levels), ktr-integration. A capability is behaviour the writer can see.
+  contribution (mode and lifetime levels), word-log (replaces ktr-integration, ADR 0007). A capability is behaviour the writer can see.
   Cross-cutting rules (data model, settings sync) stay in CLAUDE.md and ADRs, not in a spec of their own.
   Ideas nobody is working on yet live in openspec/ideas/, not in openspec/changes/. A change picked up
   from an idea starts from that idea's Why and constraints, and deletes the idea file.
@@ -36,6 +39,7 @@ rules:
       `npm run spec` checks every `Test:` line: each scenario must have one, and every test it names must
       exist. Rename a test and its spec line in the same commit.
   proposal:
+    - Say which design principles in openspec/constitution.md the change serves, and check it against the tenets.
     - Say which ADRs the change touches, and whether it needs a new one.
     - State what is out of scope, especially weight the change would add to a lighter mode.
   design:
