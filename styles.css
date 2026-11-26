@@ -439,6 +439,63 @@ body {
   color: var(--text-normal);
   box-shadow: var(--shadow-s);
 }
+/* Tools the host adds, pushed to the far right of the toolbar. An empty tool takes no room. */
+.inkwell-wb-tools {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--size-2-2);
+  margin-left: auto;
+}
+.inkwell-wb-tool:empty,
+.inkwell-wb-tool.is-hidden,
+.inkwell-timer-tool .is-hidden {
+  display: none;
+}
+/* The writing timer: a ring that fills toward the goal (or a timer icon with no goal), then the time. */
+.inkwell-wb-toolbar button.inkwell-timer-tool {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--size-2-2);
+  background: none;
+  box-shadow: none;
+  border: none;
+  height: auto;
+  padding: 2px 6px;
+  border-radius: var(--radius-s);
+  color: var(--text-normal);
+  font-size: inherit;
+  cursor: pointer;
+}
+.inkwell-wb-toolbar button.inkwell-timer-tool:hover {
+  background: var(--background-modifier-hover);
+}
+.inkwell-timer-tool.is-paused,
+.inkwell-timer-tool .inkwell-timer-tool-icon {
+  color: var(--text-muted);
+}
+.inkwell-timer-tool .inkwell-timer-tool-icon {
+  display: inline-flex;
+}
+.inkwell-timer-tool .inkwell-timer-tool-icon svg {
+  width: 14px;
+  height: 14px;
+}
+.inkwell-timer-ring {
+  width: 14px;
+  height: 14px;
+  fill: none;
+  stroke-width: 3;
+}
+.inkwell-timer-ring-track {
+  stroke: var(--text-faint);
+  opacity: 0.5;
+}
+.inkwell-timer-ring-arc {
+  stroke: var(--interactive-accent);
+}
+.inkwell-timer-tool.is-paused .inkwell-timer-ring-arc {
+  stroke: var(--text-muted);
+}
 
 /* Rendered (reading view, and Live Preview with the cursor elsewhere): the toolbar inside the callout, then the gap. */
 .callout[data-callout="writing"].inkwell-wb-has-toolbar {

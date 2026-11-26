@@ -118,11 +118,16 @@ export function registerWritingBlockView(plugin: Plugin, host: WritingBlockHost)
       const draw = (mode: BlockMode) => {
         callout.find(":scope > .inkwell-wb-toolbar")?.remove();
         drawBlockBody(callout, { ...block, mode });
-        const bar = renderToolbar(callout, { ...block, mode }, (picked) => {
-          void switchInFile(plugin.app, file, block.start, block.text, picked, host).then((done) => {
-            if (done) draw(picked);
-          });
-        });
+        const bar = renderToolbar(
+          callout,
+          { ...block, mode },
+          (picked) => {
+            void switchInFile(plugin.app, file, block.start, block.text, picked, host).then((done) => {
+              if (done) draw(picked);
+            });
+          },
+          { sourcePath: ctx.sourcePath, tools: host.tools }
+        );
         callout.prepend(bar);
       };
       draw(block.mode);

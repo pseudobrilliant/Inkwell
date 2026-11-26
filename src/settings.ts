@@ -244,7 +244,7 @@ export class InkwellSettingTab extends PluginSettingTab {
         items: [
           {
             name: "Time practice writing",
-            desc: "New exercises (including ones from a random prompt) and today's journal get a timer that starts on your first keystroke. Stopping it adds the minutes to the note's writing_min.",
+            desc: "Exercises and today's journal get a timer that starts on your first keystroke. In an exercise's writing block it counts only drafting, and reviewing the block stops it. Stopping adds the minutes to the note's writing_min.",
             aliases: ["sprint", "minutes"],
             control: { type: "toggle", key: "timerAutoStart" },
           },

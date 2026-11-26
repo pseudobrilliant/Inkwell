@@ -96,3 +96,90 @@ describe("writing timer state", () => {
     expect(T.isTimerState("timer")).toBe(false);
   });
 });
+
+describe("timing by block", () => {
+  const block = "> [!writing]\n> Draft words.";
+  const exercise = `## Prompt\nWrite about rain.\n\n${block}\n\n## Reflection\nIt went well.`;
+  const reviewed = (mode: string) => `> [!writing]\n> Revised.\n\n%% writing-block first-draft ${mode}\nFirst.\n%%`;
+  const at = (text: string, s: string) => text.indexOf(s);
+
+  it("typing outside a Draft block is not drafting", () => {
+    const how = T.timing("exercise", exercise);
+    expect(how).toBe("block");
+    expect(T.countsAsTyping(how, exercise, at(exercise, "Write about rain."))).toBe(false);
+    expect(T.countsAsTyping(how, exercise, at(exercise, "It went well."))).toBe(false);
+    expect(T.countsAsTyping(how, exercise, at(exercise, "[!writing]"))).toBe(false);
+  });
+
+  it("typing in a reviewed block is not drafting", () => {
+    const text = `${reviewed("review")}\n\n${block}`;
+    const how = T.timing("exercise", text);
+    expect(T.countsAsTyping(how, text, at(text, "Revised."))).toBe(false);
+    expect(T.countsAsTyping(how, text, at(text, "Draft words."))).toBe(true);
+    // Only drafting counts, so typing in the reviewed block lets the idle pause count up to the last draft keystroke.
+    let s = T.typed(T.armed("Ex.md", 0), t0);
+    if (T.countsAsTyping(how, text, at(text, "Revised."))) s = T.typed(s, t0 + 3 * MIN);
+    const r = T.tick(s, t0 + 6 * MIN, 5 * MIN);
+    expect(r.idlePaused).toBe(true);
+    expect(T.elapsed(r.state, t0 + 6 * MIN)).toBe(0);
+  });
+
+  it("drafting in either of two blocks counts", () => {
+    const text = `${block}\n\nBetween.\n\n> [!writing]\n> Second block.`;
+    const how = T.timing("exercise", text);
+    expect(T.countsAsTyping(how, text, at(text, "Draft words."))).toBe(true);
+    expect(T.countsAsTyping(how, text, at(text, "Second block."))).toBe(true);
+    let s = T.typed(T.armed("Ex.md", 0), t0);
+    s = T.typed(s, t0 + 2 * MIN);
+    s = T.typed(s, t0 + 5 * MIN);
+    expect(T.elapsed(s, t0 + 5 * MIN)).toBe(5 * MIN);
+  });
+
+  it("drafting in a block starts the timer", () => {
+    const how = T.timing("exercise", exercise);
+    let s = T.armed("Ex.md", 10);
+    // Reading and fixing the prompt first: still armed.
+    if (T.countsAsTyping(how, exercise, at(exercise, "Write about rain."))) s = T.typed(s, t0);
+    expect(s.phase).toBe("armed");
+    if (T.countsAsTyping(how, exercise, at(exercise, "Draft words."))) s = T.typed(s, t0 + MIN);
+    expect(s.phase).toBe("running");
+    expect(T.elapsed(s, t0 + 3 * MIN)).toBe(2 * MIN);
+  });
+
+  it("a journal or an exercise without a block is timed as a whole note", () => {
+    expect(T.timing("journal", "Today I wrote.")).toBe("note");
+    expect(T.timing("exercise", "## Work\nNo block here.")).toBe("note");
+    expect(T.countsAsTyping("note", "Today I wrote.", 0)).toBe(true);
+  });
+
+  it("only exercises are timed by block", () => {
+    expect(T.timing("journal", block)).toBe("note");
+    expect(T.timing("draft", block)).toBe("none");
+    expect(T.timing("scene", block)).toBe("none");
+    expect(T.timing("", block)).toBe("none");
+    expect(T.countsAsTyping("none", block, at(block, "Draft words."))).toBe(false);
+  });
+
+  it("an exercise whose blocks are all reviewed has nothing to draft", () => {
+    expect(T.hasDraftLeft(reviewed("edited"))).toBe(false);
+    expect(T.hasDraftLeft(`${reviewed("writing")}\n\n${reviewed("review")}`)).toBe(false);
+    expect(T.hasDraftLeft(`${reviewed("edited")}\n\n${block}`)).toBe(true);
+    expect(T.hasDraftLeft(exercise)).toBe(true);
+  });
+
+  it("goal progress is the share of the goal written", () => {
+    const s = T.typed(T.armed("Ex.md", 10), t0);
+    expect(T.goalProgress(s, t0 + 2.5 * MIN)).toBe(0.25);
+    expect(T.goalProgress(s, t0 + 10 * MIN)).toBe(1);
+    expect(T.goalProgress(s, t0 + 14 * MIN)).toBe(1);
+    expect(T.goalProgress(T.typed(T.armed("Ex.md", 0), t0), t0 + 5 * MIN)).toBeNull();
+  });
+
+  it("a first review stops the note's timer, and re-arms it while a block is still in draft", () => {
+    const s = T.typed(T.armed("Ex.md", 10), t0);
+    expect(T.afterFirstReview(s, "Ex.md", reviewed("review"))).toEqual({ log: true, rearmGoal: null });
+    expect(T.afterFirstReview(s, "Ex.md", `${reviewed("review")}\n\n${block}`)).toEqual({ log: true, rearmGoal: 10 });
+    expect(T.afterFirstReview(s, "Other.md", reviewed("review"))).toEqual({ log: false, rearmGoal: null });
+    expect(T.afterFirstReview(null, "Ex.md", reviewed("review"))).toEqual({ log: false, rearmGoal: null });
+  });
+});

@@ -199,6 +199,8 @@ export class FakeApp {
   workspace = {
     getLeaf: () => ({ openFile: async (f: TFile) => void this.opened.push(f.path) }),
     getActiveFile: () => null,
+    getLeavesOfType: () => [],
+    onLayoutReady: (fn: () => void) => fn(),
     on: () => ({}),
   };
 
@@ -209,13 +211,27 @@ export class FakeApp {
   };
 }
 
-/** A stand-in for the plugin: the fake app, default settings (with overrides), and Keep the Rhythm switched off. */
+/** An element that accepts any call and does nothing: enough for UI code that only draws (the status bar). */
+function inertElement(): HTMLElement {
+  const el: object = new Proxy(() => el, { get: () => () => el });
+  return el as HTMLElement;
+}
+
+/**
+ * A stand-in for the plugin: the fake app, default settings (with overrides), and Keep the Rhythm switched off.
+ * Registering events, intervals, commands and status bar items is accepted and does nothing.
+ */
 export function fakePlugin(app = new FakeApp(), settings: Partial<InkwellSettings> = {}): InkwellPlugin & { app: FakeApp } {
   const s = mergeSettings(settings).settings;
   return {
     app,
     settings: s,
     saveSettings: async () => undefined,
+    addStatusBarItem: inertElement,
+    addCommand: () => undefined,
+    register: () => undefined,
+    registerEvent: () => undefined,
+    registerInterval: (id: number) => id,
     ktr: {
       status: () => ({ ok: false, message: "off" }),
       wordsThisWeek: async () => null,

@@ -15,6 +15,8 @@ import {
   withLineBreaks,
   lockedRanges,
   writingAt,
+  drafting,
+  draftingAt,
   outsideLocked,
   touchesLocked,
   diffSegments,
@@ -620,5 +622,27 @@ describe("writing in a block", () => {
     expect(writingAt(inReview, inReview.indexOf("Revised."))).toBe(true);
     // The opened first draft is edited by hand, not written in.
     expect(writingAt(inReview, inReview.indexOf("First."))).toBe(false);
+  });
+});
+
+describe("drafting in a block", () => {
+  const reviewed = (mode: string) => `> [!writing]\n> Revised.\n\n%% writing-block first-draft ${mode}\nFirst.\n%%`;
+
+  it("drafting means Draft mode before review", () => {
+    expect(drafting(findBlocks("> [!writing]\n> New.")[0]!)).toBe(true);
+    for (const mode of ["writing", "review", "edited"]) expect(drafting(findBlocks(reviewed(mode))[0]!)).toBe(false);
+  });
+
+  it("draftingAt is false in a reviewed block and outside blocks", () => {
+    const note = "Prompt.\n> [!writing]\n> Line one.\n\nReflection.";
+    expect(draftingAt(note, note.indexOf("Line one."))).toBe(true);
+    expect(draftingAt(note, 0)).toBe(false);
+    expect(draftingAt(note, note.indexOf("[!writing]"))).toBe(false);
+    expect(draftingAt(note, note.indexOf("Reflection."))).toBe(false);
+    for (const mode of ["writing", "review", "edited"]) {
+      const text = reviewed(mode);
+      expect(draftingAt(text, text.indexOf("Revised."))).toBe(false);
+      expect(draftingAt(text, text.indexOf("First."))).toBe(false);
+    }
   });
 });
