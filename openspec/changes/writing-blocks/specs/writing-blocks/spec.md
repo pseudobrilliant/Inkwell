@@ -86,7 +86,7 @@ WHILE the cursor is inside a writing block in Live Preview, Inkwell SHALL hide t
 Test: none yet [checked by hand in test-vault]
 
 ### Requirement: Paragraphs inside the block
-WHILE the cursor is inside a writing block in Live Preview, Enter SHALL start a new paragraph in the block, and Enter on an empty last line after at least one paragraph SHALL leave the block, removing that empty line. Pasted lines SHALL stay inside the block. Backspace at the start of a paragraph SHALL join it to the one before, and on the block's only empty line SHALL remove the block. However two paragraphs are joined, no `>` SHALL be left in the writing.
+WHILE the cursor is inside a writing block in Live Preview, Enter SHALL start a new paragraph in the block, also on an empty last line, so the writer is never taken out of the block while writing. Pasted lines SHALL stay inside the block. Backspace at the start of a paragraph SHALL join it to the one before, and on the block's only empty line SHALL remove the block, leaving an empty line in its place. However two paragraphs are joined, no `>` SHALL be left inside the writing.
 
 #### Scenario: Enter stays in the block
 - **GIVEN** the cursor at the end of a paragraph in a writing block
@@ -95,12 +95,19 @@ WHILE the cursor is inside a writing block in Live Preview, Enter SHALL start a 
 
 Test: tests/writingblocks.test.ts › "enter starts a new paragraph in the block" [the keymap is checked by hand]
 
-#### Scenario: Enter twice leaves the block
+#### Scenario: Enter twice stays in the block
 - **GIVEN** the cursor at the end of the block's last paragraph
-- **WHEN** the writer presses Enter twice
-- **THEN** the cursor is on a new line below the block, and the block ends with that paragraph
+- **WHEN** the writer presses Enter twice and types
+- **THEN** the new text is a paragraph inside the block, after an empty one
 
-Test: tests/writingblocks.test.ts › "enter on an empty last line leaves the block" [the keymap is checked by hand]
+Test: tests/writingblocks.test.ts › "enter on an empty last line starts another paragraph" [the keymap is checked by hand]
+
+#### Scenario: Backspace in an empty block
+- **GIVEN** an empty block directly below a heading, with the cursor in it
+- **WHEN** the writer presses Backspace
+- **THEN** the block is removed and the cursor is on an empty line below the heading, not in it
+
+Test: tests/writingblocks.test.ts › "backspace on the only empty line removes the block"
 
 #### Scenario: Backspace joins paragraphs
 - **GIVEN** the cursor at the start of the block's second paragraph
@@ -115,6 +122,63 @@ Test: tests/writingblocks.test.ts › "backspace at a paragraph's start joins it
 - **THEN** the joined paragraph contains no `>`
 
 Test: tests/writingblocks.test.ts › "a join takes the next line's > with the line break" [the editor's handling is checked by hand]
+
+### Requirement: Leaving the block
+WHILE the cursor is on a writing block's last line in Live Preview, the down arrow SHALL move below the block. IF nothing follows the block in the note, THEN the down arrow SHALL add a blank line and a line to write on below it.
+
+#### Scenario: Down arrow at the end of the note
+- **GIVEN** a block that ends the note, with the cursor on its last line
+- **WHEN** the writer presses the down arrow
+- **THEN** a blank line and a new line are added below the block, with the cursor on the new line
+
+Test: tests/writingblocks.test.ts › "down arrow on the last line of a note leaves the block" [the keymap is checked by hand]
+
+### Requirement: Every line keeps its >
+WHEN an edit in Live Preview removes the `>` at the start of a line of writing (a paragraph selected from its start and deleted or typed over, or a deletion back to the line's start), Inkwell SHALL put the `>` back in front of what is left on that line, unless the edit removes whole lines only.
+
+#### Scenario: Deleting a whole paragraph
+- **GIVEN** a paragraph selected from its start through its line break, as a triple-click selects it
+- **WHEN** the writer deletes it, or types over it
+- **THEN** the paragraph after it keeps its `>`, and stays in the block
+
+Test: tests/writingblocks.test.ts › "deleting or typing over a whole paragraph keeps the next one's >"
+
+#### Scenario: Deleting to a paragraph's start
+- **GIVEN** the cursor in the middle of a paragraph
+- **WHEN** the writer deletes back to the start of the line (Cmd+Backspace)
+- **THEN** the rest of the paragraph keeps its `>`
+
+Test: tests/writingblocks.test.ts › "deleting to a paragraph's start keeps its >"
+
+### Requirement: The cursor stays off the hidden header
+WHILE a writing block shows in Live Preview, the cursor SHALL NOT rest on its hidden header. Arriving from above or by a click, it SHALL go into the writing. Leaving the first paragraph by Left or Up, it SHALL go to the line above the block. Arriving by Up from below, it SHALL go to the block's last paragraph.
+
+#### Scenario: Left from the first paragraph
+- **GIVEN** the cursor at the start of the block's first paragraph
+- **WHEN** the writer presses Left, then types
+- **THEN** the cursor is at the end of the line above the block, the typing goes there, and the block is unchanged
+
+Test: tests/writingblocks.test.ts › "the cursor never rests on the hidden header" [the editor's handling is checked by hand]
+
+### Requirement: Edits that break the header
+IF an edit in Live Preview would break a block's header (typing before it, joining it onto the line above, or joining the writing onto it), THEN Inkwell SHALL refuse the edit and show a notice. Deleting the whole block, or whole lines above it, SHALL be allowed.
+
+#### Scenario: Delete at the end of the heading above
+- **GIVEN** a block directly below the heading "Work"
+- **WHEN** the writer presses Delete at the end of the heading
+- **THEN** the note is unchanged and a notice explains why
+
+Test: tests/writingblocks.test.ts › "edits that would break the header are refused" [the notice is checked by hand]
+
+### Requirement: Typing below a block
+WHEN the writer types on the blank line straight below a block that has no first draft, Inkwell SHALL start the text one line further down, so a blank line keeps it out of the block.
+
+#### Scenario: Typing below a block
+- **GIVEN** a block followed by a blank line and a heading
+- **WHEN** the writer types on the blank line
+- **THEN** the text is on its own line, with a blank line between it and the block, and is not part of the block
+
+Test: tests/writingblocks.test.ts › "typing straight below a block keeps a blank line between"
 
 ### Requirement: Draft mode before review
 WHILE a writing block has never been reviewed, Inkwell SHALL show it in Draft mode: just the writing, which the writer edits normally. Nothing besides the block itself is written to the note.
@@ -168,7 +232,7 @@ Test: tests/writingblocks.test.ts › "going straight to Edited also keeps the f
 Test: tests/writingblocks.test.ts › "the first draft never changes across mode switches"
 
 ### Requirement: The first draft is protected
-IF an edit in Live Preview would change a block's kept first draft, or the blank line above it, while the cursor is not in the first draft, THEN Inkwell SHALL refuse the edit and show a notice. Deleting the whole block with its first draft SHALL be allowed, and so SHALL editing the first draft by hand with the cursor in it.
+IF an edit in Live Preview would change a block's kept first draft, or the blank line above it, while the cursor is not inside the first draft, THEN Inkwell SHALL refuse the edit and show a notice. The folded first draft SHALL open only when the writer clicks it: moving the cursor SHALL pass over it and the blank line above it, never resting at its edges. Deleting the whole block with its first draft SHALL be allowed, and so SHALL editing the first draft by hand once opened.
 
 #### Scenario: Backspace below the first draft
 - **GIVEN** a reviewed block, and the cursor at the start of the line below its folded first draft
@@ -177,12 +241,19 @@ IF an edit in Live Preview would change a block's kept first draft, or the blank
 
 Test: tests/writingblocks.test.ts › "the kept first draft can't be edited by accident" [the refusal and notice are checked by hand]
 
-#### Scenario: Leaving the block keeps it apart
-- **GIVEN** the cursor on the block's empty last line
-- **WHEN** the writer presses Enter and types
-- **THEN** a blank line separates the new text from the block, so it is not part of it
+#### Scenario: Moving past the first draft
+- **GIVEN** a reviewed block, and the cursor on its last line
+- **WHEN** the writer presses the down arrow, then types
+- **THEN** the cursor is on the line below the folded first draft, the draft stays folded, and the typing goes there
 
-Test: tests/writingblocks.test.ts › "enter on an empty last line leaves the block"
+Test: tests/writingblocks.test.ts › "the folded first draft is passed over, never opened by moving" [the fold is checked by hand]
+
+#### Scenario: Typing at the draft's edge
+- **GIVEN** the cursor at the very end of the folded first draft (the note ends there)
+- **WHEN** the writer types a letter
+- **THEN** the note is unchanged and a notice explains why, but Enter adds a line below
+
+Test: tests/writingblocks.test.ts › "typing at the edges of a first draft is refused"
 
 ### Requirement: Review mode
 WHILE a block is in Review, Inkwell SHALL show its current text with words added since the first draft highlighted and words removed since the first draft struck through, updating as the writer types. The writer SHALL be able to edit the text in Review.
@@ -224,6 +295,13 @@ WHILE a reviewed block is in Draft mode, Inkwell SHALL show the first draft in p
 - **GIVEN** a reviewed block whose text has been revised
 - **WHEN** the writer switches it to Draft
 - **THEN** the first draft shows, and typing in it changes nothing and shows the notice
+
+#### Scenario: The end of a locked block
+- **GIVEN** a reviewed block in Draft mode
+- **WHEN** the cursor arrives at the very end of its first draft and the writer types
+- **THEN** the cursor moves past the block, and typing there is refused, except a line break when the note ends there
+
+Test: tests/writingblocks.test.ts › "the end of a locked block is locked too"
 
 Test: tests/writingblocks.test.ts › "typing into a reviewed block in Draft mode is refused" [the notice and the drawing are checked by hand]
 
@@ -272,7 +350,7 @@ IF the writing contains `%%`, THEN Inkwell SHALL refuse to enter Review and show
 Test: tests/writingblocks.test.ts › "refuses review when the writing contains %%" [the notice is checked by hand]
 
 ### Requirement: Missing or damaged first draft
-IF a block's comment is missing, or its opening line can't be read, THEN Inkwell SHALL treat the block as never reviewed, and SHALL NOT change or remove the comment.
+IF a block's comment is missing, its opening line can't be read, or the first line holding `%%` after it isn't a bare `%%`, THEN Inkwell SHALL treat the block as never reviewed, SHALL NOT read past that line, and SHALL NOT change or remove the comment.
 
 #### Scenario: Comment deleted by hand
 - **GIVEN** a reviewed block whose comment the writer deleted
@@ -280,6 +358,13 @@ IF a block's comment is missing, or its opening line can't be read, THEN Inkwell
 - **THEN** it is in Draft mode, showing its current text
 
 Test: tests/writingblocks.test.ts › "a missing or unreadable comment means never reviewed"
+
+#### Scenario: Closing line damaged by hand
+- **GIVEN** two reviewed blocks, the first with "x" typed after its closing `%%`
+- **WHEN** Inkwell reads the note
+- **THEN** the first block is never reviewed, and the second keeps its own text and first draft
+
+Test: tests/writingblocks.test.ts › "a damaged closing %% means never reviewed, and nothing past it is read"
 
 ### Requirement: Keep the Rhythm comment setting
 WHERE Keep the Rhythm is installed and its "Don't count comments" setting is off, WHEN a block enters Review for the first time, Inkwell SHALL show a notice that the first draft will be counted as new words unless that setting is turned on. Inkwell SHALL NOT change Keep the Rhythm's settings.

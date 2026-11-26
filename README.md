@@ -51,12 +51,12 @@ Inkwell helps you organize and write projects, but it stops short of publishing 
 ### Writing blocks
 A writing block is a box for the writing itself, apart from the prompt, goal and notes around it. It looks like a typed page: a typewriter font, each paragraph indented like a tab. You can use one in any note, and new exercises start with one.
 - **New writing block** (command or right-click): adds an empty block, wraps the selected text in one, or turns writing you indented with tabs into one.
-- **Write in the box:** you only ever see your writing, never Markdown. Enter starts a new paragraph, and Enter on an empty last line leaves the block. **Shift+Enter** starts a new line in the same paragraph, without the indent, for verse or a sign-off.
+- **Write in the box:** you only ever see your writing, never Markdown. Enter always starts a new paragraph, and the down arrow takes you out of the block below it. **Shift+Enter** starts a new line in the same paragraph, without the indent, for verse or a sign-off.
 - **Draft, Review, Edited:** every block has a toolbar with three modes, and you can switch between them at any time.
   - **Draft** is where you write. Once you've reviewed, Draft shows your first draft, read-only.
   - **Review** shows what you've changed since the first draft while you keep revising: added words are highlighted and underlined, removed words are struck through.
   - **Edited** shows the revised text, clean.
-- **Your first draft stays in the note.** The first time you review a block, Inkwell saves its text as the first draft, in a hidden comment just below it. Nothing ever needs accepting or rejecting.
+- **Your first draft stays in the note.** The first time you review a block, Inkwell saves its text as the first draft, in a hidden comment just below it, folded to one line. Click it if you ever want to edit it by hand. Nothing ever needs accepting or rejecting.
 - **Keep the Rhythm:** turn on its "Don't count comments" setting, so the hidden first draft isn't counted as new words. Inkwell reminds you the first time you review if it's off.
 - Moving work up (**This became a story**, **Promote**) takes a block's current text as plain paragraphs, never the first draft.
 - Without Inkwell, a block is an ordinary callout and the first draft an ordinary comment, so nothing is lost.

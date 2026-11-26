@@ -77,14 +77,17 @@ function readFirstDraft(lines: string[], blockEnd: number): FirstDraft | null {
   const m = clean(open).match(COMMENT_OPEN);
   if (!m) return null;
   for (let i = blockEnd + 3; i < lines.length; i++) {
-    if (clean(lines[i] ?? "").trim() === "%%") {
-      return {
-        start: blockEnd + 2,
-        end: i,
-        mode: m[1] as BlockMode,
-        text: lines.slice(blockEnd + 3, i).map(clean).join("\n"),
-      };
-    }
+    const line = clean(lines[i] ?? "");
+    if (!line.includes("%%")) continue;
+    // Obsidian ends the comment at the first %%. If that line isn't a bare %%, the comment was damaged by hand:
+    // treat the block as never reviewed rather than read on into whatever comes next.
+    if (line.trim() !== "%%") return null;
+    return {
+      start: blockEnd + 2,
+      end: i,
+      mode: m[1] as BlockMode,
+      text: lines.slice(blockEnd + 3, i).map(clean).join("\n"),
+    };
   }
   return null;
 }
@@ -244,30 +247,15 @@ function bodyLineAt(text: string, pos: number): { block: WritingBlock; line: Lin
   return { block, line: lineInfo(text, starts, index), starts };
 }
 
-/** Enter: a new paragraph in the block, or, on an empty last line after at least one paragraph, leave the block. */
+/**
+ * Enter: always a new paragraph in the block, even on an empty last line, so a habit of pressing Enter twice never
+ * throws the writer out mid-draft. The block is left with the down arrow (`leaveAtEnd` at the end of a note).
+ */
 export function enterAt(text: string, pos: number): KeyEdit | null {
   const at = bodyLineAt(text, pos);
   if (!at) return null;
-  const { block, line, starts } = at;
+  const { line } = at;
   const p = prefixLength(line.text);
-  const isEmpty = line.text.slice(p).trim() === "";
-  if (isEmpty && line.index === block.end && block.end > block.start + 1) {
-    const prev = lineInfo(text, starts, line.index - 1);
-    if (block.firstDraft) {
-      // Keep the blank line and comment below the block where they are: the cursor goes below the comment.
-      const close = lineInfo(text, starts, block.firstDraft.end);
-      const removed = line.to - prev.to;
-      return {
-        changes: [
-          { from: prev.to, to: line.to, insert: "" },
-          { from: close.to, to: close.to, insert: "\n" },
-        ],
-        cursor: close.to + 1 - removed,
-      };
-    }
-    // A blank line between the block and what comes next: text straight after a callout line would join it.
-    return { changes: [{ from: line.from, to: line.to, insert: "\n" }], cursor: line.from + 1 };
-  }
   const cut = splitPoint(line, p, pos);
   return { changes: [{ from: cut, to: cut, insert: "\n> " }], cursor: cut + 3 };
 }
@@ -301,10 +289,9 @@ export function backspaceAt(text: string, pos: number): KeyEdit | null {
   if (line.index === block.start + 1) {
     const onlyLine = block.end === block.start + 1;
     if (onlyLine && line.text.slice(p).trim() === "" && !block.firstDraft) {
+      // An empty line stays where the block was, so the next keys never land on the line above (often a heading).
       const header = lineInfo(text, starts, block.start);
-      const from = header.from > 0 ? header.from - 1 : header.from;
-      const to = header.from > 0 ? line.to : Math.min(line.to + 1, text.length);
-      return { changes: [{ from, to, insert: "" }], cursor: from };
+      return { changes: [{ from: header.from, to: line.to, insert: "" }], cursor: header.from };
     }
     return { changes: [], cursor: pos };
   }
@@ -323,6 +310,19 @@ export function deleteAt(text: string, pos: number): KeyEdit | null {
   if (line.index === block.end) return { changes: [], cursor: pos };
   const next = lineInfo(text, starts, line.index + 1);
   return { changes: [{ from: end, to: next.from + prefixLength(next.text), insert: "" }], cursor: end };
+}
+
+/**
+ * Down arrow on a block's last line when nothing follows it in the note (nor its first draft): add a blank line and
+ * a line to write on below, so the writer can always leave the block. Null when there's a line below to move to.
+ */
+export function leaveAtEnd(text: string, pos: number): KeyEdit | null {
+  const at = bodyLineAt(text, pos);
+  if (!at || at.line.index !== at.block.end) return null;
+  const last = lineInfo(text, at.starts, at.block.firstDraft?.end ?? at.block.end);
+  if (last.to !== text.length) return null;
+  const insert = at.block.firstDraft ? "\n" : "\n\n";
+  return { changes: [{ from: text.length, to: text.length, insert }], cursor: text.length + insert.length };
 }
 
 /** Text pasted into a block, with every new line quoted so it stays inside. */
@@ -418,25 +418,111 @@ export function setMode(text: string, block: WritingBlock, mode: BlockMode): Mod
 // ---------- Guards while editing ----------
 
 /**
- * Widen a deletion that removes the line break before a line of writing so it takes that line's `> ` too.
- * However the join happens (a selection, a key Inkwell doesn't handle), the `> ` never ends up mid-line.
+ * Keep every line of writing quoted, however an edit removes text (a selection, a key Inkwell doesn't handle):
+ * - an edit that removes the line break before a line of writing takes that line's `> ` too (and the previous
+ *   line's `\\` break mark), so the `> ` never ends up mid-line;
+ * - an edit that starts at a line's very start, taking its `> ` (a triple-clicked paragraph, Cmd+Backspace to the
+ *   line's start), puts the `> ` back in front of what's left, unless it removes whole lines only.
  */
-export function widenJoin(text: string, from: number, to: number): { from: number; to: number } {
-  if (to <= from) return { from, to };
+export function widenJoin(text: string, from: number, to: number, insert = ""): TextChange {
+  if (to <= from) return { from, to, insert };
   const starts = lineStarts(text);
+  const atLineStart = (pos: number) => pos === 0 || text[pos - 1] === "\n";
   for (const b of findBlocks(text)) {
     for (let n = b.start + 1; n <= b.end; n++) {
       const line = lineInfo(text, starts, n);
       const p = prefixLength(line.text);
+      if (from === line.from && p > 0) {
+        if (!insert && atLineStart(to)) return { from, to, insert };
+        // Whatever is left of the line `to` lands in gets this line's `> `, in place of its own.
+        let wideTo = to;
+        for (let m = n; m <= b.end; m++) {
+          const other = lineInfo(text, starts, m);
+          if (to >= other.from && to < other.from + prefixLength(other.text)) wideTo = other.from + prefixLength(other.text);
+        }
+        return { from, to: wideTo, insert: line.text.slice(0, p) + insert };
+      }
       if (from >= line.from || to < line.from) continue;
-      // The line break before this line is being removed: take its `> `, and the previous line's `\` break mark.
+      // The line break before this line is being removed: take its `> `, and the previous line's `\\` break mark.
       const prev = lineInfo(text, starts, n - 1);
       const wideFrom = n > b.start + 1 && from === prev.to && endsWithBreak(prev.text) ? prev.to - 1 : from;
       const wideTo = p > 0 && to < line.from + p ? line.from + p : to;
-      if (wideFrom !== from || wideTo !== to) return { from: wideFrom, to: wideTo };
+      if (wideFrom !== from || wideTo !== to) return { from: wideFrom, to: wideTo, insert };
     }
   }
-  return { from, to };
+  return { from, to, insert };
+}
+
+/**
+ * Whether an edit would break a block's hidden header (`> [!writing]`), which Live Preview never shows: typing
+ * before or in it, joining it onto the line above, or joining the first paragraph onto it. Deleting the whole
+ * block, or whole lines above it, is fine.
+ */
+export function breaksHeader(text: string, from: number, to: number, insert: string): boolean {
+  const starts = lineStarts(text);
+  const atLineStart = (pos: number) => pos === 0 || text[pos - 1] === "\n";
+  return findBlocks(text).some((b) => {
+    const header = lineInfo(text, starts, b.start);
+    const last = lineInfo(text, starts, b.end);
+    // The header line and the line breaks on either side of it.
+    const bodyFrom = b.end > b.start ? lineInfo(text, starts, b.start + 1).from : header.to + 1;
+    if (to === from) return from >= header.from && from <= header.to && !(from === header.from && insert.endsWith("\n"));
+    if (from <= header.from && to >= last.to) return false;
+    if (to === header.from && atLineStart(from)) return false;
+    return from < bodyFrom && to > header.from - 1 && to >= header.from;
+  });
+}
+
+/**
+ * Where the cursor goes if it would rest somewhere the writer can't see: on a block's hidden header, or by the
+ * folded first draft (its edges and the blank line above it). Null to leave it. `previous` is where it came from;
+ * `pointer` is true for a click or tap.
+ * - Header: into the writing (from above, or a click); out to the line above (Left or Up from the first paragraph);
+ *   into the last paragraph (Up from below the block).
+ * - First draft: past it in the direction of travel, below it or back into the writing. With the cursor strictly
+ *   inside the comment (opened by a click on it), it's left alone, so the draft can still be edited by hand.
+ * Locked blocks (Draft mode after review) have their own rule, `outsideLocked`.
+ */
+export function cursorStop(text: string, head: number, previous: number, pointer: boolean): number | null {
+  const starts = lineStarts(text);
+  for (const b of findBlocks(text)) {
+    if (b.firstDraft && b.mode === "writing") continue;
+    const header = lineInfo(text, starts, b.start);
+    const last = lineInfo(text, starts, b.end);
+    if (head >= header.from && head <= header.to && b.end > b.start) {
+      const first = lineInfo(text, starts, b.start + 1);
+      const writing = first.from + prefixLength(first.text);
+      if (pointer || previous <= header.from) return writing;
+      if (previous > last.to) return last.to;
+      return header.from > 0 ? header.from - 1 : writing;
+    }
+    if (!b.firstDraft) continue;
+    const open = lineInfo(text, starts, b.firstDraft.start);
+    const close = lineInfo(text, starts, b.firstDraft.end);
+    const inGap = (head > last.to && head <= open.from) || head === close.to;
+    if (!inGap) continue;
+    const forward = !pointer && previous < head;
+    if (forward) return close.to < text.length ? close.to + 1 : null;
+    return last.to;
+  }
+  return null;
+}
+
+/**
+ * Text typed on the blank line straight below a block would join the block (Markdown's lazy continuation): keep a
+ * blank line between them by starting the typed text on the next line.
+ */
+export function keepApart(text: string, from: number, to: number, insert: string): TextChange {
+  if (to !== from || !insert || insert.startsWith("\n")) return { from, to, insert };
+  const starts = lineStarts(text);
+  for (const b of findBlocks(text)) {
+    if (b.firstDraft) continue;
+    const below = lineInfo(text, starts, b.end + 1);
+    if (b.end + 1 < starts.length && below.text.trim() === "" && from === below.from && below.to === below.from) {
+      return { from, to, insert: "\n" + insert };
+    }
+  }
+  return { from, to, insert };
 }
 
 /** A block's kept first draft, with the blank line above it and the line break after it, as offsets. */
@@ -473,11 +559,21 @@ export function guardedDrafts(text: string): GuardedDraft[] {
  * Whether an edit (`from`–`to` replaced) would damage a kept first draft by accident: it touches the comment or the
  * blank line above it, while the cursor wasn't in the comment and the edit isn't deleting the whole block.
  */
-export function damagesFirstDraft(drafts: GuardedDraft[], from: number, to: number, cursorFrom: number, cursorTo: number): boolean {
+export function damagesFirstDraft(
+  drafts: GuardedDraft[],
+  from: number,
+  to: number,
+  cursorFrom: number,
+  cursorTo: number,
+  insert = ""
+): boolean {
   return drafts.some((d) => {
-    if (cursorTo >= d.commentFrom && cursorFrom <= d.commentTo) return false;
+    // Strictly inside: at the comment's edges, the writer has only arrived next to it.
+    if (cursorFrom > d.commentFrom && cursorTo < d.commentTo) return false;
     if (from <= d.blockFrom && to >= d.commentTo) return false;
     if (to > from) return from < d.to && to > d.from;
+    // A line break typed at the very end of the draft adds a line below it.
+    if (from === d.commentTo && insert.startsWith("\n")) return false;
     return from >= d.from && from < d.to;
   });
 }
@@ -567,18 +663,27 @@ export function lockedRanges(text: string): LockedRange[] {
  * Null if it's not inside one.
  */
 export function outsideLocked(ranges: LockedRange[], head: number, previous: number, docLength: number): number | null {
-  const r = ranges.find((x) => head > x.from && head < x.to) ?? ranges.find((x) => head === x.from && previous > x.to);
+  const r =
+    ranges.find((x) => head > x.from && head < x.to) ??
+    ranges.find((x) => head === x.from && previous > x.to) ??
+    // Its very end is locked too, unless the note ends there and there is nowhere else to go.
+    ranges.find((x) => head === x.to && x.to < docLength);
   if (!r) return null;
   if (previous >= r.to && r.from > 0) return r.from - 1;
   return Math.min(r.to + 1, docLength);
 }
 
-/** Whether an edit touches a locked block. Deleting the whole block at once is allowed. */
-export function touchesLocked(ranges: LockedRange[], from: number, to: number): boolean {
+/**
+ * Whether an edit touches a locked block, its first and last character included. Deleting the whole block at once
+ * is allowed, and so is a line break typed at its very end (a new line below it).
+ */
+export function touchesLocked(ranges: LockedRange[], from: number, to: number, insert = ""): boolean {
   return ranges.some((r) => {
     if (from <= r.from && to >= r.to) return false;
     if (to > from) return from < r.to && to > r.from;
-    return from > r.from && from < r.to;
+    if (from === r.to && insert.startsWith("\n")) return false;
+    if (from === r.from && insert.endsWith("\n")) return false;
+    return from >= r.from && from <= r.to;
   });
 }
 

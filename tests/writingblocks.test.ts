@@ -23,6 +23,10 @@ import {
   damagesFirstDraft,
   guardedDrafts,
   widenJoin,
+  breaksHeader,
+  cursorStop,
+  keepApart,
+  leaveAtEnd,
   setMode,
   tabbedRunAt,
   unwrapBlocks,
@@ -163,12 +167,10 @@ describe("keys inside a block", () => {
     expect(press(enterAt, "> [!writing]\n> The door was open.|\nAfter.")).toBe("> [!writing]\n> The door was open.\n> |\nAfter.");
   });
 
-  it("enter on an empty last line leaves the block", () => {
-    // A blank line keeps what's typed next out of the block (Markdown would join it to the callout).
-    expect(press(enterAt, "> [!writing]\n> The door.\n> |\nAfter.")).toBe("> [!writing]\n> The door.\n\n|\nAfter.");
-    expect(findBlocks(press(enterAt, "> [!writing]\n> The door.\n> |")!.replace("|", "Next."))[0]?.text).toBe("The door.");
+  it("enter on an empty last line starts another paragraph", () => {
+    // Pressing Enter twice out of habit never throws the writer out of the block.
+    expect(press(enterAt, "> [!writing]\n> The door.\n> |\n\nAfter.")).toBe("> [!writing]\n> The door.\n> \n> |\n\nAfter.");
     const reviewedBlock = "> [!writing]\n> The door.\n> |\n\n%% writing-block first-draft review\nA door.\n%%";
-    expect(press(enterAt, reviewedBlock)).toBe("> [!writing]\n> The door.\n\n%% writing-block first-draft review\nA door.\n%%\n|");
     expect(findBlocks(press(enterAt, reviewedBlock)!.replace("|", ""))[0]?.firstDraft?.text).toBe("A door.");
   });
 
@@ -182,7 +184,8 @@ describe("keys inside a block", () => {
   });
 
   it("backspace on the only empty line removes the block", () => {
-    expect(press(backspaceAt, "Before.\n> [!writing]\n> |\nAfter.")).toBe("Before.|\nAfter.");
+    // An empty line is left where the block was, so the next keys never land in the heading above.
+    expect(press(backspaceAt, "## Work\n> [!writing]\n> |\n\n## Reflection")).toBe("## Work\n|\n\n## Reflection");
     expect(press(backspaceAt, "> [!writing]\n> |")).toBe("|");
   });
 
@@ -319,10 +322,10 @@ describe("guards while editing", () => {
     const text = "> [!writing]\n> One.\n> Two.";
     const two = text.indexOf("> Two.");
     // Deleting just the line break (cursor before the hidden "> ", or a selection ending there).
-    expect(widenJoin(text, two - 1, two)).toEqual({ from: two - 1, to: two + 2 });
-    expect(widenJoin(text, two - 3, two + 1)).toEqual({ from: two - 3, to: two + 2 });
+    expect(widenJoin(text, two - 1, two)).toEqual({ from: two - 1, to: two + 2, insert: "" });
+    expect(widenJoin(text, two - 3, two + 1)).toEqual({ from: two - 3, to: two + 2, insert: "" });
     // Deletions that don't end at a line's start are left alone.
-    expect(widenJoin(text, two + 2, two + 4)).toEqual({ from: two + 2, to: two + 4 });
+    expect(widenJoin(text, two + 2, two + 4)).toEqual({ from: two + 2, to: two + 4, insert: "" });
   });
 
   it("the kept first draft can't be edited by accident", () => {
@@ -341,6 +344,132 @@ describe("guards while editing", () => {
     expect(damagesFirstDraft(drafts, inComment, inComment + 1, inComment, inComment)).toBe(false);
     // Deleting the whole block with its draft: allowed.
     expect(damagesFirstDraft(drafts, 0, after, 0, after)).toBe(false);
+  });
+});
+
+/** Apply one edit to a note. */
+const edit = (text: string, c: { from: number; to: number; insert: string }) => text.slice(0, c.from) + c.insert + text.slice(c.to);
+
+describe("keeping the block whole", () => {
+  it("deleting or typing over a whole paragraph keeps the next one's >", () => {
+    // A triple-click selects a paragraph from its line's start through its line break.
+    const text = "> [!writing]\n> First.\n> Second.\n> Third.";
+    const second = text.indexOf("> Second.");
+    const third = text.indexOf("> Third.");
+    expect(edit(text, widenJoin(text, second, third))).toBe("> [!writing]\n> First.\n> Third.");
+    expect(edit(text, widenJoin(text, second, third, "New."))).toBe("> [!writing]\n> First.\n> New.Third.");
+    const first = text.indexOf("> First.");
+    expect(findBlocks(edit(text, widenJoin(text, first, second)))[0]?.lines).toEqual(["Second.", "Third."]);
+  });
+
+  it("deleting to a paragraph's start keeps its >", () => {
+    // Cmd+Backspace mid-line can reach the line's very start, past the hidden "> ".
+    const text = "> [!writing]\n> One.\n> Two words.\n> Three.";
+    const two = text.indexOf("> Two");
+    expect(edit(text, widenJoin(text, two, two + 6))).toBe("> [!writing]\n> One.\n> words.\n> Three.");
+    expect(edit(text, widenJoin(text, two, text.indexOf("\n> Three.")))).toBe("> [!writing]\n> One.\n> \n> Three.");
+  });
+
+  it("a damaged closing %% means never reviewed, and nothing past it is read", () => {
+    const text = [
+      "> [!writing]", "> A now.", "", "%% writing-block first-draft review", "A then.", "%%x", "Between.", "",
+      "> [!writing]", "> B now.", "", "%% writing-block first-draft review", "B then.", "%%",
+    ].join("\n");
+    const blocks = findBlocks(text);
+    expect(blocks.map((b) => b.text)).toEqual(["A now.", "B now."]);
+    expect(blocks[0]?.firstDraft).toBeNull();
+    expect(blocks[1]?.firstDraft?.text).toBe("B then.");
+  });
+
+  it("the cursor never rests on the hidden header", () => {
+    const text = "## Work\n> [!writing]\n> Words.\n\nAfter.";
+    const header = text.indexOf("> [!writing]");
+    const writing = text.indexOf("Words.");
+    // Coming from above, or a click (Obsidian's edit button lands here): into the writing.
+    expect(cursorStop(text, header, 2, false)).toBe(writing);
+    expect(cursorStop(text, header, text.length, true)).toBe(writing);
+    // Left or Up from the first paragraph: out of the block, to the end of the line above.
+    expect(cursorStop(text, header, writing, false)).toBe(header - 1);
+    // Up from below the block: into its last line.
+    expect(cursorStop(text, header, text.indexOf("After."), false)).toBe(text.indexOf("\n\nAfter."));
+    // Anywhere else: left alone.
+    expect(cursorStop(text, writing + 2, writing, false)).toBeNull();
+    expect(cursorStop(text, 3, 0, false)).toBeNull();
+  });
+
+  it("edits that would break the header are refused", () => {
+    const text = "## Work\n> [!writing]\n> Words.\n\nAfter.";
+    const header = text.indexOf("> [!writing]");
+    const first = text.indexOf("> Words.");
+    // Backspace at the header's start, Delete at the end of the line above, typing before the header.
+    expect(breaksHeader(text, header - 1, header, "")).toBe(true);
+    expect(breaksHeader(text, header, header, "x")).toBe(true);
+    // Joining the first paragraph onto the header.
+    expect(breaksHeader(text, first - 1, first + 2, "")).toBe(true);
+    // A selection from the text above into the writing.
+    expect(breaksHeader(text, 3, first + 4, "")).toBe(true);
+    // Fine: typing or Enter at the end of the line above, deleting whole lines above, the whole block, or writing.
+    expect(breaksHeader(text, header - 1, header - 1, "\n")).toBe(false);
+    expect(breaksHeader(text, 0, header, "")).toBe(false);
+    expect(breaksHeader(text, 0, text.indexOf("\n\nAfter."), "")).toBe(false);
+    expect(breaksHeader(text, first + 3, first + 3, "x")).toBe(false);
+    expect(breaksHeader(text, first, text.indexOf("\n\nAfter."), "")).toBe(false);
+  });
+
+  it("the folded first draft is passed over, never opened by moving", () => {
+    const text = "> [!writing]\n> Now.\n\n%% writing-block first-draft review\nThen.\n%%\nAfter.";
+    const lastEnd = text.indexOf("\n\n%%");
+    const open = text.indexOf("%% writing-block");
+    const close = text.indexOf("%%\nAfter.") + 2;
+    // Down past the block (landing on the fold's edge): below the first draft.
+    expect(cursorStop(text, close, lastEnd, false)).toBe(close + 1);
+    expect(cursorStop(text, open, lastEnd, false)).toBe(close + 1);
+    // Up from below: into the writing's last line. The blank line above the draft isn't a stop either.
+    expect(cursorStop(text, close, close + 3, false)).toBe(lastEnd);
+    expect(cursorStop(text, lastEnd + 1, close + 3, true)).toBe(lastEnd);
+    // Strictly inside the comment (opened by a click on it): left alone, so it can be edited by hand.
+    expect(cursorStop(text, open + 5, open + 5, true)).toBeNull();
+  });
+
+  it("typing at the edges of a first draft is refused", () => {
+    const text = "> [!writing]\n> Now.\n\n%% writing-block first-draft review\nThen.\n%%\nAfter.";
+    const drafts = guardedDrafts(text);
+    const open = text.indexOf("%% writing-block");
+    const close = text.indexOf("%%\nAfter.") + 2;
+    expect(damagesFirstDraft(drafts, close, close, close, close, "x")).toBe(true);
+    expect(damagesFirstDraft(drafts, open, open, open, open, "x")).toBe(true);
+    // Enter at the very end of the draft adds a line below it: fine.
+    expect(damagesFirstDraft(drafts, close, close, close, close, "\n")).toBe(false);
+  });
+
+  it("the end of a locked block is locked too", () => {
+    const note = "Before.\n> [!writing]\n> Revised.\n\n%% writing-block first-draft writing\nFirst.\n%%\nAfter.";
+    const ranges = lockedRanges(note);
+    const end = ranges[0]!.to;
+    expect(touchesLocked(ranges, end, end, "x")).toBe(true);
+    expect(touchesLocked(ranges, end, end, "\n")).toBe(false);
+    expect(outsideLocked(ranges, end, 3, note.length)).toBe(end + 1);
+    expect(outsideLocked(ranges, end, note.length, note.length)).toBe(ranges[0]!.from - 1);
+  });
+
+  it("typing straight below a block keeps a blank line between", () => {
+    // Text right under a callout line would join the block, so a blank line is kept.
+    const text = "> [!writing]\n> Words.\n\n## Reflection";
+    const blank = text.indexOf("\n\n## ") + 1;
+    expect(keepApart(text, blank, blank, "N")).toEqual({ from: blank, to: blank, insert: "\nN" });
+    expect(findBlocks(edit(text, keepApart(text, blank, blank, "Note.")))[0]?.text).toBe("Words.");
+    // Elsewhere, and a line break typed there: unchanged.
+    expect(keepApart(text, 3, 3, "x")).toEqual({ from: 3, to: 3, insert: "x" });
+    expect(keepApart(text, blank, blank, "\n")).toEqual({ from: blank, to: blank, insert: "\n" });
+  });
+
+  it("down arrow on the last line of a note leaves the block", () => {
+    expect(press(leaveAtEnd, "> [!writing]\n> The en|d.")).toBe("> [!writing]\n> The end.\n\n|");
+    const reviewedAtEnd = "> [!writing]\n> Now.|\n\n%% writing-block first-draft review\nThen.\n%%";
+    expect(press(leaveAtEnd, reviewedAtEnd)).toBe(reviewedAtEnd.replace("|", "") + "\n|");
+    // With a line below the block, the arrow key does its usual job.
+    expect(press(leaveAtEnd, "> [!writing]\n> The en|d.\n\nAfter.")).toBeNull();
+    expect(press(leaveAtEnd, "> [!writing]\n> On|e.\n> Two.")).toBeNull();
   });
 });
 
@@ -454,7 +583,7 @@ describe("Shift+Enter: a line break in the same paragraph", () => {
     expect(press(deleteAt, "> [!writing]\n> One,|\\\n> two.")).toBe("> [!writing]\n> One,|two.");
     const text = "> [!writing]\n> One,\\\n> two.";
     const two = text.indexOf("> two.");
-    expect(widenJoin(text, two - 1, two)).toEqual({ from: two - 2, to: two + 2 });
+    expect(widenJoin(text, two - 1, two)).toEqual({ from: two - 2, to: two + 2, insert: "" });
   });
 
   it("an even run of backslashes is text, not a line break", () => {

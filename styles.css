@@ -465,6 +465,10 @@ body {
   font-size: var(--font-ui-smaller);
   font-style: italic;
 }
+.markdown-source-view.mod-cm6 .inkwell-wb-first-draft:hover {
+  color: var(--text-muted);
+  cursor: pointer;
+}
 
 /* Review: what changed since the first draft. Never colour alone: added text is underlined, removed text struck. */
 .inkwell-wb-added {

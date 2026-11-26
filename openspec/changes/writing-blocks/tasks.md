@@ -55,11 +55,11 @@ These tests describe current code and pass before anything else changes.
 
   Put the key logic in pure functions in `src/writingblocks.ts` (`enterAt`, `backspaceAt`, returning the change and new cursor). Add to `tests/writingblocks.test.ts`:
   - "enter starts a new paragraph in the block"
-  - "enter on an empty last line leaves the block"
+  - "enter on an empty last line starts another paragraph" (was "leaves the block"; changed in review, 2026-11-26)
   - "backspace at a paragraph's start joins it to the one before"
   - "backspace on the only empty line removes the block"
 
-  Set the Test lines for "Enter stays in the block", "Enter twice leaves the block" and "Backspace joins paragraphs". Verify `npm test`, then by hand in `test-vault`:
+  Set the Test lines for "Enter stays in the block", "Enter twice stays in the block" and "Backspace joins paragraphs". Verify `npm test`, then by hand in `test-vault`:
   - no `>` or `[!writing]` shows while typing
   - clicking in and out doesn't move the box
   - arrow keys skip the hidden Markdown
@@ -125,6 +125,11 @@ These tests describe current code and pass before anything else changes.
 - [x] 5.1 Pass `workSection`'s result through `unwrapBlocks`. Add "a story starts from the block's current text" to `tests/became.test.ts` (fake vault) and update the 1.2 tests whose behaviour changes. Set the "A story starts from the revised text" Test line. Verify `npm test` passes.
 - [x] 5.2 In `promoteToLongForm`, call `unwrapBlocks` on the draft body before `splitScenes`. Add "scenes hold only current text, and the original draft is archived first" to `tests/promote.test.ts`, with `***` in a first draft. Set the "Promoting keeps the first draft out of scenes" Test line. Verify `npm test` passes.
 - [x] 5.3 Start the built-in exercise template's `## Work` with an empty writing block in `src/templates.ts`. Add "the built-in exercise template starts Work with a writing block" to `tests/blocks.test.ts` (templates suite), and set the "New exercise has a block" Test line. Verify `npm test` passes and a new exercise in `test-vault` has the block.
+
+## 5b. Keeping the block whole (from the review, 2026-11-26)
+
+- [x] 5b.1 Pure fixes with tests in `tests/writingblocks.test.ts` ("keeping the block whole"): the first draft ends at the first `%%`; whole-paragraph deletes and deletes to a line's start keep `>`; header edits refused (`breaksHeader`); the cursor never rests on the header or the fold's edges (`cursorStop`); the locked block's end is locked; typing under a block keeps a blank line (`keepApart`); Enter never leaves; Down leaves at the end of a note (`leaveAtEnd`); Backspace in an empty block leaves an empty line.
+- [ ] 5b.2 By hand in `test-vault`, desktop and phone: Left/Up from the first paragraph, Obsidian's edit-block button, triple-click and delete, Cmd+Backspace, Delete at the end of the heading above, arrowing past a reviewed block and a locked one, clicking "First draft kept", Enter twice, Down at the end of a note.
 
 ## 6. Docs, ADR, check
 

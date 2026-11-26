@@ -10,6 +10,8 @@ import { editorLivePreviewField, Notice, type Editor } from "obsidian";
 import {
   backspaceAt,
   blockAtLine,
+  breaksHeader,
+  cursorStop,
   damagesFirstDraft,
   deleteAt,
   diffSegments,
@@ -18,6 +20,8 @@ import {
   findBlocks,
   guardedDrafts,
   inBlockWriting,
+  keepApart,
+  leaveAtEnd,
   lockedRanges,
   newBlockAt,
   outsideLocked,
@@ -70,7 +74,10 @@ class ToolbarWidget extends WidgetType {
   }
 }
 
-/** The kept first draft, folded to one quiet line so it doesn't sit under the writing. */
+/**
+ * The kept first draft, folded to one quiet line so it doesn't sit under the writing. The cursor passes over it;
+ * only a click on it opens it, for editing by hand.
+ */
 class FirstDraftWidget extends WidgetType {
   eq(): boolean {
     return true;
@@ -79,6 +86,21 @@ class FirstDraftWidget extends WidgetType {
   toDOM(view: EditorView): HTMLElement {
     const el = view.dom.createDiv({ cls: "inkwell-wb-first-draft", text: "First draft kept" });
     el.remove();
+    el.setAttr("aria-label", "Click to open the first draft and edit it by hand");
+    el.addEventListener("mousedown", (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      let pos: number;
+      try {
+        pos = view.posAtDOM(el);
+      } catch {
+        return;
+      }
+      // The start of the draft's text: strictly inside the comment, so it unfolds and stays open.
+      const at = Math.min(view.state.doc.lineAt(pos).to + 1, view.state.doc.length);
+      view.dispatch({ selection: EditorSelection.cursor(at), scrollIntoView: true, userEvent: "select.pointer" });
+      view.focus();
+    });
     return el;
   }
 }
@@ -163,16 +185,18 @@ function build(state: EditorState, host: WritingBlockHost): BlockDecorations {
   const decos: Range<Decoration>[] = [];
   const hidden: Range<Decoration>[] = [];
   const touches = (from: number, to: number) => state.selection.ranges.some((r) => r.to >= from && r.from <= to);
+  const within = (from: number, to: number) => state.selection.ranges.some((r) => r.from > from && r.to < to);
   for (const b of findBlocks(text)) {
     const header = doc.line(b.start + 1);
     const last = doc.line(b.end + 1);
     if (b.firstDraft) {
       const open = doc.line(b.firstDraft.start + 1);
       const close = doc.line(b.firstDraft.end + 1);
-      // Folded unless the cursor is in it, so it can still be edited or deleted by hand.
-      if (!touches(open.from, close.to)) {
+      // Folded unless the cursor is strictly inside it (opened with a click), so arriving next to it never opens
+      // it. The cursor skips it and the blank line above it in one step.
+      if (!within(open.from, close.to)) {
         decos.push(firstDraftFold.range(open.from, close.to));
-        hidden.push(hide.range(open.from, close.to));
+        hidden.push(hide.range(last.to, close.to));
       }
     }
     // With the cursor elsewhere, Obsidian draws the callout, and `renderedToolbars` adds the toolbar to it.
@@ -311,50 +335,65 @@ const blockKeys = Prec.highest(
     { key: "Mod-Backspace", run: runKey(backspaceAt) },
     { key: "Alt-Backspace", run: runKey(backspaceAt) },
     { key: "Delete", run: runKey(deleteAt) },
+    { key: "ArrowDown", run: leaveDown },
   ])
 );
 
+/** Down arrow on the last line of a block at the very end of the note: make a line below it, so there's a way out. */
+function leaveDown(view: EditorView): boolean {
+  if (!livePreview(view.state)) return false;
+  const sel = view.state.selection;
+  if (sel.ranges.length !== 1 || !sel.main.empty) return false;
+  const head = sel.main.head;
+  const edit = leaveAtEnd(view.state.doc.toString(), head);
+  if (!edit) return false;
+  // Only from the paragraph's last visual line: a wrapped paragraph moves down within itself first.
+  const here = view.coordsAtPos(head);
+  const end = view.coordsAtPos(view.state.doc.lineAt(head).to);
+  if (here && end && Math.abs(here.top - end.top) > 1) return false;
+  view.dispatch({ changes: edit.changes, selection: EditorSelection.cursor(edit.cursor), scrollIntoView: true, userEvent: INKWELL_EDIT });
+  return true;
+}
+
 /**
  * Every edit the writer makes, checked against the block before it lands:
- * - one that would change the folded first draft by accident is refused, with a notice;
- * - a join that removes a line break takes the next line's `> ` too, so it never ends up mid-line;
- * - pasted or dropped lines get `> `, so they stay in the block.
+ * - one that would break a block's hidden header, or change the folded first draft by accident, is refused, with a
+ *   notice;
+ * - one that removes a line's `> ` (a join, a whole selected paragraph) keeps every line of writing quoted;
+ * - pasted or dropped lines get `> `, so they stay in the block;
+ * - text typed straight below a block starts a line further down, so it doesn't join the block.
  */
 const guardEdits = EditorState.transactionFilter.of((tr: Transaction) => {
   if (!tr.docChanged || !livePreview(tr.startState)) return tr;
   if (!(tr.isUserEvent("input") || tr.isUserEvent("delete") || tr.isUserEvent("move"))) return tr;
   const before = tr.startState.doc.toString();
   const drafts = guardedDrafts(before);
-  const sel = tr.startState.selection.main;
-  let damages = false;
-  tr.changes.iterChangedRanges((fromA, toA) => {
-    if (damagesFirstDraft(drafts, fromA, toA, sel.from, sel.to)) damages = true;
-  });
-  if (damages) {
-    new Notice("The first draft is kept below this block. Click it to open it if you want to edit it by hand.");
-    return [];
-  }
   const locked = lockedRanges(before);
-  let intoLocked = false;
-  tr.changes.iterChangedRanges((fromA, toA) => {
-    if (touchesLocked(locked, fromA, toA)) intoLocked = true;
+  const sel = tr.startState.selection.main;
+  let refusal: string | null = null;
+  tr.changes.iterChanges((fromA, toA, _fromB, _toB, inserted) => {
+    const insert = inserted.toString();
+    if (refusal) return;
+    if (touchesLocked(locked, fromA, toA, insert)) refusal = "This block is showing its first draft. To revise it, pick another mode on its toolbar.";
+    else if (damagesFirstDraft(drafts, fromA, toA, sel.from, sel.to, insert)) {
+      refusal = "The first draft is kept below this block. Click it to open it if you want to edit it by hand.";
+    } else if (breaksHeader(before, fromA, toA, insert)) refusal = "That would break the writing block. To remove it, select the whole block.";
   });
-  if (intoLocked) {
-    new Notice("This block is showing its first draft. To revise it, pick another mode on its toolbar.");
+  if (refusal) {
+    new Notice(refusal);
     return [];
   }
   const paste = tr.isUserEvent("input.paste") || tr.isUserEvent("input.drop");
   const specs: { from: number; to: number; insert: string }[] = [];
   let rewritten = false;
   tr.changes.iterChanges((fromA, toA, _fromB, _toB, inserted) => {
-    let insert = inserted.toString();
-    const wide = widenJoin(before, fromA, toA);
-    if (wide.to !== toA) rewritten = true;
-    if (paste && insert.includes("\n") && inBlockWriting(before, fromA)) {
-      insert = quotePasted(insert);
-      rewritten = true;
-    }
-    specs.push({ from: wide.from, to: wide.to, insert });
+    const original = inserted.toString();
+    let insert = original;
+    if (paste && insert.includes("\n") && inBlockWriting(before, fromA)) insert = quotePasted(insert);
+    const wide = widenJoin(before, fromA, toA, insert);
+    const apart = keepApart(before, wide.from, wide.to, wide.insert);
+    if (apart.from !== fromA || apart.to !== toA || apart.insert !== original) rewritten = true;
+    specs.push(apart);
   });
   if (!rewritten) return tr;
   const changes = tr.startState.changes(specs);
@@ -364,21 +403,26 @@ const guardEdits = EditorState.transactionFilter.of((tr: Transaction) => {
   return { changes, selection: EditorSelection.cursor(cursor), scrollIntoView: true, userEvent: tr.annotation(Transaction.userEvent) };
 });
 
-/** Keep the cursor out of locked blocks (Draft mode after review), so Obsidian keeps showing them rendered. */
-const keepOutOfLocked = EditorState.transactionFilter.of((tr: Transaction) => {
+/**
+ * Keep the cursor where the writer can see it: out of locked blocks (Draft mode after review, so Obsidian keeps
+ * showing them rendered), off a block's hidden header, and past its folded first draft.
+ */
+const keepCursorVisible = EditorState.transactionFilter.of((tr: Transaction) => {
   if (!tr.selection && !tr.docChanged) return tr;
   if (!livePreview(tr.state)) return tr;
   const text = tr.newDoc.toString();
+  const main = tr.newSelection.main;
+  const head = main.head;
+  const previous = tr.changes.mapPos(tr.startState.selection.main.head);
   const ranges = lockedRanges(text);
-  if (!ranges.length) return tr;
-  const head = tr.newSelection.main.head;
-  const moved = outsideLocked(ranges, head, tr.startState.selection.main.head, text.length);
-  if (moved === null) return tr;
+  let moved = ranges.length ? outsideLocked(ranges, head, previous, text.length) : null;
+  if (moved === null && main.empty) moved = cursorStop(text, head, previous, tr.isUserEvent("select.pointer"));
+  if (moved === null || moved === head) return tr;
   return [tr, { selection: EditorSelection.cursor(moved), sequential: true }];
 });
 
 export function writingBlockEditor(host: WritingBlockHost): Extension {
-  return [blockField(host), blockKeys, guardEdits, keepOutOfLocked, renderedToolbars(host)];
+  return [blockField(host), blockKeys, guardEdits, keepCursorVisible, renderedToolbars(host)];
 }
 
 /** "New writing block": wrap the selection, convert the tabbed run under the cursor, or add an empty block. */
