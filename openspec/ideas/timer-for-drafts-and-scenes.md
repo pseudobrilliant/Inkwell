@@ -15,3 +15,7 @@ Decide whether the timer should time drafts and scenes too, and what the minutes
 ## Out of scope / constraints
 
 Piece progress is measured in words, not minutes. The counting rule (practice never counts toward a piece) must hold.
+
+## Related
+
+[writing-blocks](writing-blocks.md) could make the timer run only while typing inside a writing block. That would apply to any note, so it may answer this question too.
