@@ -1,24 +1,14 @@
 # Inkwell — CLAUDE.md
 
-> **This document is meant to grow.** Inkwell's identity is still taking shape. A new key concept starts as an idea in `openspec/ideas/` and becomes an OpenSpec proposal in `openspec/changes/` when work on it starts. Once it's built, its behaviour moves into a spec in `openspec/specs/`, and the reasons behind hard-to-reverse choices go into an ADR in `openspec/decisions/` (see **Design records**). This file keeps the vision, tenets and engineering rules, plus a short summary of each mode. Keep the README (user-facing), the specs (behaviour) and this file (intent and rules) in sync when features change.
+> **This document is meant to grow.** Inkwell's identity is still taking shape. A new key concept starts as an idea in `openspec/ideas/` and becomes an OpenSpec proposal in `openspec/changes/` when work on it starts. Once it's built, its behaviour moves into a spec in `openspec/specs/`, and the reasons behind hard-to-reverse choices go into an ADR in `openspec/decisions/` (see **Design records**). The principles live in `openspec/constitution.md`. This file keeps the engineering rules, plus a short summary of each mode. Keep the constitution (principles), the README (user-facing), the specs (behaviour) and this file (rules) in sync when features change.
 
 ## What Inkwell is
 
 Inkwell is a **writing-practice toolkit** for Obsidian. It helps a writer show up every day, catch every idea, and give the work that comes out of practice a place to grow: from a ten-minute exercise, to a short story, to a novel. It is **not** a publishing tool.
 
-## Motivation & inspiration
+## Constitution
 
-Most writing software is built around the *end* of writing: compiling, formatting, exporting, submitting. Very little of it helps with the part that actually makes a writer: **writing regularly, catching ideas before they're lost, and letting small pieces grow into bigger ones.**
-
-Inkwell is built on five beliefs:
-
-1. **Practice is the work.** Daily writing, prompts, and exercises are the foundation. A finished manuscript is only one possible result.
-2. **Ideas are cheap to lose and expensive to recover.** Capturing has to be instant and must never get in the way of writing.
-3. **Feed the well.** Writers are made by what they take in as much as what they put out. The poem a teacher mentions or the craft book a friend recommends is raw material too, and it's as easy to lose as an idea.
-4. **Write, reflect, write again.** Revising is part of practice, not a separate stage. A writer should be able to see what they changed and read the result, without losing what they first wrote.
-5. **Seeing your contribution keeps you going.** A writer who can see that they showed up today, that a story moved forward this week, and that a year of practice has added up will keep writing. Progress should be visible at every level, from a single day to a whole writing life.
-
-<!-- Author's voice: add personal motivation, inspirations, influences here as they come into focus. -->
+**[`openspec/constitution.md`](openspec/constitution.md) comes before everything in this file.** It holds Inkwell's core themes (the five beliefs: practice is the work; ideas are cheap to lose; feed the well; write, reflect, write again; seeing your contribution keeps you going), its design principles (the writing block and its tools, block types, Inkwell's own word count, daily and weekly goals, Home), and its tenets. Read it before proposing a feature. This file keeps the mode summaries and the engineering rules, and follows the constitution where they differ.
 
 ## The shape of Inkwell: Capture + three modes
 
@@ -75,7 +65,7 @@ Feeding the well is the ethos behind Capture. It has two sides, and both go thro
 - **Home** (`src/home.ts`, `src/homeblocks.ts`, `src/contribution.ts`) brings everything together: inbox, in-progress pieces, practice, prompt of the day, heatmap. It is built from code blocks (`inkwell-inbox`, `inkwell-in-progress`, `inkwell-prompt`, `inkwell-practice`, `inkwell-heatmap`) that work in any note. The **New…** picker creates any Inkwell note.
 
 ### Core component: writing blocks
-Writing blocks are not a mode. They're a core component that supports features across Capture, Practice and the writing modes, starting with exercises.
+The writing block is the heart of the writing experience (constitution, design principles 1–3). Writing blocks are not a mode. They're a core component that supports features across Capture, Practice and the writing modes, starting with exercises.
 - **What it is:** a `> [!writing]` callout that holds the writing itself, edited as a styled box with the Markdown hidden. Its toolbar has Draft, Review and Edited.
 - **The first draft** is kept in a `%% writing-block first-draft <mode> … %%` comment just below the block. Review shows a live diff against it, so nothing is accepted or rejected.
 - **Behaviour:** [`openspec/specs/writing-blocks/spec.md`](openspec/specs/writing-blocks/spec.md). The format: [ADR 0006](openspec/decisions/0006-writing-block-first-draft-in-a-comment.md).
@@ -93,6 +83,8 @@ Work moves **up** as it grows: capture → practice → story → project.
 
 ## Progress & motivation model
 
+> Being replaced by Inkwell's own word log ([ADR 0007](openspec/decisions/0007-inkwell-keeps-its-own-word-log.md)), with daily and weekly word goals (ideas `block-word-log`, `word-goals`). The table and the KTR rules below describe the current code until that change lands.
+
 Contribution is tracked at four levels. Each answers a different question.
 
 | Level | Question it answers | What exists now | Status |
@@ -104,19 +96,9 @@ Contribution is tracked at four levels. Each answers a different question.
 
 **Counting rule:** practice writing (journal, exercises) **never** counts toward a piece's progress. It **does** count toward the day and lifetime levels. Piece-level numbers come only from drafts and scenes.
 
-## Key tenets
-
-- **Plain notes, always.** Everything is ordinary Markdown with frontmatter. Uninstalling Inkwell loses nothing.
-- **Write first, organize later.** Capture is instant. Filing is optional and can be batched.
-- **Each mode is as light as its purpose.** Practice is quick, short form is one draft, and long form gets the full structure. Don't add weight to a lighter mode.
-- **Build only what's missing.** Use Bases for tables, Keep the Rhythm for word logs, streaks, and heatmaps, and StoryLine for advanced long-form views. Inkwell is the glue plus what doesn't exist elsewhere.
-- **Mobile from day one.** No desktop-only APIs (`isDesktopOnly: false`).
-- **Not a publishing tool.** No compile, export, or submission tracking.
-- **Prose only.** TTRPG and worldbuilding projects are out of scope.
-- **Safe by default.** Anything that moves, splits, or rewrites notes saves the original to `Archive/` or uses Obsidian's trash first.
-
 ## Design records
 
+- **Principles** live in [`openspec/constitution.md`](openspec/constitution.md). Everything below answers to it. Change it on purpose, in its own commit.
 - **Behaviour** lives in `openspec/specs/<capability>/spec.md`: one living spec per capability, with requirements in EARS sentences and scenarios that name their tests. Conventions are in `openspec/config.yaml`. So far: `writing-timer`, `writing-blocks`. The other capabilities are still described in the sections above.
 - **Ideas and open questions** live in `openspec/ideas/<id>.md`, one short file each, indexed in `openspec/ideas/README.md`. They are not OpenSpec changes, so `changes/` only holds work in progress.
 - **Changes in progress** live in `openspec/changes/<id>/`. Picking up an idea makes it a proposal (the `openspec-propose` skill, or `npx openspec new change <id>`) and deletes the idea file. Once it's built, archive it (`npx openspec archive <id>`), which merges its spec changes into the specs.
@@ -151,7 +133,7 @@ Contribution is tracked at four levels. Each answers a different question.
 - **Obsidian plugin guidelines** (enforced by lint): sentence case for all UI text, including command names and notices. Don't disable `obsidianmd/*` rules inline (the config forbids it), so reword the text instead. Use `instanceof`/`getFileByPath`/`getFolderByPath` rather than casting to `TFile`/`TFolder`. Use `activeDocument`/`activeWindow`, not `document`/`window` globals (for popout windows), except timers: lint requires `window.setInterval`/`window.setTimeout`. Build DOM with `createEl`, never `innerHTML`. Styles go in `styles.css` with Obsidian CSS variables, never `el.style`. No default hotkeys. Use the Vault API, not `vault.adapter`. The one exception is reading another plugin's file under `configDir`, which the vault doesn't index. TypeScript is `strict` with `noUncheckedIndexedAccess`.
 - **Scene order:** `sequence` uses gaps of 10 (10, 20, 30…), so a reorder usually rewrites one file. Scene file names follow StoryLine: `<act>-<sequence> <title>`.
 - **StoryLine compatibility:** long-form notes use StoryLine's frontmatter (tested against StoryLine 1.11.12). Long-form statuses default to StoryLine's (`idea, outlined, draft, written, revised, final`). Short-form statuses: `idea, drafting, revising, done`.
-- **Keep the Rhythm (KTR):**
+- **Keep the Rhythm (KTR):** to be removed ([ADR 0007](openspec/decisions/0007-inkwell-keeps-its-own-word-log.md)). Until then:
   - Optional. Inkwell works fully without it, and KTR-based numbers are simply hidden.
   - All KTR access lives in `src/integrations/keep-the-rhythm.ts`. Nothing else reads KTR data.
   - Read-only. Never write KTR data or settings.

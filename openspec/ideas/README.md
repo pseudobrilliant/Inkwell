@@ -19,6 +19,7 @@ Kept short on purpose: only ideas that build on what we're working on now (writi
 | [writing-block-timer](writing-block-timer.md) | open (after writing-blocks) | writing-timer, writing-blocks |
 | [writing-block-types](writing-block-types.md) | open (after writing-blocks) | writing-blocks |
 | [block-word-log](block-word-log.md) | planned (after writing-blocks) | word-log, contribution, piece-progress, writing-blocks |
+| [word-goals](word-goals.md) | open (after block-word-log) | practice-stats, contribution |
 
 ### Gated
 
