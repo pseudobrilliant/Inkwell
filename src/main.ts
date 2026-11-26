@@ -1,6 +1,6 @@
 import { debounce, Menu, Plugin, TFile } from "obsidian";
-import { DEFAULT_SETTINGS, InkwellSettings, InkwellSettingTab } from "./settings";
-import { CaptureModal } from "./capture";
+import { InkwellSettings, InkwellSettingTab, mergeSettings, type LegacyLocalState } from "./settings";
+import { CaptureModal, LAST_KIND_KEY } from "./capture";
 import { writeDefaultTemplates } from "./templates";
 import { openTodaysJournal } from "./journal";
 import { addStarterDrills, newDrill } from "./drills";
@@ -28,14 +28,15 @@ export default class InkwellPlugin extends Plugin {
   private statusEl: HTMLElement | null = null;
 
   async onload() {
-    await this.loadSettings();
+    const legacy = await this.loadSettings();
     this.ktr = new KeepTheRhythm(this.app);
     this.addSettingTab(new InkwellSettingTab(this.app, this));
     this.timer = new WritingTimer(this);
+    await this.migrateLegacyState(legacy);
 
     // Home
     this.addCommand({ id: "open-home", name: "Open home", callback: () => openHome(this) });
-    this.addRibbonIcon("home", "Inkwell: Home", () => openHome(this));
+    this.addRibbonIcon("home", "Inkwell: home", () => openHome(this));
 
     // Capture
     const capture = () => new CaptureModal(this.app, this).open();
@@ -180,7 +181,8 @@ export default class InkwellPlugin extends Plugin {
     const ws = this.app.workspace;
     let leaf = ws.getLeavesOfType(type)[0];
     if (!leaf) {
-      leaf = ws.getRightLeaf(false)!;
+      // The right sidebar can be unavailable (some mobile layouts); a tab works everywhere.
+      leaf = ws.getRightLeaf(false) ?? ws.getLeaf("tab");
       await leaf.setViewState({ type, active: true });
     }
     await ws.revealLeaf(leaf);
@@ -202,18 +204,26 @@ export default class InkwellPlugin extends Plugin {
     this.statusEl.show();
   }
 
-  async loadSettings() {
-    const data = ((await this.loadData()) ?? {}) as Partial<InkwellSettings>;
-    // Older versions kept exercise notes under `folders.exercises`. Keep that folder as the exercise writing folder so
-    // existing vaults keep working; nothing is moved.
-    const { exercises, ...folders } = (data.folders ?? {}) as Partial<InkwellSettings["folders"]> & { exercises?: string };
-    if (exercises && !folders.writings) folders.writings = exercises;
-    this.settings = {
-      ...DEFAULT_SETTINGS,
-      ...data,
-      folders: { ...DEFAULT_SETTINGS.folders, ...folders },
-      templates: { ...DEFAULT_SETTINGS.templates, ...data.templates },
-    };
+  async loadSettings(): Promise<LegacyLocalState | null> {
+    const { settings, legacy } = mergeSettings(await this.loadData());
+    this.settings = settings;
+    return legacy;
+  }
+
+  /** Move state that older versions kept in the synced settings file to this device's local storage. */
+  private async migrateLegacyState(legacy: LegacyLocalState | null) {
+    if (!legacy) return;
+    if (legacy.lastCaptureKind && this.app.loadLocalStorage(LAST_KIND_KEY) === null) {
+      this.app.saveLocalStorage(LAST_KIND_KEY, legacy.lastCaptureKind);
+    }
+    this.timer.adoptLegacy(legacy.timer);
+    await this.saveSettings();
+  }
+
+  /** The settings file changed on disk (sync from another device): reload so the next save doesn't overwrite it. */
+  async onExternalSettingsChange() {
+    await this.loadSettings();
+    void this.refreshStatusBar();
   }
 
   async saveSettings() {

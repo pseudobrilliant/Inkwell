@@ -54,7 +54,7 @@ Inkwell helps you organize and write projects, but it stops short of publishing 
 - **Prompt of the day:** appears in the journal and on Home.
 - **Exercises:** start an exercise from a prompt with a time goal.
 - **Drills:** repeatable practice for one skill (freewriting, sensory detail, dialogue…). Create your own with **New drill**, add five common ones with **Add starter drills**, and start a timed exercise from one with **Exercise from a drill** (it uses the open drill note, or asks which one).
-- **Writing timer:** exercises (new ones, including from a random prompt or a drill, and ones you reopen) and today's journal get a timer that starts when you begin typing. It pauses on its own when you stop typing for a while and picks up again when you type. Pause, reset, or stop it from the status bar, the timer button at the top of the note (on mobile too), or commands you can bind to hotkeys. Stopping adds the minutes to the note's `writing_min`, and **Practice this week** shows minutes written.
+- **Writing timer:** exercises (new ones, including from a random prompt or a drill, and ones you reopen) and today's journal get a timer that starts when you begin typing. It pauses on its own when you stop typing for a while and picks up again when you type. Pause, reset, or stop it from the status bar, the timer button at the top of the note (on mobile too), or commands you can bind to hotkeys. Stopping adds the minutes to the note's `writing_min`, and **Practice this week** shows minutes written. Each device keeps its own timer.
 - **This became a story:** promote an exercise into a short story, with a link back to it.
 
 ### Stories

@@ -3,7 +3,8 @@
   "name": "Inkwell",
   "version": "0.0.1",
   "minAppVersion": "1.13.0",
-  "description": "A writing-practice toolkit: capture, prompts, exercises, and story project organization.",
+  "description": "Practice writing daily, capture ideas and reading, and grow exercises into stories and novels.",
   "author": "cblythe",
+  "authorUrl": "https://pseudobrilliant.com",
   "isDesktopOnly": false
 }

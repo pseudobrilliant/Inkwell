@@ -54,8 +54,8 @@ Feeding the well is the ethos behind Capture. It has two sides, and both go thro
 ### Mode 1: Practice. Show up.
 - **Purpose:** low-stakes, daily writing. Quantity over polish. Always gives you something to write today, even with no project.
 - **Structure:** `01 - Practice/` → `Journal/` (`type: journal`) and `Exercises/`, which holds `Prompts/` (`type: prompt`, one note per prompt), `Drills/` (`type: drill`, one note per drill, from the drill template), and `Writing/` (`type: exercise`: the writing you did; setting `folders.writings`).
-- **Tools:** today's journal, new exercise (with a time goal), new prompt, random prompt (least used and oldest first), new drill, exercise from a drill (the open drill note, or a pick; the drill's `minutes` sets the timer goal), add starter drills (five common drills, skips existing), prompt of the day (`inkwell-prompt` block), prompts table (Bases), writing timer. See `src/journal.ts`, `src/exercise.ts`, `src/prompts.ts`, `src/drills.ts`, `src/timer.ts`.
-- **Writing timer:** one timer at a time. Creating an exercise (any route, including random prompt or a drill), opening an exercise, or opening today's journal arms it; it starts on the first keystroke in that note, pauses by itself after idle minutes (counting only up to the last keystroke) and resumes on typing. Stop adds whole minutes to the note's `writing_min`. A new exercise logs and replaces a timer in use; opening an existing exercise or the journal never replaces one. Status bar on desktop, a header button on the timed note (the only UI on mobile). State is timestamps in settings (`timer`), so it survives backgrounding and reloads.
+- **Tools:** today's journal, new exercise (with a time goal), new prompt, random prompt (least used and oldest first), new drill, exercise from a drill (the open drill note, or a pick; the drill's `minutes` sets the timer goal), add starter drills (five common drills, skips existing), prompt of the day (`inkwell-prompt` block), prompts table (Bases), writing timer. See `src/journal.ts`, `src/exercise.ts`, `src/prompts.ts`, `src/drills.ts`, `src/timer.ts`, `src/timerstate.ts`.
+- **Writing timer:** one timer at a time. Creating an exercise (any route, including random prompt or a drill), opening an exercise, or opening today's journal arms it; it starts on the first keystroke in that note, pauses by itself after idle minutes (counting only up to the last keystroke) and resumes on typing. Stop adds whole minutes to the note's `writing_min`. A new exercise logs and replaces a timer in use; opening an existing exercise or the journal never replaces one. Status bar on desktop, a header button on the timed note (the only UI on mobile). State is timestamps in device-local storage (`inkwell-timer`), so it survives backgrounding and reloads, and each device times its own writing. The state machine is pure (`src/timerstate.ts`); `src/timer.ts` is the UI around it.
 - **Progress signal:** did I write today? Journal entries, exercises done, minutes written, prompts used.
 
 ### Mode 2: Short form. Finish small things.
@@ -138,8 +138,9 @@ Contribution is tracked at four levels. Each answers a different question.
   - Read-only. Never write KTR data or settings.
   - Version-gated (`KTR_TESTED_VERSIONS`). On an untested version, hide stats rather than show wrong numbers. After each KTR update, check the numbers against KTR's own views before adding the version.
   - Per-piece numbers count only draft and scene files.
-  - Inkwell keeps no word log, streak, or heatmap of its own. Known risk: KTR history is stored per device and may undercount across phone and desktop.
-- **Settings** hold folders, template paths, status lists, and default targets (`src/settings.ts`). Never hard-code folder names.
+  - Inkwell keeps no word log, streak, or heatmap of its own. Known risk: KTR's live history is per device (IndexedDB). Its `data.json`, which Inkwell reads, is a copy written about a second after activity, and when it syncs in from another device KTR merges entries by auto-numbered `id`, which each device assigns on its own, so one device's day can overwrite another's. Expect undercounts across phone and desktop.
+  - Parsing and sums over KTR's data are pure functions (`usableData`, `dailyWordsIn`, `streakIn`, `weekStartFor`), tested against a trimmed `data.json`.
+- **Settings** hold folders, template paths, status lists, and default targets (`src/settings.ts`). Never hard-code folder names. The settings file syncs across devices, so keep fast-changing or per-device state out of it: use `app.saveLocalStorage` (the timer, the last capture kind). `onExternalSettingsChange` reloads settings when sync changes the file, so a save never overwrites another device's change. Loading goes through the pure `mergeSettings` (defaults, migrations); controls go through `controlValue`/`applyControlValue`.
 - **Settings tab is declarative** (Obsidian 1.13+, so `minAppVersion` is 1.13.0). Add a setting by adding a definition in `getSettingDefinitions()`, which makes it appear in Obsidian's settings search. Don't add a `display()` method. Nested settings use dotted control keys (`folders.inbox`). Every key must be handled in both `getControlValue` and `setControlValue`, where values are normalized (trimmed, with defaults as fallback).
 
 ### Build, test, release
@@ -148,12 +149,14 @@ npm install
 npm run dev          # watch build
 npm run build        # type-check + production build
 npm run lint         # Obsidian's official ESLint rules (eslint-plugin-obsidianmd)
-npm run check        # lint + build; run before every commit
+npm test             # unit tests (Vitest); npm run test:watch while working
+npm run check        # lint + test + build; run before every commit
 npm run deploy:test  # build and copy into ./test-vault
 ```
 - Develop against `test-vault/`, not a real vault.
-- **Lint must pass with zero errors.** `eslint-plugin-obsidianmd` is the same rule set Obsidian's automated review runs on every release (since May 2026). A release that fails it is removed from the community directory search. CI runs lint and build on every push (`.github/workflows/lint.yml`).
-- Release: `npm version x.y.z` bumps `package.json`, `manifest.json`, and `versions.json`. The tag equals the version with **no `v` prefix**. Pushing the tag lints, builds, attests build provenance for `main.js` and `styles.css`, and creates a draft GitHub release. Users install via BRAT.
+- **Tests** live in `tests/` and run in Node. `obsidian` is aliased to a small stand-in (`tests/helpers/obsidian.ts`), and `tests/helpers/fake-app.ts` is an in-memory vault (frontmatter parsed from file text, strict like Obsidian about existing files and missing folders) with `fakePlugin()` for code that takes the plugin. Keep logic that can be pure in pure functions and test it there; test flows that move or rewrite notes (promote, snapshots, triage) against the fake vault, including the "original is kept first" rule. The `obsidian` types are pinned to `minAppVersion`, so the type-check catches APIs newer than the oldest supported app.
+- **Lint must pass with zero errors.** `eslint-plugin-obsidianmd` is the same rule set Obsidian's automated review runs on every release (since May 2026). A release that fails it is removed from the community directory search. CI runs lint, tests, and build on every push (`.github/workflows/lint.yml`).
+- Release: `npm version x.y.z` bumps `package.json`, `manifest.json`, and `versions.json`. The tag equals the version with **no `v` prefix**. Pushing the tag lints, tests, builds, attests build provenance for `main.js` and `styles.css`, and creates a draft GitHub release. Users install via BRAT.
 
 ## Open questions & growing edges
 

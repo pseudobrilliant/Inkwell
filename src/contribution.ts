@@ -8,20 +8,13 @@
  * Word numbers come from Keep the Rhythm and are hidden when it's unavailable.
  */
 import { moment, normalizePath, TFile } from "obsidian";
-import { fmOf, fmStr } from "./util";
+import { fmDay, fmOf, fmStr } from "./util";
+
+export { fmDay } from "./util";
 import type InkwellPlugin from "./main";
 import { LiveBlock, opts } from "./homeblocks";
 
 const DAY = "YYYY-MM-DD";
-
-/** A frontmatter date (or datetime) as YYYY-MM-DD, or "" if missing/invalid. */
-export function fmDay(v: unknown): string {
-  if (v === undefined || v === null || v === "") return "";
-  const s = fmStr(v);
-  if (!s) return "";
-  const m = moment(s);
-  return m.isValid() ? m.format(DAY) : "";
-}
 
 const under = (path: string, folder: string) => path.startsWith(normalizePath(folder) + "/");
 

@@ -9,34 +9,16 @@
  * Time is kept as timestamps, not a ticking counter, so it stays right when a phone
  * puts Obsidian in the background and survives a reload.
  */
-import { MarkdownView, Menu, Notice, TFile, debounce } from "obsidian";
+import { MarkdownView, Menu, Notice, TFile } from "obsidian";
 import type InkwellPlugin from "./main";
 import { fmOf, fmStr, type Frontmatter } from "./util";
+import * as T from "./timerstate";
+import type { TimerState } from "./timerstate";
 
-export interface TimerState {
-  path: string;
-  /** Goal in minutes; 0 = no goal. */
-  goalMin: number;
-  /** armed = waiting for the first keystroke. */
-  phase: "armed" | "running" | "paused";
-  /** Typing resumes an idle pause, but not one you chose. */
-  pausedBy?: "idle" | "user";
-  /** When the current running stretch began (ms). */
-  startedAt: number | null;
-  /** Time counted before the current running stretch (ms). */
-  elapsedMs: number;
-  lastTypedAt: number;
-  goalNotified: boolean;
-}
+export type { TimerState } from "./timerstate";
 
-/** m:ss, or h:mm:ss past an hour. */
-function clock(ms: number): string {
-  const t = Math.max(0, Math.floor(ms / 1000));
-  const h = Math.floor(t / 3600);
-  const m = Math.floor((t % 3600) / 60);
-  const s = String(t % 60).padStart(2, "0");
-  return h ? `${h}:${String(m).padStart(2, "0")}:${s}` : `${m}:${s}`;
-}
+/** Device-local storage key for the running timer: each device times its own writing, and it never syncs. */
+export const TIMER_STORAGE_KEY = "inkwell-timer";
 
 /** Notes the timer can run on: exercises and journal entries. */
 export function isTimedNote(plugin: InkwellPlugin, file: TFile | null): file is TFile {
@@ -47,7 +29,7 @@ export function isTimedNote(plugin: InkwellPlugin, file: TFile | null): file is 
 export class WritingTimer {
   private statusEl: HTMLElement;
   private actions = new Map<MarkdownView, HTMLElement>();
-  private saveSoon = debounce(() => void this.plugin.saveSettings(), 10_000, true);
+  private current: TimerState | null;
 
   constructor(private plugin: InkwellPlugin) {
     const { app } = plugin;
@@ -55,9 +37,9 @@ export class WritingTimer {
     this.statusEl.addClass("mod-clickable", "inkwell-timer-status");
     this.statusEl.onClickEvent((evt) => this.menu().showAtMouseEvent(evt));
 
-    // A timer left running when Obsidian closed counts only up to the last keystroke.
-    const s = this.state;
-    if (s?.phase === "running") this.pause("idle", s.lastTypedAt);
+    const stored: unknown = app.loadLocalStorage(TIMER_STORAGE_KEY);
+    this.current = T.isTimerState(stored) ? T.restore(stored) : null;
+    this.persist();
 
     plugin.registerEvent(app.workspace.on("editor-change", (_editor, info) => this.onType(info.file)));
     // Opening an exercise gets the timer ready for it, like the journal: never replaces a timer in use.
@@ -72,21 +54,18 @@ export class WritingTimer {
     plugin.registerEvent(
       app.vault.on("rename", (f, old) => {
         if (this.state?.path !== old) return;
-        this.state.path = f.path;
-        void plugin.saveSettings();
-        this.render();
+        this.state = { ...this.state, path: f.path };
       })
     );
     plugin.registerEvent(
       app.vault.on("delete", (f) => {
         if (this.state?.path !== f.path) return;
-        this.clear();
+        this.state = null;
         new Notice("Writing timer discarded: its note was deleted.");
       })
     );
     plugin.registerInterval(window.setInterval(() => this.tick(), 1000));
     plugin.register(() => {
-      this.saveSoon.cancel();
       for (const el of this.actions.values()) el.remove();
       this.actions.clear();
     });
@@ -94,19 +73,25 @@ export class WritingTimer {
     app.workspace.onLayoutReady(() => this.render());
   }
 
+  /** A timer from an older version, kept in the synced settings file: adopt it unless this device has one. */
+  adoptLegacy(s: unknown) {
+    if (this.current || !T.isTimerState(s)) return;
+    this.state = T.restore(s);
+  }
+
   private get state(): TimerState | null {
-    return this.plugin.settings.timer ?? null;
+    return this.current;
   }
 
+  /** Every change is saved to device-local storage (synchronous and cheap) and shown. */
   private set state(s: TimerState | null) {
-    if (s) this.plugin.settings.timer = s;
-    else delete this.plugin.settings.timer;
+    this.current = s;
+    this.persist();
+    this.render();
   }
 
-  private elapsed(now = Date.now()): number {
-    const s = this.state;
-    if (!s) return 0;
-    return s.elapsedMs + (s.phase === "running" && s.startedAt !== null ? now - s.startedAt : 0);
+  private persist() {
+    this.plugin.app.saveLocalStorage(TIMER_STORAGE_KEY, this.current);
   }
 
   /**
@@ -122,73 +107,36 @@ export class WritingTimer {
       if (!replace) return;
       await this.stop();
     }
-    this.state = {
-      path: file.path,
-      goalMin: Math.max(0, goalMin),
-      phase: "armed",
-      startedAt: null,
-      elapsedMs: 0,
-      lastTypedAt: 0,
-      goalNotified: false,
-    };
-    await this.plugin.saveSettings();
-    this.render();
+    this.state = T.armed(file.path, goalMin);
   }
 
   private onType(file: TFile | null) {
     const s = this.state;
     if (!s || file?.path !== s.path) return;
-    const now = Date.now();
-    s.lastTypedAt = now;
-    if (s.phase === "armed" || (s.phase === "paused" && s.pausedBy === "idle")) this.start(now);
-    else this.saveSoon();
-  }
-
-  private start(now = Date.now()) {
-    const s = this.state;
-    if (!s || s.phase === "running") return;
-    s.phase = "running";
-    s.pausedBy = undefined;
-    s.startedAt = now;
-    s.lastTypedAt = now;
-    void this.plugin.saveSettings();
-    this.render();
-  }
-
-  /** Pause, counting time up to `at` (now, or the last keystroke for an idle pause). */
-  private pause(by: "idle" | "user", at = Date.now()) {
-    const s = this.state;
-    if (!s || s.phase !== "running" || s.startedAt === null) return;
-    s.elapsedMs += Math.max(0, at - s.startedAt);
-    s.startedAt = null;
-    s.phase = "paused";
-    s.pausedBy = by;
-    void this.plugin.saveSettings();
-    this.render();
+    const next = T.typed(s, Date.now());
+    if (next.phase !== s.phase) this.state = next;
+    else {
+      // Only the last keystroke changed: keep it without redrawing on every key.
+      this.current = next;
+      this.persist();
+    }
   }
 
   toggle() {
-    const s = this.state;
-    if (!s) return;
-    if (s.phase === "running") this.pause("user");
-    else this.start();
+    if (this.state) this.state = T.toggle(this.state, Date.now());
   }
 
   /** Back to zero; starts again on the next keystroke. */
   reset() {
-    const s = this.state;
-    if (!s) return;
-    Object.assign(s, { phase: "armed", pausedBy: undefined, startedAt: null, elapsedMs: 0, goalNotified: false });
-    void this.plugin.saveSettings();
-    this.render();
+    if (this.state) this.state = T.reset(this.state);
   }
 
   /** Stop and add the whole minutes to the note's `writing_min`. */
   async stop(): Promise<void> {
     const s = this.state;
     if (!s) return;
-    const minutes = Math.round(this.elapsed() / 60_000);
-    this.clear();
+    const minutes = T.minutesToLog(s, Date.now());
+    this.state = null;
     const file = this.plugin.app.vault.getFileByPath(s.path);
     if (!file) return;
     if (minutes < 1) {
@@ -202,35 +150,24 @@ export class WritingTimer {
   }
 
   private clear() {
-    this.saveSoon.cancel();
     this.state = null;
-    void this.plugin.saveSettings();
-    this.render();
   }
 
   private tick() {
     const s = this.state;
     if (!s) return;
-    const now = Date.now();
-    const idleMs = this.plugin.settings.timerIdleMinutes * 60_000;
-    if (s.phase === "running" && idleMs > 0 && now - s.lastTypedAt > idleMs) {
-      this.pause("idle", s.lastTypedAt);
-      return;
-    }
-    if (s.goalMin > 0 && !s.goalNotified && this.elapsed(now) >= s.goalMin * 60_000) {
-      s.goalNotified = true;
-      void this.plugin.saveSettings();
-      new Notice(`Time's up: ${s.goalMin} minutes. Keep writing, or stop the timer to log it.`, 10_000);
-    }
-    if (s.phase === "running") this.render();
+    const r = T.tick(s, Date.now(), this.plugin.settings.timerIdleMinutes * 60_000);
+    if (r.state !== s) this.state = r.state;
+    else if (s.phase === "running") this.render();
+    if (r.goalReached) new Notice(`Time's up: ${s.goalMin} minutes. Keep writing, or stop the timer to log it.`, 10_000);
   }
 
   private label(): string {
     const s = this.state;
     if (!s) return "";
     if (s.phase === "armed") return s.goalMin ? `Ready · ${s.goalMin} min` : "Ready";
-    const goal = s.goalMin ? ` / ${clock(s.goalMin * 60_000)}` : "";
-    return `${clock(this.elapsed())}${goal}`;
+    const goal = s.goalMin ? ` / ${T.clock(s.goalMin * 60_000)}` : "";
+    return `${T.clock(T.elapsed(s, Date.now()))}${goal}`;
   }
 
   private tooltip(): string {
@@ -309,15 +246,7 @@ export class WritingTimer {
         if (!this.state && active) {
           const fm = fmOf(plugin.app, active);
           const goal = fmStr(fm?.type) === "exercise" ? Number(fm?.minutes) || 0 : plugin.settings.journalMinutes;
-          this.state = {
-            path: active.path,
-            goalMin: goal,
-            phase: "armed",
-            startedAt: null,
-            elapsedMs: 0,
-            lastTypedAt: 0,
-            goalNotified: false,
-          };
+          this.current = T.armed(active.path, goal);
         }
         this.toggle();
         return true;

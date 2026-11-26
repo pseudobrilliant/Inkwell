@@ -5,3 +5,9 @@ main.js
 data.json
 test-vault/
 .obsidian/
+
+# SSH keys: never commit
+pesudobrilliant_github*
+*.pem
+id_rsa*
+id_ed25519*

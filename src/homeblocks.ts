@@ -1,4 +1,4 @@
-import { debounce, MarkdownRenderChild, MarkdownRenderer, moment, TFile } from "obsidian";
+import { debounce, MarkdownRenderChild, MarkdownRenderer, moment, normalizePath, TFile } from "obsidian";
 import type InkwellPlugin from "./main";
 import { listInbox } from "./inbox";
 import { listLongProjects, projectWords } from "./projects";
@@ -15,22 +15,42 @@ export function opts(src: string): Record<string, string> {
   return o;
 }
 
-/** A self-refreshing block that redraws when the vault or metadata changes. */
+/** True if a path is inside one of Inkwell's folders: the only notes a live block can show. */
+export function inInkwellFolders(folders: Record<string, string>, path: string): boolean {
+  return Object.values(folders).some((f) => {
+    const dir = normalizePath(f);
+    return path === dir || path.startsWith(dir + "/");
+  });
+}
+
+/**
+ * A self-refreshing block. It redraws when a note in one of Inkwell's folders is created, deleted, renamed or
+ * changes, not on every edit in the vault. The new content is drawn off-screen and swapped in, so it doesn't
+ * flicker, and a slow draw that is overtaken by a newer one is dropped.
+ */
 export class LiveBlock extends MarkdownRenderChild {
+  private generation = 0;
+
   constructor(el: HTMLElement, private plugin: InkwellPlugin, private draw: (el: HTMLElement, child: LiveBlock) => Promise<void>) {
     super(el);
   }
   onload() {
     const redraw = debounce(() => void this.redraw(), 800, true);
-    this.registerEvent(this.plugin.app.vault.on("create", redraw));
-    this.registerEvent(this.plugin.app.vault.on("delete", redraw));
-    this.registerEvent(this.plugin.app.vault.on("rename", redraw));
-    this.registerEvent(this.plugin.app.metadataCache.on("changed", redraw));
+    const mine = (path: string) => inInkwellFolders(this.plugin.settings.folders, path);
+    const { vault, metadataCache } = this.plugin.app;
+    this.registerEvent(vault.on("create", (f) => mine(f.path) && redraw()));
+    this.registerEvent(vault.on("delete", (f) => mine(f.path) && redraw()));
+    this.registerEvent(vault.on("rename", (f, old) => (mine(f.path) || mine(old)) && redraw()));
+    this.registerEvent(metadataCache.on("changed", (f) => mine(f.path) && redraw()));
     void this.redraw();
   }
   async redraw() {
-    this.containerEl.empty();
-    await this.draw(this.containerEl, this);
+    const gen = ++this.generation;
+    const next = this.containerEl.doc.createElement("div");
+    await this.draw(next, this);
+    if (gen !== this.generation) return;
+    this.containerEl.addClasses(Array.from(next.classList));
+    this.containerEl.replaceChildren(...Array.from(next.childNodes));
   }
 }
 

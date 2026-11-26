@@ -12,6 +12,9 @@ import {
 } from "./resources";
 import { createNote, slugWords, uniquePath } from "./util";
 
+/** Device-local storage key for the last kind picked in the popup (an idea kind or a resource kind). */
+export const LAST_KIND_KEY = "inkwell-last-capture-kind";
+
 export const CAPTURE_KINDS = ["idea", "line", "link", "prompt", "research"] as const;
 export type CaptureKind = (typeof CAPTURE_KINDS)[number];
 /** Everything the capture popup can save: your own ideas (Inbox) or others' work (Resources). */
@@ -54,7 +57,7 @@ export class CaptureModal extends Modal {
   /** `resource: true` opens on the last resource kind (the "Capture a resource" command). */
   constructor(app: App, private plugin: InkwellPlugin, opts: { resource?: boolean } = {}) {
     super(app);
-    const last = plugin.settings.lastCaptureKind;
+    const last: unknown = app.loadLocalStorage(LAST_KIND_KEY);
     if (opts.resource) this.kind = isResourceKind(last) ? last : "article";
     else this.kind = isCaptureKind(last) || isResourceKind(last) ? last : "idea";
   }
@@ -155,8 +158,7 @@ export class CaptureModal extends Modal {
     try {
       if (isResourceKind(this.kind)) await createResource(this.plugin, this.kind, this.values);
       else await saveCapture(this.plugin, this.kind, this.text);
-      this.plugin.settings.lastCaptureKind = this.kind;
-      await this.plugin.saveSettings();
+      this.app.saveLocalStorage(LAST_KIND_KEY, this.kind);
       new Notice(isResourceKind(this.kind) ? "Added to resources" : "Captured to inbox");
       this.close();
     } catch (e) {

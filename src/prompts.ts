@@ -1,7 +1,7 @@
 import { App, MarkdownRenderChild, Modal, moment, normalizePath, Notice, Setting, TFile, TFolder } from "obsidian";
 import type InkwellPlugin from "./main";
 import { askForm } from "./modals";
-import { cleanName, createNote, ensureFolder, slugWords, uniquePath, fmOf, type Frontmatter, fmStr } from "./util";
+import { cleanName, createNote, ensureFolder, slugWords, uniquePath, fmDay, fmOf, type Frontmatter } from "./util";
 
 export interface Prompt {
   file: TFile;
@@ -20,12 +20,7 @@ export function listPrompts(plugin: InkwellPlugin): Prompt[] {
       else if (c instanceof TFile && c.extension === "md") {
         const fm = fmOf(app, c);
         if (fm?.type && fm.type !== "prompt") continue;
-        const lu = fm?.last_used;
-        out.push({
-          file: c,
-          used: Number(fm?.used) || 0,
-          lastUsed: fmStr(lu) ? moment(fmStr(lu)).format("YYYY-MM-DD") : "",
-        });
+        out.push({ file: c, used: Number(fm?.used) || 0, lastUsed: fmDay(fm?.last_used) });
       }
     }
   };

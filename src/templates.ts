@@ -318,5 +318,5 @@ export async function writeDefaultTemplates(app: App, settings: InkwellSettings)
     await app.vault.create(p, BUILTIN_TEMPLATES[key]);
     written++;
   }
-  new Notice(written ? `Inkwell: wrote ${written} template(s).` : "Inkwell: all templates already exist.");
+  new Notice(written ? `Wrote ${written} template(s).` : "All templates already exist.");
 }

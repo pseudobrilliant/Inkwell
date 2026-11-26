@@ -1,14 +1,16 @@
-import { App, normalizePath, TFile, TFolder } from "obsidian";
+import { App, moment, normalizePath, TFile, TFolder } from "obsidian";
 
 /** Strip characters Obsidian/OSes don't allow in file names. */
 export function cleanName(s: string): string {
   return s.replace(/[\\/:*?"<>|#^[\]]/g, "").replace(/\s+/g, " ").trim();
 }
 
-/** First few words of a text, for use as a note name. */
+/** First few words of a text, for use as a note name. Trailing sentence punctuation is dropped ("Then." → "Then"),
+ *  so a note name never ends in "..md". */
 export function slugWords(text: string, maxWords = 6, maxLen = 50): string {
   const words = cleanName(text.split("\n")[0] ?? "").split(" ").slice(0, maxWords).join(" ");
-  return words.length > maxLen ? words.slice(0, maxLen).trim() : words;
+  const cut = words.length > maxLen ? words.slice(0, maxLen) : words;
+  return cut.replace(/[\s.,;:!?…]+$/u, "");
 }
 
 export async function ensureFolder(app: App, path: string): Promise<void> {
@@ -77,6 +79,14 @@ export function fmStr(v: unknown): string {
   if (typeof v === "number" || typeof v === "boolean") return String(v);
   if (v instanceof Date && !isNaN(v.getTime())) return v.toISOString();
   return "";
+}
+
+/** A frontmatter date (or datetime) as YYYY-MM-DD, or "" if missing/invalid. ISO 8601 only, parsed strictly. */
+export function fmDay(v: unknown): string {
+  const s = fmStr(v);
+  if (!s) return "";
+  const m = moment(s, moment.ISO_8601, true);
+  return m.isValid() ? m.format("YYYY-MM-DD") : "";
 }
 
 /** Text under a "## heading" (up to the next # or ## heading), or null if the note has no such section. */

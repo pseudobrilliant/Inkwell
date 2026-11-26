@@ -1,6 +1,5 @@
 import { App, PluginSettingTab, type SettingDefinition, type SettingDefinitionItem } from "obsidian";
 import type InkwellPlugin from "./main";
-import type { TimerState } from "./timer";
 import type { AnyCaptureKind } from "./capture";
 
 export interface InkwellSettings {
@@ -31,8 +30,6 @@ export interface InkwellSettings {
   journalDateFormat: string;
   shortStatuses: string[];
   longStatuses: string[];
-  /** The last kind picked in the capture popup: an idea kind or a resource kind. */
-  lastCaptureKind: AnyCaptureKind;
   exerciseMinutes: number;
   journalMinutes: number;
   timerAutoStart: boolean;
@@ -42,8 +39,15 @@ export interface InkwellSettings {
   defaultSceneTarget: number;
   captureToJournal: boolean;
   promptOfDay?: { date: string; path: string };
-  /** The running writing timer (src/timer.ts), kept here so it survives a reload. */
-  timer?: TimerState;
+}
+
+/**
+ * State from older versions that lived in the synced settings file. It is device-local now
+ * (Obsidian's local storage), so it no longer conflicts across devices: see `mergeSettings`.
+ */
+export interface LegacyLocalState {
+  timer?: unknown;
+  lastCaptureKind?: AnyCaptureKind;
 }
 
 export const DEFAULT_SETTINGS: InkwellSettings = {
@@ -74,7 +78,6 @@ export const DEFAULT_SETTINGS: InkwellSettings = {
   shortStatuses: ["idea", "drafting", "revising", "done"],
   // StoryLine's scene statuses
   longStatuses: ["idea", "outlined", "draft", "written", "revised", "final"],
-  lastCaptureKind: "idea",
   exerciseMinutes: 15,
   journalMinutes: 10,
   timerAutoStart: true,
@@ -84,6 +87,30 @@ export const DEFAULT_SETTINGS: InkwellSettings = {
   defaultSceneTarget: 800,
   captureToJournal: false,
 };
+
+
+/**
+ * Settings from what `loadData()` returned, with defaults filled in. Pulls out device-local state that older
+ * versions kept here (`legacy`), so the caller can move it to local storage and save the settings without it.
+ */
+export function mergeSettings(raw: unknown): { settings: InkwellSettings; legacy: LegacyLocalState | null } {
+  const data = (raw && typeof raw === "object" ? raw : {}) as Partial<InkwellSettings> & LegacyLocalState;
+  const { timer, lastCaptureKind, ...rest } = data;
+  // Older versions kept exercise notes under `folders.exercises`. Keep that folder as the exercise writing folder so
+  // existing vaults keep working; nothing is moved.
+  const { exercises, ...folders } = (rest.folders ?? {}) as Partial<InkwellSettings["folders"]> & { exercises?: string };
+  if (exercises && !folders.writings) folders.writings = exercises;
+  const settings: InkwellSettings = {
+    ...DEFAULT_SETTINGS,
+    ...rest,
+    folders: { ...DEFAULT_SETTINGS.folders, ...folders },
+    templates: { ...DEFAULT_SETTINGS.templates, ...rest.templates },
+    shortStatuses: [...(rest.shortStatuses ?? DEFAULT_SETTINGS.shortStatuses)],
+    longStatuses: [...(rest.longStatuses ?? DEFAULT_SETTINGS.longStatuses)],
+  };
+  const legacy = timer !== undefined || lastCaptureKind !== undefined ? { timer, lastCaptureKind } : null;
+  return { settings, legacy };
+}
 
 type FolderKey = keyof InkwellSettings["folders"];
 type TemplateKey = keyof InkwellSettings["templates"];
@@ -266,44 +293,55 @@ export class InkwellSettingTab extends PluginSettingTab {
   }
 
   getControlValue(key: string): unknown {
-    const s = this.plugin.settings;
-    const [group, sub] = key.split(".");
-    if (group === "folders" && sub && sub in s.folders) return s.folders[sub as FolderKey];
-    if (group === "templates" && sub && sub in s.templates) return s.templates[sub as TemplateKey];
-    if (key === "shortStatuses" || key === "longStatuses") return s[key].join(", ");
-    if (key in s) return s[key as keyof InkwellSettings];
-    return undefined;
+    return controlValue(this.plugin.settings, key);
   }
 
   async setControlValue(key: string, value: unknown): Promise<void> {
-    const s = this.plugin.settings;
-    const [group, sub] = key.split(".");
-    if (group === "folders" && sub && sub in s.folders) {
-      const k = sub as FolderKey;
-      s.folders[k] = asText(value) || DEFAULT_SETTINGS.folders[k];
-    } else if (group === "templates" && sub && sub in s.templates) {
-      s.templates[sub as TemplateKey] = asText(value);
-    } else if (key === "homeNote") {
-      s.homeNote = asText(value) || DEFAULT_SETTINGS.homeNote;
-    } else if (key === "journalDateFormat") {
-      s.journalDateFormat = asText(value) || DEFAULT_SETTINGS.journalDateFormat;
-    } else if (key === "captureToJournal") {
-      s.captureToJournal = value === true;
-    } else if (key === "exerciseMinutes") {
-      s.exerciseMinutes = asCount(value) || DEFAULT_SETTINGS.exerciseMinutes;
-    } else if (key === "journalMinutes" || key === "timerIdleMinutes") {
-      s[key] = asCount(value);
-    } else if (key === "timerAutoStart") {
-      s.timerAutoStart = value === true;
-    } else if ((TARGET_KEYS as readonly string[]).includes(key)) {
-      s[key as (typeof TARGET_KEYS)[number]] = asCount(value);
-    } else if ((STATUS_KEYS as readonly string[]).includes(key)) {
-      const k = key as (typeof STATUS_KEYS)[number];
-      const list = asText(value).split(",").map((x) => x.trim()).filter(Boolean);
-      s[k] = list.length ? list : [...DEFAULT_SETTINGS[k]];
-    } else {
-      return;
-    }
-    await this.plugin.saveSettings();
+    if (applyControlValue(this.plugin.settings, key, value)) await this.plugin.saveSettings();
   }
+}
+
+/** The value a settings control shows. Status lists are edited as comma-separated text. */
+export function controlValue(s: InkwellSettings, key: string): unknown {
+  const [group, sub] = key.split(".");
+  if (group === "folders" && sub && sub in s.folders) return s.folders[sub as FolderKey];
+  if (group === "templates" && sub && sub in s.templates) return s.templates[sub as TemplateKey];
+  if (key === "shortStatuses" || key === "longStatuses") return s[key].join(", ");
+  if (key in s) return s[key as keyof InkwellSettings];
+  return undefined;
+}
+
+/**
+ * Store a value from a settings control, normalized: text is trimmed, empty paths and lists fall back to defaults,
+ * counts are whole and never negative. Returns false for an unknown key (nothing changed).
+ */
+export function applyControlValue(s: InkwellSettings, key: string, value: unknown): boolean {
+  const [group, sub] = key.split(".");
+  if (group === "folders" && sub && sub in s.folders) {
+    const k = sub as FolderKey;
+    s.folders[k] = asText(value) || DEFAULT_SETTINGS.folders[k];
+  } else if (group === "templates" && sub && sub in s.templates) {
+    s.templates[sub as TemplateKey] = asText(value);
+  } else if (key === "homeNote") {
+    s.homeNote = asText(value) || DEFAULT_SETTINGS.homeNote;
+  } else if (key === "journalDateFormat") {
+    s.journalDateFormat = asText(value) || DEFAULT_SETTINGS.journalDateFormat;
+  } else if (key === "captureToJournal") {
+    s.captureToJournal = value === true;
+  } else if (key === "exerciseMinutes") {
+    s.exerciseMinutes = asCount(value) || DEFAULT_SETTINGS.exerciseMinutes;
+  } else if (key === "journalMinutes" || key === "timerIdleMinutes") {
+    s[key] = asCount(value);
+  } else if (key === "timerAutoStart") {
+    s.timerAutoStart = value === true;
+  } else if ((TARGET_KEYS as readonly string[]).includes(key)) {
+    s[key as (typeof TARGET_KEYS)[number]] = asCount(value);
+  } else if ((STATUS_KEYS as readonly string[]).includes(key)) {
+    const k = key as (typeof STATUS_KEYS)[number];
+    const list = asText(value).split(",").map((x) => x.trim()).filter(Boolean);
+    s[k] = list.length ? list : [...DEFAULT_SETTINGS[k]];
+  } else {
+    return false;
+  }
+  return true;
 }

@@ -82,7 +82,7 @@ export async function addStarterDrills(plugin: InkwellPlugin): Promise<void> {
     await createNote(app, path, d.body, { type: "drill", tags: d.tags, skill: d.skill, minutes: d.minutes, created: date });
     added++;
   }
-  new Notice(added ? `Inkwell: added ${added} starter drill(s).` : "Inkwell: the starter drills are already there.");
+  new Notice(added ? `Added ${added} starter drill(s).` : "The starter drills are already there.");
 }
 
 function splitTags(s: string): string[] {
