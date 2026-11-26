@@ -1,6 +1,7 @@
 import { App, PluginSettingTab, type SettingDefinition, type SettingDefinitionItem } from "obsidian";
 import type InkwellPlugin from "./main";
 import type { AnyCaptureKind } from "./capture";
+import { isWeekday, WEEKDAYS, type Weekday } from "./wordlog";
 
 export interface InkwellSettings {
   folders: {
@@ -13,6 +14,8 @@ export interface InkwellSettings {
     prompts: string;
     drills: string;
     resources: string;
+    /** Inkwell's word log: one subfolder per device, one note per month (ADR 0008). */
+    wordLog: string;
   };
   templates: {
     home: string;
@@ -38,6 +41,8 @@ export interface InkwellSettings {
   defaultLongTarget: number;
   defaultSceneTarget: number;
   captureToJournal: boolean;
+  /** The day every weekly number starts on. */
+  weekStart: Weekday;
   promptOfDay?: { date: string; path: string };
 }
 
@@ -60,6 +65,7 @@ export const DEFAULT_SETTINGS: InkwellSettings = {
     writing: "02 - Stories",
     longProjects: "03 - Projects",
     resources: "05 - Resources",
+    wordLog: "99 - System/Inkwell/Word log",
   },
   templates: {
     home: "99 - System/Templates/Inkwell/Home.md",
@@ -86,6 +92,7 @@ export const DEFAULT_SETTINGS: InkwellSettings = {
   defaultLongTarget: 0,
   defaultSceneTarget: 800,
   captureToJournal: false,
+  weekStart: "monday",
 };
 
 
@@ -107,6 +114,7 @@ export function mergeSettings(raw: unknown): { settings: InkwellSettings; legacy
     templates: { ...DEFAULT_SETTINGS.templates, ...rest.templates },
     shortStatuses: [...(rest.shortStatuses ?? DEFAULT_SETTINGS.shortStatuses)],
     longStatuses: [...(rest.longStatuses ?? DEFAULT_SETTINGS.longStatuses)],
+    weekStart: isWeekday(rest.weekStart) ? rest.weekStart : DEFAULT_SETTINGS.weekStart,
   };
   const legacy = timer !== undefined || lastCaptureKind !== undefined ? { timer, lastCaptureKind } : null;
   return { settings, legacy };
@@ -124,6 +132,7 @@ const FOLDER_LABELS: Record<FolderKey, string> = {
   writing: "Stories",
   longProjects: "Projects",
   resources: "Resources",
+  wordLog: "Word log",
 };
 
 const TEMPLATE_LABELS: Record<TemplateKey, string> = {
@@ -145,6 +154,7 @@ type ControlKey =
   | `templates.${TemplateKey}`
   | "homeNote"
   | "captureToJournal"
+  | "weekStart"
   | "journalDateFormat"
   | "exerciseMinutes"
   | "journalMinutes"
@@ -264,6 +274,22 @@ export class InkwellSettingTab extends PluginSettingTab {
       },
       {
         type: "group",
+        heading: "Words",
+        items: [
+          {
+            name: "Week starts on",
+            desc: "The first day of the week for words this week and practice this week.",
+            aliases: ["word count", "streak"],
+            control: {
+              type: "dropdown",
+              key: "weekStart",
+              options: Object.fromEntries(WEEKDAYS.map((d) => [d, d.charAt(0).toUpperCase() + d.slice(1)])),
+            },
+          },
+        ],
+      },
+      {
+        type: "group",
         heading: "Keep the Rhythm",
         items: [
           {
@@ -326,6 +352,8 @@ export function applyControlValue(s: InkwellSettings, key: string, value: unknow
     s.homeNote = asText(value) || DEFAULT_SETTINGS.homeNote;
   } else if (key === "journalDateFormat") {
     s.journalDateFormat = asText(value) || DEFAULT_SETTINGS.journalDateFormat;
+  } else if (key === "weekStart") {
+    s.weekStart = isWeekday(value) ? value : DEFAULT_SETTINGS.weekStart;
   } else if (key === "captureToJournal") {
     s.captureToJournal = value === true;
   } else if (key === "exerciseMinutes") {

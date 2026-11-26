@@ -2,7 +2,6 @@
  * Inkwell's side of writing blocks: what it does around them, kept out of the block code itself
  * (openspec/changes/archive/2026-11-26-writing-blocks/design.md, decision 10). The blocks call this through `WritingBlockHost`.
  */
-import { Notice } from "obsidian";
 import type InkwellPlugin from "./main";
 import { blockAtLine, findBlocks, type BlockMode } from "./writingblocks";
 import { switchInEditor, type WritingBlockHost } from "./writingblocktoolbar";
@@ -11,26 +10,17 @@ import { registerWritingBlockView } from "./writingblockview";
 import { TypewriterMode } from "./integrations/typewriter-mode";
 
 /**
- * Keep the Rhythm counts comments unless told not to; the first draft lives in one. Inkwell never changes KTR's settings.
  * Typewriter Mode, if installed, is on only while the writer is writing in a block.
  * The writing timer is a toolbar tool, and a block's first review stops it (spec writing-timer).
+ * Words the writer types in blocks go to Inkwell's word log (spec word-log).
  */
 function blockHost(plugin: InkwellPlugin): WritingBlockHost {
   const typewriter = new TypewriterMode(plugin.app);
   return {
     tools: [plugin.timer.tool],
     onWritingInBlock: (writing) => typewriter.writingInBlock(writing),
-    onFirstDraftSaved: ({ sourcePath, text }) => {
-      void plugin.timer.blockReviewed(sourcePath, text);
-      void plugin.ktr.ignoresComments().then((ignored) => {
-        if (ignored === false) {
-          new Notice(
-            "Your first draft is kept in a hidden comment, which Keep the Rhythm counts as new words. To stop that, turn on its setting to not count comments.",
-            12_000
-          );
-        }
-      });
-    },
+    onFirstDraftSaved: ({ sourcePath, text }) => void plugin.timer.blockReviewed(sourcePath, text),
+    onBlockWords: (sourcePath, words) => plugin.words.add(sourcePath, words),
   };
 }
 

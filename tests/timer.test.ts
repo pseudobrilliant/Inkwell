@@ -65,6 +65,7 @@ describe("the writing timer and a block's first review", () => {
     const host: WritingBlockHost = {
       tools: [timer.tool],
       onWritingInBlock: () => undefined,
+      onBlockWords: () => undefined,
       onFirstDraftSaved: ({ sourcePath, text }) => {
         reviewed.push(sourcePath);
         void timer.blockReviewed(sourcePath, text);

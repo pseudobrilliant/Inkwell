@@ -4,7 +4,7 @@
  * editing, so it looks the same in each. What it shows comes from the block type: for the writing block, its modes.
  *
  * Writing blocks don't depend on the rest of Inkwell (design decision 10). The host (Inkwell) passes in what it
- * wants done around a switch, such as the Keep the Rhythm notice, through `WritingBlockHost`.
+ * wants done around a switch, such as stopping the writing timer, through `WritingBlockHost`.
  */
 import { Notice, type App, type Editor, type TFile } from "obsidian";
 import type { EditorView } from "@codemirror/view";
@@ -36,6 +36,11 @@ export interface WritingBlockHost {
    * editor (Live Preview), or that editor closes. Called only when the answer changes, for each editor.
    */
   onWritingInBlock(writing: boolean): void;
+  /**
+   * Called with the net words the writer added to a note's blocks (negative when they cut), after they pause, leave
+   * the editor or close it. Only the writer's own edits count: never a mode switch, Inkwell's rewrites or sync.
+   */
+  onBlockWords(sourcePath: string, words: number): void;
 }
 
 export interface BlockType {

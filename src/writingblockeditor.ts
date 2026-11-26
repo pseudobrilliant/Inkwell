@@ -36,6 +36,7 @@ import {
 } from "./writingblocks";
 import { renderToolbar, switchInView, type WritingBlockHost } from "./writingblocktoolbar";
 import { drawBlockBody } from "./writingblockview";
+import { BlockWordTally, countsAsWriting, INKWELL_EDIT, type BlockWordsReport } from "./writingblockwords";
 
 interface BlockDecorations {
   decorations: DecorationSet;
@@ -323,8 +324,7 @@ function blockField(host: WritingBlockHost) {
   });
 }
 
-/** Edits Inkwell makes itself. The guard below leaves them alone: they already keep the block whole. */
-const INKWELL_EDIT = "inkwell.block-key";
+// Edits Inkwell's block keys make (INKWELL_EDIT): the guard below leaves them alone, since they already keep the block whole.
 
 /** Run a pure key function at the cursor; false lets the editor handle the key. */
 function runKey(key: (text: string, pos: number) => KeyEdit | null) {
@@ -479,8 +479,55 @@ function writingWatch(host: WritingBlockHost) {
   );
 }
 
+/** How long the writer can pause before what they wrote is reported. */
+const SETTLE_MS = 2000;
+
+/**
+ * Reports the words the writer adds to the note's blocks (spec word-log, "What counts as words written"). Only the
+ * writer's own edits in a focused editor count; the tally (src/writingblockwords.ts) keeps every other change out.
+ */
+function wordWatch(host: WritingBlockHost) {
+  return ViewPlugin.fromClass(
+    class {
+      private tally = new BlockWordTally();
+      private timer: number | null = null;
+
+      constructor(readonly view: EditorView) {}
+
+      update(u: ViewUpdate) {
+        for (const tr of u.transactions) {
+          if (!tr.docChanged) continue;
+          const counted = countsAsWriting(tr.annotation(Transaction.userEvent)) && this.view.hasFocus;
+          this.report(this.tally.edit(counted, sourcePathOf(tr.startState), () => tr.startState.doc.toString()));
+        }
+        if (u.focusChanged && !this.view.hasFocus) this.settle();
+        else if (u.docChanged && this.tally.counting) this.wait();
+      }
+
+      destroy() {
+        this.settle();
+      }
+
+      private wait() {
+        if (this.timer !== null) window.clearTimeout(this.timer);
+        this.timer = window.setTimeout(() => this.settle(), SETTLE_MS);
+      }
+
+      private settle() {
+        if (this.timer !== null) window.clearTimeout(this.timer);
+        this.timer = null;
+        this.report(this.tally.settle(() => this.view.state.doc.toString()));
+      }
+
+      private report(r: BlockWordsReport | null) {
+        if (r) host.onBlockWords(r.sourcePath, r.words);
+      }
+    }
+  );
+}
+
 export function writingBlockEditor(host: WritingBlockHost): Extension {
-  return [blockField(host), blockKeys, guardEdits, keepCursorVisible, renderedToolbars(host), writingWatch(host)];
+  return [blockField(host), blockKeys, guardEdits, keepCursorVisible, renderedToolbars(host), writingWatch(host), wordWatch(host)];
 }
 
 /** "New writing block": wrap the selection, convert the tabbed run under the cursor, or add an empty block. */

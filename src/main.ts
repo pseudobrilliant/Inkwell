@@ -21,16 +21,20 @@ import { newProject, newScene, projectForFile, projectProgress } from "./project
 import { WritingTimer } from "./timer";
 import { createResourcesBase, exerciseFromResource } from "./resources";
 import { registerWritingBlocks } from "./blockhost";
+import { WordLog } from "./wordlogstore";
 
 export default class InkwellPlugin extends Plugin {
   settings!: InkwellSettings;
   ktr!: KeepTheRhythm;
+  words!: WordLog;
   timer!: WritingTimer;
   private statusEl: HTMLElement | null = null;
 
   async onload() {
     const legacy = await this.loadSettings();
     this.ktr = new KeepTheRhythm(this.app);
+    this.words = new WordLog(this);
+    this.words.register();
     this.addSettingTab(new InkwellSettingTab(this.app, this));
     this.timer = new WritingTimer(this);
     await this.migrateLegacyState(legacy);

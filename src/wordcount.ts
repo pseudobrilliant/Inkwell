@@ -1,16 +1,2 @@
-import { isHeader } from "./writingblocks";
-
-/** Count prose words: ignores frontmatter, code blocks, comments (so a writing block's first draft), writing block headers, link targets. */
-export function countWords(text: string): number {
-  const prose = text
-    .replace(/^---\r?\n[\s\S]*?\r?\n---(\r?\n|$)/, "")
-    .replace(/```[\s\S]*?```/g, " ")
-    .replace(/%%[\s\S]*?%%/g, " ")
-    .replace(/<!--[\s\S]*?-->/g, " ")
-    .split("\n")
-    .filter((line) => !isHeader(line))
-    .join("\n")
-    .replace(/!?\[\[(?:[^\]|]*\|)?([^\]]*)\]\]/g, "$1")
-    .replace(/!?\[([^\]]*)\]\([^)]*\)/g, "$1");
-  return prose.match(/[\p{L}\p{N}][\p{L}\p{N}'’-]*/gu)?.length ?? 0;
-}
+/** Word counts for the rest of Inkwell. The counting itself lives with the writing blocks, which count without Inkwell. */
+export { blockWords, countWords } from "./writingblockwords";
