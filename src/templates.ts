@@ -114,10 +114,9 @@ writing_min:
 ## Ideas, Observations, Reflections
 
 
-## Words Written
-\`\`\`ktr-entries
-{{date}}
-\`\`\`
+## Writing
+> [!writing]
+> 
 `,
   exercise: `---
 type: exercise
@@ -185,7 +184,8 @@ views:
   storyDraft: `---
 type: draft
 ---
-
+> [!writing]
+> 
 `,
   projectHub: `---
 type: storyline

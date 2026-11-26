@@ -10,7 +10,8 @@ export function isExercise(plugin: InkwellPlugin, file: TFile | null): file is T
 
 /**
  * The "## Work" section of an exercise, or the whole body if there isn't one. Writing blocks in it come out as
- * plain paragraphs of their current text: the story starts from the revision, never the kept first draft.
+ * plain paragraphs of their current text: the story starts from the revision, never the kept first draft. The story's
+ * draft puts it back in a writing block.
  */
 export function workSection(text: string): string {
   return unwrapBlocks(sectionText(text, "Work") ?? stripFrontmatter(text).trim()).trim();
@@ -32,7 +33,7 @@ export async function exerciseBecameStory(plugin: InkwellPlugin, exercise: TFile
   if (!input) return;
   const work = workSection(await app.vault.read(exercise));
   const story = await createShortStory(plugin, input, {
-    draftBody: work,
+    draftWriting: work,
     hubFields: { from: `[[${exercise.basename}]]` },
   });
   if (!story) return;

@@ -4,7 +4,9 @@ import type InkwellPlugin from "./main";
 import { promoteToLongForm } from "./promote";
 import { listLongProjects, LongProject, newScene, projectForFile, projectFromFolder, projectProgress } from "./projects";
 import { countWords } from "./wordcount";
+import { findBlocks } from "./writingblocks";
 import { renderHeatmap } from "./wordblocks";
+import { hasWritingBlock, putInWritingBlock } from "./blockhost";
 import { listRevisions, snapshotDraft } from "./revisions";
 import { formatProgress, listStories, newCodexNote, Story, storyForFile, storyFromFolder, storyProgress } from "./stories";
 
@@ -107,6 +109,9 @@ export class StoryView extends ItemView {
       cls: "inkwell-muted",
       text: p.lastWorked ? `Last worked ${moment(p.lastWorked).fromNow()}` : "No draft yet",
     });
+    if (draft && !(await hasWritingBlock(this.app, draft))) {
+      this.notCounted(prog, "This draft isn't in a writing block, so its writing isn't counted.", draft);
+    }
 
     if (story.hub) this.renderNext(el, story.hub, fm?.next);
 
@@ -253,8 +258,9 @@ export class StoryView extends ItemView {
         const sfm = fmOf(this.app, s);
         const li = ol.createEl("li");
         li.createEl("a", { text: fmStr(sfm?.title) || s.basename }).onclick = () => this.open(s);
-        const words = countWords(await this.app.vault.cachedRead(s));
-        li.createSpan({ cls: "inkwell-muted", text: ` — ${fmStr(sfm?.status) || "?"} · ${words.toLocaleString()} words` });
+        const text = await this.app.vault.cachedRead(s);
+        li.createSpan({ cls: "inkwell-muted", text: ` — ${fmStr(sfm?.status) || "?"} · ${countWords(text).toLocaleString()} words` });
+        if (!findBlocks(text).length) this.notCounted(li, "Not counted: no writing block.", s);
       }
     }
 
@@ -275,6 +281,14 @@ export class StoryView extends ItemView {
     const hs = el.createDiv({ cls: "inkwell-story-section" });
     hs.createDiv({ cls: "inkwell-label", text: "Writing days" });
     await renderHeatmap(hs, plugin, (path) => path.startsWith(scenesPrefix), { weeks: 12 });
+  }
+
+  /** Say a note's writing isn't counted, and offer to put it in a writing block. */
+  private notCounted(el: HTMLElement, message: string, file: TFile) {
+    const row = el.createDiv({ cls: "inkwell-not-counted" });
+    row.createSpan({ cls: "inkwell-muted", text: message + " " });
+    const b = row.createEl("button", { text: "Put in a writing block" });
+    b.onclick = () => void putInWritingBlock(this.app, file).then(() => this.render());
   }
 
   private fileList(el: HTMLElement, label: string, files: TFile[], onAdd?: () => unknown) {

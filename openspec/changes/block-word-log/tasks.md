@@ -30,10 +30,10 @@ Test lines named below go in this change's `specs/word-log/spec.md` and `specs/w
 
 ## 5. Blocks where writing happens
 
-- [ ] 5.1 "This became a story" puts the current text in one writing block with no first draft. Update the test "a story starts from the block's current text" in `tests/became.test.ts` and the spec scenario. Verify `npm test` passes.
-- [ ] 5.2 Promote wraps each scene's body in a writing block. Update the test "scenes hold only current text, and the original draft is archived first" in `tests/promote.test.ts` (the archive still comes first). Verify `npm test` passes.
-- [ ] 5.3 The built-in story draft and journal templates hold an empty block (the journal's "Words written" section and its `ktr-entries` block go), and `createScene` starts a scene's body with one unless a body is given. Test all three in `tests/blocks.test.ts`, and fill in the Test lines for "Drafts, scenes and journals start with a block". Verify `npm test` passes.
-- [ ] 5.4 The story and project panels say when a draft or scene has no block, and offer "Put in a writing block" (a `vault.process` that wraps the body below the frontmatter). Test the wrap against the fake vault, and fill in the Test lines for "Writing that won't count". Verify `npm test` passes.
+- [x] 5.1 "This became a story" puts the current text in one writing block with no first draft. Update the test "a story starts from the block's current text" in `tests/became.test.ts` and the spec scenario. Verify `npm test` passes.
+- [x] 5.2 Promote wraps each scene's body in a writing block. Update the test "scenes hold only current text, and the original draft is archived first" in `tests/promote.test.ts` (the archive still comes first). Verify `npm test` passes.
+- [x] 5.3 The built-in story draft and journal templates hold an empty block (the journal's "Words written" section and its `ktr-entries` block go), and `createScene` starts a scene's body with one unless a body is given. Test all three in `tests/blocks.test.ts`, and fill in the Test lines for "Drafts, scenes and journals start with a block". Verify `npm test` passes.
+- [x] 5.4 The story and project panels say when a draft or scene has no block, and offer "Put in a writing block" (a `vault.process` that wraps the body below the frontmatter). Test the wrap against the fake vault, and fill in the Test lines for "Writing that won't count". Verify `npm test` passes.
 
 ## 6. Removing Keep the Rhythm
 

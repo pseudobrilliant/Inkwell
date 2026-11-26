@@ -4,6 +4,7 @@ import { askForm, pick } from "./modals";
 import { loadTemplate, render } from "./templates";
 import { cleanName, createNote, ensureFolder, uniquePath, fmOf, type Frontmatter, fmStr } from "./util";
 import { countWords } from "./wordcount";
+import { putInBlock } from "./writingblocks";
 import { listLongProjects, LongProject, projectForFile } from "./projects";
 
 export interface Story {
@@ -80,7 +81,7 @@ export async function askStoryDetails(
 export async function createShortStory(
   plugin: InkwellPlugin,
   input: StoryInput,
-  opts: { draftBody?: string; hubFields?: Record<string, unknown>; open?: boolean } = {}
+  opts: { draftWriting?: string; hubFields?: Record<string, unknown>; open?: boolean } = {}
 ): Promise<Story | null> {
   const { app, settings } = plugin;
   const { title } = input;
@@ -104,7 +105,8 @@ export async function createShortStory(
 
   const hub = await createNote(app, `${folder}/${title}.md`, render(await loadTemplate(app, settings, "storyHub"), vars), hubFields);
   let draftText = render(await loadTemplate(app, settings, "storyDraft"), vars);
-  if (opts.draftBody) draftText = draftText.replace(/\s*$/, "\n\n") + opts.draftBody.trim() + "\n";
+  // Writing carried up from an exercise goes in the draft's writing block, so it keeps counting (spec writing-blocks).
+  if (opts.draftWriting) draftText = putInBlock(draftText, opts.draftWriting.trim());
   const draft = await createNote(app, `${folder}/${title} - Draft.md`, draftText, {
     type: "draft",
     project: `[[${title}]]`,

@@ -579,3 +579,7 @@ body {
 .markdown-source-view.mod-cm6 .cm-line.inkwell-wb-line.inkwell-wb-cont {
   text-indent: 0 !important;
 }
+
+/* A draft or scene whose writing isn't counted (no writing block) */
+.inkwell-not-counted { display: flex; flex-wrap: wrap; align-items: center; gap: var(--size-2-2); margin-top: var(--size-2-2); font-size: var(--font-ui-small); }
+.inkwell-not-counted button { font-size: var(--font-ui-smaller); height: auto; padding: var(--size-2-1) var(--size-4-2); }

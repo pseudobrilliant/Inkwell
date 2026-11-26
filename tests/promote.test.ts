@@ -7,6 +7,7 @@ vi.mock("../src/modals", () => ({ askForm: vi.fn(async () => ({ target: "60000" 
 import { promoteToLongForm, splitScenes } from "../src/promote";
 import { snapshotDraft } from "../src/revisions";
 import { storyFromFolder } from "../src/stories";
+import { findBlocks } from "../src/writingblocks";
 import { fakePlugin, FakeApp } from "./helpers/fake-app";
 
 describe("splitScenes", () => {
@@ -133,11 +134,22 @@ describe("promoteToLongForm", () => {
 
     const scenes = app.paths().filter((p) => p.includes("/Scenes/"));
     expect(scenes).toHaveLength(2);
+    // Each scene holds one writing block of current text, with no first draft.
+    expect(scenes.map((p) => findBlocks(app.textOf(p) ?? "").map((b) => [b.text, b.firstDraft]))).toEqual([
+      [["The boat sat.", null]],
+      [["Then the sea came back.", null]],
+    ]);
     const sceneText = scenes.map((p) => app.textOf(p) ?? "").join("\n");
-    expect(sceneText).toContain("The boat sat.");
-    expect(sceneText).toContain("Then the sea came back.");
-    expect(sceneText).not.toMatch(/first try|Never kept|Old heading|\[!writing\]|%%/);
+    expect(sceneText).not.toMatch(/first try|Never kept|Old heading|%%/);
     expect(app.textOf("03 - Projects/Tide/Archive/Tide - Draft.md")).toBe(draftText);
+  });
+
+  it("promoting logs no words, though the scenes hold the draft's words in blocks", async () => {
+    const plugin = fakePlugin(storyVault("---\ntype: draft\n---\n> [!writing]\n> The boat sat.\n> ***\n> Then the sea came back.\n"));
+    await promoteToLongForm(plugin, storyFromFolder(plugin, plugin.app.folder(STORY)));
+    await plugin.words.store.flush();
+    expect(await plugin.words.words(() => true, "0000-00-00")).toBe(0);
+    expect(plugin.app.paths().some((p) => p.startsWith(plugin.settings.folders.wordLog))).toBe(false);
   });
 
   it("refuses when a project of that name exists, changing nothing", async () => {

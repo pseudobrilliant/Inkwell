@@ -45,7 +45,7 @@ Inkwell SHALL log only edits the writer makes in the editor. Notes Inkwell creat
 - **WHEN** the writer promotes it to long form
 - **THEN** the log doesn't change, though the scenes now hold 3,000 words in blocks
 
-Test: none yet
+Test: tests/promote.test.ts › "promoting logs no words, though the scenes hold the draft's words in blocks"
 
 #### Scenario: A change arrives by sync
 - **GIVEN** a note open on the desktop

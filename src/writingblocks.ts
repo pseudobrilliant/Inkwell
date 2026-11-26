@@ -188,6 +188,32 @@ export function unwrapBlocks(text: string): string {
   return lines.join("\n");
 }
 
+/**
+ * A note's text with `writing` in a writing block: the first empty block that was never reviewed (as a template's
+ * is), or else a new block at the end. Empty writing leaves the text as it is.
+ */
+export function putInBlock(text: string, writing: string): string {
+  if (!writing.trim()) return text;
+  const wrapped = wrapLines(writing.split("\n"));
+  const empty = findBlocks(text).find((b) => !b.firstDraft && b.text.trim() === "");
+  if (!empty) return text.replace(/\s*$/, "\n\n") + wrapped.join("\n") + "\n";
+  const lines = text.split("\n");
+  lines.splice(empty.start + 1, empty.end - empty.start, ...wrapped.slice(1));
+  return lines.join("\n");
+}
+
+/**
+ * A note whose writing isn't in a block, with its body (everything below the frontmatter) put in one. Null when the
+ * note already has a block.
+ */
+export function wrapBody(text: string): string | null {
+  if (findBlocks(text).length) return null;
+  const fm = text.match(/^---\r?\n[\s\S]*?\r?\n---(?:\r?\n|$)/)?.[0] ?? "";
+  const head = fm && !fm.endsWith("\n") ? fm + "\n" : fm;
+  const body = text.slice(fm.length);
+  return head + (body.trim() ? wrapLines(body.split("\n")) : emptyBlock()).join("\n") + "\n";
+}
+
 // ---------- Keys inside a block (Live Preview) ----------
 // Each function takes the note's text and the cursor offset, and returns the edit to make, or null to let the editor
 // handle the key as usual. Offsets are plain string offsets, so they map one-to-one onto CodeMirror positions.
