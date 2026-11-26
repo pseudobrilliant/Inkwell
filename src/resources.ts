@@ -77,6 +77,41 @@ export const RESOURCE_FIELDS: Record<ResourceKind, FieldDef[]> = {
   other: [{ key: "title", label: "Title", placeholder: "Video, podcast, site…" }, { key: "author", label: "By" }, LINK],
 };
 
+/** The sections each kind's note gets, between Source and Try This (the template's `{{sections}}`). */
+export const RESOURCE_SECTIONS: Record<ResourceKind, string[]> = {
+  poem: ["Reflection", "Take Aways"],
+  story: ["Reflection", "Take Aways"],
+  essay: ["Take Aways"],
+  article: ["Key Ideas", "Quotes", "What I'll Use"],
+  book: ["Notes", "Reflections", "Quotes", "Take Aways"],
+  class: ["Sessions", "Assignments", "Readings & Handouts", "Take Aways"],
+  other: ["Notes", "Take Aways"],
+};
+
+/** A hint under a heading, as a comment so it doesn't show in reading view. */
+const SECTION_HINTS: Record<string, string> = {
+  "What I'll Use": "What you'll try in your own writing.",
+  "Readings & Handouts": "Link resources from class here.",
+};
+
+/** Kind-specific starters under some headings. */
+const SECTION_STARTERS: Partial<Record<ResourceKind, Record<string, string>>> = {
+  class: { Sessions: "### Session 1\n", Assignments: "- [ ] " },
+};
+
+/** The kind's sections as Markdown, ready for the template's `{{sections}}`. */
+export function resourceSections(kind: ResourceKind): string {
+  let out = "";
+  for (const h of RESOURCE_SECTIONS[kind]) {
+    const hint = SECTION_HINTS[h];
+    const quote = h === "Quotes" ? "> " : "";
+    out += `## ${h}\n`;
+    if (hint) out += `%% ${hint} %%\n`;
+    out += `${SECTION_STARTERS[kind]?.[h] ?? quote}\n\n`;
+  }
+  return out;
+}
+
 /** Frontmatter fields a resource can carry, in the order they're listed in the note's Source section. */
 const SOURCE_FIELDS = ["author", "teacher", "where", "start", "end", "url"] as const;
 
@@ -207,6 +242,7 @@ export async function createResource(plugin: InkwellPlugin, kind: ResourceKind, 
     // The pasted text (a poem) as its own section, so the note has nothing extra when there isn't any.
     text: r.text ? `## Text\n${r.text}\n\n` : "",
     source: sourceLines(kind, r),
+    sections: resourceSections(kind),
     kind: RESOURCE_LABELS[kind],
     date,
   });
@@ -265,7 +301,8 @@ export async function exerciseFromResource(plugin: InkwellPlugin): Promise<void>
   const fm = fmOf(app, file);
   const author = fmStr(fm?.author) || fmStr(fm?.teacher);
   const source = `[[${file.basename}]]${author ? ` by ${author}` : ""}`;
-  const tryThis = sectionText(await app.vault.read(file), "Try This");
+  // Without the template's hint comments (%% … %%), so an untouched section counts as empty.
+  const tryThis = sectionText(await app.vault.read(file), "Try This")?.replace(/%%[\s\S]*?%%/g, "").trim();
   const text = tryThis ? `${tryThis}\n\nFrom ${source}` : `Respond to or imitate ${source}.`;
   await createExercise(plugin, null, { text, resource: file });
 }

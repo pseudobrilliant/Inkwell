@@ -272,16 +272,8 @@ tags:
 {{text}}## Source
 {{source}}
 
-## Notes
-
-
-## Lines Worth Keeping
-> 
-
-## What It Does
-
-
-## Try This
+{{sections}}## Try This
+%% An exercise this gives you. Exercise from a resource uses it as the prompt. %%
 
 `,
 };
