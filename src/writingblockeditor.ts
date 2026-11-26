@@ -10,20 +10,26 @@ import { editorLivePreviewField, Notice, type Editor } from "obsidian";
 import {
   backspaceAt,
   blockAtLine,
+  BREAK_MARK,
   damagesFirstDraft,
   deleteAt,
+  diffSegments,
   enterAt,
   findBlocks,
   guardedDrafts,
   inBlockWriting,
+  lockedRanges,
   newBlockAt,
+  outsideLocked,
   prefixLength,
   quotePasted,
+  touchesLocked,
   widenJoin,
   type KeyEdit,
   type WritingBlock,
 } from "./writingblocks";
 import { renderToolbar, switchInView, type WritingBlockHost } from "./writingblocktoolbar";
+import { drawBlockBody } from "./writingblockview";
 
 interface BlockDecorations {
   decorations: DecorationSet;
@@ -94,6 +100,73 @@ class IndentAnchor extends WidgetType {
 }
 const indentAnchor = Decoration.widget({ widget: new IndentAnchor(), side: 1 });
 
+/** Text removed since the first draft, shown struck through where it was. */
+class RemovedWidget extends WidgetType {
+  constructor(private text: string) {
+    super();
+  }
+
+  eq(other: RemovedWidget): boolean {
+    return other.text === this.text;
+  }
+
+  toDOM(view: EditorView): HTMLElement {
+    const el = view.dom.createSpan({ cls: "inkwell-wb-removed", text: this.text.split("\n").join(` ${BREAK_MARK} `) });
+    el.remove();
+    return el;
+  }
+}
+
+/** A paragraph break added since the first draft, marked at the end of the line it ends. */
+class AddedBreakWidget extends WidgetType {
+  eq(): boolean {
+    return true;
+  }
+
+  toDOM(view: EditorView): HTMLElement {
+    const el = view.dom.createSpan({ cls: "inkwell-wb-added inkwell-wb-break", text: BREAK_MARK });
+    el.remove();
+    return el;
+  }
+}
+const addedMark = Decoration.mark({ class: "inkwell-wb-added" });
+
+/** Review marks for a block, as decorations: its text offsets mapped to the note through each line's hidden `> `. */
+function reviewDecorations(state: EditorState, b: WritingBlock, firstDraft: string): Range<Decoration>[] {
+  const doc = state.doc;
+  // Where each line of the block's text starts, in the text and in the note.
+  const lines: { textFrom: number; docFrom: number; length: number }[] = [];
+  let textFrom = 0;
+  for (let n = b.start + 1; n <= b.end; n++) {
+    const line = doc.line(n + 1);
+    const p = prefixLength(line.text);
+    lines.push({ textFrom, docFrom: line.from + p, length: line.length - p });
+    textFrom += line.length - p + 1;
+  }
+  const toDoc = (offset: number) => {
+    for (const l of lines) if (offset <= l.textFrom + l.length) return l.docFrom + Math.max(0, offset - l.textFrom);
+    const last = lines[lines.length - 1];
+    return last ? last.docFrom + last.length : doc.line(b.start + 1).to;
+  };
+  const out: Range<Decoration>[] = [];
+  for (const seg of diffSegments(firstDraft, b.text)) {
+    if (seg.kind === "removed") {
+      out.push(Decoration.widget({ widget: new RemovedWidget(seg.text), side: -1 }).range(toDoc(seg.at)));
+    } else if (seg.kind === "added") {
+      let at = seg.at;
+      for (const part of seg.text.split("\n").map((t, i, all) => ({ t, brk: i < all.length - 1 }))) {
+        if (part.t) out.push(addedMark.range(toDoc(at), toDoc(at + part.t.length)));
+        at += part.t.length;
+        if (part.brk) {
+          out.push(Decoration.widget({ widget: new AddedBreakWidget(), side: 1 }).range(toDoc(at)));
+          at += 1;
+        }
+      }
+    }
+  }
+  return out;
+}
+
 function build(state: EditorState, host: WritingBlockHost): BlockDecorations {
   if (!livePreview(state)) return NONE;
   const doc = state.doc;
@@ -114,7 +187,9 @@ function build(state: EditorState, host: WritingBlockHost): BlockDecorations {
       }
     }
     // With the cursor elsewhere, Obsidian draws the callout, and `renderedToolbars` adds the toolbar to it.
-    if (!touches(header.from, last.to)) continue;
+    // A reviewed block in Draft mode is locked: the cursor never enters it, so it always stays rendered.
+    if (!touches(header.from, last.to) || (b.firstDraft && b.mode === "writing")) continue;
+    if (b.firstDraft && b.mode === "review") decos.push(...reviewDecorations(state, b, b.firstDraft.text));
     // The header line becomes the toolbar; each line's `> ` is hidden. The cursor skips both.
     decos.push(Decoration.replace({ widget: new ToolbarWidget(b, host), block: true }).range(header.from, header.to));
     if (b.end === b.start) {
@@ -145,6 +220,9 @@ function build(state: EditorState, host: WritingBlockHost): BlockDecorations {
  * when only the comment below it changes, so the toolbar is kept in step from the note's text after every update,
  * and whenever Obsidian (re)draws a callout.
  */
+/** What each rendered callout last showed, so it's only redrawn when its mode or text changes. */
+const drawn = new WeakMap<HTMLElement, string>();
+
 function renderedToolbars(host: WritingBlockHost) {
   return ViewPlugin.fromClass(
     class {
@@ -183,7 +261,10 @@ function renderedToolbars(host: WritingBlockHost) {
           if (!block) continue;
           const current = callout.querySelector<HTMLElement>(":scope > .inkwell-wb-toolbar");
           const key = `${block.start}:${block.mode}`;
-          if (current?.dataset.block === key) continue;
+          const shown = `${key}\u0001${block.text}\u0001${block.firstDraft?.text ?? ""}`;
+          if (current?.dataset.block === key && drawn.get(callout) === shown) continue;
+          drawn.set(callout, shown);
+          drawBlockBody(callout, block);
           current?.remove();
           callout.addClass("inkwell-wb-has-toolbar");
           const bar = renderToolbar(callout, block, (mode) => switchInView(this.view, block.start, mode, host));
@@ -256,6 +337,15 @@ const guardEdits = EditorState.transactionFilter.of((tr: Transaction) => {
     new Notice("The first draft is kept below this block. Click it to open it if you want to edit it by hand.");
     return [];
   }
+  const locked = lockedRanges(before);
+  let intoLocked = false;
+  tr.changes.iterChangedRanges((fromA, toA) => {
+    if (touchesLocked(locked, fromA, toA)) intoLocked = true;
+  });
+  if (intoLocked) {
+    new Notice("This block is showing its first draft. To revise it, pick another mode on its toolbar.");
+    return [];
+  }
   const paste = tr.isUserEvent("input.paste") || tr.isUserEvent("input.drop");
   const specs: { from: number; to: number; insert: string }[] = [];
   let rewritten = false;
@@ -277,8 +367,21 @@ const guardEdits = EditorState.transactionFilter.of((tr: Transaction) => {
   return { changes, selection: EditorSelection.cursor(cursor), scrollIntoView: true, userEvent: tr.annotation(Transaction.userEvent) };
 });
 
+/** Keep the cursor out of locked blocks (Draft mode after review), so Obsidian keeps showing them rendered. */
+const keepOutOfLocked = EditorState.transactionFilter.of((tr: Transaction) => {
+  if (!tr.selection && !tr.docChanged) return tr;
+  if (!livePreview(tr.state)) return tr;
+  const text = tr.newDoc.toString();
+  const ranges = lockedRanges(text);
+  if (!ranges.length) return tr;
+  const head = tr.newSelection.main.head;
+  const moved = outsideLocked(ranges, head, tr.startState.selection.main.head, text.length);
+  if (moved === null) return tr;
+  return [tr, { selection: EditorSelection.cursor(moved), sequential: true }];
+});
+
 export function writingBlockEditor(host: WritingBlockHost): Extension {
-  return [blockField(host), blockKeys, guardEdits, renderedToolbars(host)];
+  return [blockField(host), blockKeys, guardEdits, keepOutOfLocked, renderedToolbars(host)];
 }
 
 /** "New writing block": wrap the selection, convert the tabbed run under the cursor, or add an empty block. */

@@ -13,6 +13,7 @@
  *
  * Everything here is pure: it reads and builds text by line. The editor, reading view and commands apply the results.
  */
+import { presentableDiff } from "@codemirror/merge";
 
 export type BlockMode = "writing" | "review" | "edited";
 export const BLOCK_MODES: readonly BlockMode[] = ["writing", "review", "edited"];
@@ -447,5 +448,106 @@ export function damagesFirstDraft(drafts: GuardedDraft[], from: number, to: numb
     if (from <= d.blockFrom && to >= d.commentTo) return false;
     if (to > from) return from < d.to && to > d.from;
     return from >= d.from && from < d.to;
+  });
+}
+
+// ---------- Review: what changed since the first draft ----------
+
+export interface DiffSegment {
+  kind: "same" | "added" | "removed";
+  text: string;
+  /** Where the segment sits in the current text: its start, or for removed text, the point it was removed from. */
+  at: number;
+}
+
+/**
+ * The changes from the first draft to the current text, in order. Paragraph breaks are text too, so adding or
+ * removing one is a change. Bounded in time: a very long, heavily rewritten block gets a coarser diff, never a hang.
+ */
+export function diffSegments(before: string, after: string): DiffSegment[] {
+  const out: DiffSegment[] = [];
+  let b = 0;
+  for (const c of presentableDiff(before, after, { scanLimit: 2000, timeout: 50 })) {
+    if (c.fromB > b) out.push({ kind: "same", text: after.slice(b, c.fromB), at: b });
+    if (c.toA > c.fromA) out.push({ kind: "removed", text: before.slice(c.fromA, c.toA), at: c.fromB });
+    if (c.toB > c.fromB) out.push({ kind: "added", text: after.slice(c.fromB, c.toB), at: c.fromB });
+    b = c.toB;
+  }
+  if (b < after.length) out.push({ kind: "same", text: after.slice(b), at: b });
+  return out;
+}
+
+export interface ReviewSpan {
+  kind: "same" | "added" | "removed";
+  text: string;
+}
+
+/** Shown for a paragraph break that was added or removed. */
+export const BREAK_MARK = "¶";
+
+/**
+ * The review as paragraphs of spans, for drawing a rendered block: the current text's paragraphs, with removed
+ * text in place. An added break ends its paragraph with a marked ¶; a removed one shows as a struck ¶ in the
+ * paragraph it joined.
+ */
+export function reviewParagraphs(segments: DiffSegment[]): ReviewSpan[][] {
+  const paras: ReviewSpan[][] = [[]];
+  const push = (kind: ReviewSpan["kind"], text: string) => {
+    if (text) paras[paras.length - 1]?.push({ kind, text });
+  };
+  for (const seg of segments) {
+    const parts = seg.text.split("\n");
+    parts.forEach((part, i) => {
+      if (i > 0) {
+        if (seg.kind === "removed") push("removed", BREAK_MARK);
+        else {
+          if (seg.kind === "added") push("added", BREAK_MARK);
+          paras.push([]);
+        }
+      }
+      push(seg.kind, part);
+    });
+  }
+  return paras;
+}
+
+/** The current text's paragraphs, clean (Edited), as spans. */
+export function plainParagraphs(text: string): ReviewSpan[][] {
+  return text.split("\n").map((line) => (line ? [{ kind: "same" as const, text: line }] : []));
+}
+
+// ---------- Draft mode after review: the block is locked ----------
+
+/** A reviewed block shown in Draft mode, from its header to the end of its first draft: read-only while editing. */
+export interface LockedRange {
+  from: number;
+  to: number;
+}
+
+export function lockedRanges(text: string): LockedRange[] {
+  const starts = lineStarts(text);
+  return findBlocks(text)
+    .filter((b) => b.firstDraft && b.mode === "writing")
+    .map((b) => ({ from: lineInfo(text, starts, b.start).from, to: lineInfo(text, starts, b.firstDraft?.end ?? b.end).to }));
+}
+
+/**
+ * Where the cursor goes if it would land inside a locked block: past it, in the direction it was moving
+ * (below the block when coming from above or from a click inside, above it when coming from below).
+ * Null if it's not inside one.
+ */
+export function outsideLocked(ranges: LockedRange[], head: number, previous: number, docLength: number): number | null {
+  const r = ranges.find((x) => head > x.from && head < x.to) ?? ranges.find((x) => head === x.from && previous > x.to);
+  if (!r) return null;
+  if (previous >= r.to && r.from > 0) return r.from - 1;
+  return Math.min(r.to + 1, docLength);
+}
+
+/** Whether an edit touches a locked block. Deleting the whole block at once is allowed. */
+export function touchesLocked(ranges: LockedRange[], from: number, to: number): boolean {
+  return ranges.some((r) => {
+    if (from <= r.from && to >= r.to) return false;
+    if (to > from) return from < r.to && to > r.from;
+    return from > r.from && from < r.to;
   });
 }

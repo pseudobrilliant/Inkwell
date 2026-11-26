@@ -175,20 +175,20 @@ WHILE a block is in Review, Inkwell SHALL show its current text with words added
 - **WHEN** in Review the writer changes "been here" to "come back"
 - **THEN** "been here" shows struck through and "come back" shows highlighted
 
-Test: none yet [the diff is unit-tested; the drawing is checked by hand]
+Test: tests/writingblocks.test.ts › "diff marks replaced words as removed then added" [the drawing is checked by hand]
 
 #### Scenario: No changes yet
 - **GIVEN** a block that has just entered Review
 - **WHEN** the writer views it
 - **THEN** the text shows with no marks
 
-Test: none yet
+Test: tests/writingblocks.test.ts › "no changes gives no marks"
 
 #### Scenario: Paragraph breaks count as changes
 - **WHEN** in Review the writer splits one paragraph into two
 - **THEN** the new break shows as a change
 
-Test: none yet
+Test: tests/writingblocks.test.ts › "a split paragraph shows as a change"
 
 ### Requirement: Edited mode
 WHILE a block is in Edited mode, Inkwell SHALL show its current text clean, with no marks. The writer SHALL be able to edit the text in Edited mode.
@@ -198,7 +198,7 @@ WHILE a block is in Edited mode, Inkwell SHALL show its current text clean, with
 - **WHEN** the writer switches it to Edited
 - **THEN** the current text shows with no highlights or strike-throughs
 
-Test: none yet
+Test: tests/writingblocks.test.ts › "edited shows current text with no marks" [the drawing is checked by hand]
 
 ### Requirement: Draft mode after review
 WHILE a reviewed block is in Draft mode, Inkwell SHALL show the first draft in place of the current text, read-only. IF the writer tries to type in it, THEN Inkwell SHALL leave the note unchanged and show a notice to switch to Review or Edited to revise.
@@ -208,7 +208,7 @@ WHILE a reviewed block is in Draft mode, Inkwell SHALL show the first draft in p
 - **WHEN** the writer switches it to Draft
 - **THEN** the first draft shows, and typing in it changes nothing and shows the notice
 
-Test: none yet
+Test: tests/writingblocks.test.ts › "typing into a reviewed block in Draft mode is refused" [the notice and the drawing are checked by hand]
 
 ### Requirement: Block toolbar
 Inkwell SHALL show a toolbar across the top of every writing block, in reading view and in Live Preview whether or not the cursor is inside the block. For a writing block it SHALL show the three modes, Draft, Review and Edited, with the current one marked, and the writer SHALL be able to pick any of them at any time.

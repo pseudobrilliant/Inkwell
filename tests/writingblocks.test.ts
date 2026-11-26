@@ -9,6 +9,13 @@ import {
   findBlocks,
   newBlockAt,
   quotePasted,
+  lockedRanges,
+  outsideLocked,
+  touchesLocked,
+  diffSegments,
+  plainParagraphs,
+  reviewParagraphs,
+  type DiffSegment,
   damagesFirstDraft,
   guardedDrafts,
   widenJoin,
@@ -330,5 +337,94 @@ describe("guards while editing", () => {
     expect(damagesFirstDraft(drafts, inComment, inComment + 1, inComment, inComment)).toBe(false);
     // Deleting the whole block with its draft: allowed.
     expect(damagesFirstDraft(drafts, 0, after, 0, after)).toBe(false);
+  });
+});
+
+const rebuild = (segs: DiffSegment[], keep: DiffSegment["kind"]) => segs.filter((g) => g.kind === "same" || g.kind === keep).map((g) => g.text).join("");
+
+describe("review: what changed since the first draft", () => {
+  it("diff marks replaced words as removed then added", () => {
+    const segs = diffSegments("I have been here before.", "I have come back before.");
+    expect(segs.filter((g) => g.kind !== "same").map((g) => [g.kind, g.text.trim()])).toEqual([
+      ["removed", "been here"],
+      ["added", "come back"],
+    ]);
+  });
+
+  it("no changes gives no marks", () => {
+    expect(diffSegments("Same text.\nTwo.", "Same text.\nTwo.")).toEqual([{ kind: "same", text: "Same text.\nTwo.", at: 0 }]);
+  });
+
+  it("a split paragraph shows as a change", () => {
+    const segs = diffSegments("One. Two.", "One.\nTwo.");
+    expect(segs.some((g) => g.kind !== "same" && g.text.includes("\n"))).toBe(true);
+    const paras = reviewParagraphs(segs);
+    expect(paras).toHaveLength(2);
+    expect(paras[0]?.some((sp) => sp.kind === "added" && sp.text === "¶")).toBe(true);
+    const joined = reviewParagraphs(diffSegments("One.\nTwo.", "One. Two."));
+    expect(joined).toHaveLength(1);
+    expect(joined[0]?.some((sp) => sp.kind === "removed" && sp.text === "¶")).toBe(true);
+  });
+
+  it("rebuilding the first draft from the segments gives it back exactly", () => {
+    const cases: [string, string][] = [
+      ["I have been here before.\n\nThe door was open.", "I have come back.\nThe door, open, was not.\nNew ending."],
+      ["", "All new."],
+      ["All gone.", ""],
+      ["Curly ‘quotes’ — and dashes.", "Curly “quotes” – and dashes!"],
+    ];
+    for (const [before, after] of cases) {
+      const segs = diffSegments(before, after);
+      expect(rebuild(segs, "removed")).toBe(before);
+      expect(rebuild(segs, "added")).toBe(after);
+      for (const g of segs) if (g.kind !== "removed") expect(after.slice(g.at, g.at + g.text.length)).toBe(g.text);
+    }
+  });
+
+  it("diffs a long, heavily rewritten block quickly", () => {
+    const words = (seed: number) => Array.from({ length: 5000 }, (_, i) => `w${(i * seed) % 997}`).join(" ");
+    const before = words(7);
+    const after = words(13);
+    const t = performance.now();
+    const segs = diffSegments(before, after);
+    expect(performance.now() - t).toBeLessThan(100);
+    expect(rebuild(segs, "removed")).toBe(before);
+    expect(rebuild(segs, "added")).toBe(after);
+  });
+
+  it("edited shows current text with no marks", () => {
+    expect(plainParagraphs("One.\n\nTwo.")).toEqual([[{ kind: "same", text: "One." }], [], [{ kind: "same", text: "Two." }]]);
+  });
+});
+
+describe("Draft mode after review", () => {
+  const note = "Before.\n> [!writing]\n> Revised.\n\n%% writing-block first-draft writing\nFirst.\n%%\nAfter.";
+
+  it("typing into a reviewed block in Draft mode is refused", () => {
+    const ranges = lockedRanges(note);
+    expect(ranges).toEqual([{ from: 8, to: note.indexOf("%%\nAfter.") + 2 }]);
+    const inWriting = note.indexOf("Revised.");
+    expect(touchesLocked(ranges, inWriting, inWriting)).toBe(true);
+    expect(touchesLocked(ranges, inWriting, inWriting + 3)).toBe(true);
+    // Outside the block, and deleting the whole block: fine.
+    expect(touchesLocked(ranges, 0, 0)).toBe(false);
+    expect(touchesLocked(ranges, note.indexOf("After."), note.indexOf("After."))).toBe(false);
+    expect(touchesLocked(ranges, 8, ranges[0]!.to)).toBe(false);
+    // Review and Edited blocks, and blocks never reviewed, aren't locked.
+    expect(lockedRanges(note.replace("first-draft writing", "first-draft review"))).toEqual([]);
+    expect(lockedRanges("> [!writing]\n> Never reviewed.")).toEqual([]);
+  });
+
+  it("the cursor moves past a locked block in the direction it was going", () => {
+    const ranges = lockedRanges(note);
+    const r = ranges[0]!;
+    const inside = note.indexOf("Revised.");
+    // Coming from above, or a click inside: below the block.
+    expect(outsideLocked(ranges, inside, 3, note.length)).toBe(r.to + 1);
+    expect(outsideLocked(ranges, inside, inside, note.length)).toBe(r.to + 1);
+    // Coming from below: above it.
+    expect(outsideLocked(ranges, inside, note.length, note.length)).toBe(r.from - 1);
+    // Not inside: nothing to do.
+    expect(outsideLocked(ranges, 2, 0, note.length)).toBeNull();
   });
 });

@@ -92,7 +92,7 @@ These tests describe current code and pass before anything else changes.
   - picking a mode: an editor transaction while editing, and `vault.process` in reading view, re-finding the block by line and checking its text first
 
   Add "a writing callout's type defaults to the writing block" and "picking modes in any order" to `tests/writingblocks.test.ts`. Set the "Any mode, any order" Test line, and "The toolbar is always there" as checked by hand. Verify `npm test`, then by hand in reading view and Live Preview, with the cursor in and out of the block, on desktop and phone: the toolbar never moves and never shows Markdown.
-- [ ] 3.5 **Check KTR** in `test-vault` with "Don't count comments" on:
+- [x] 3.5 **Check KTR** in `test-vault` with "Don't count comments" on:
   - first review, switching modes, and toggling between Writing and Edited change the day's count by 0
   - replacing 3 words with 5 logs +2
 
@@ -100,25 +100,25 @@ These tests describe current code and pass before anything else changes.
 
 ## 4. Review, Edited and Writing views
 
-- [ ] 4.1 Add `diffSegments(before, after)` to `src/writingblocks.ts` using `presentableDiff` (or the 1.4 fallback), on unwrapped prose, with paragraph breaks as changes, bounded by `scanLimit` and `timeout`. Add tests:
+- [x] 4.1 Add `diffSegments(before, after)` to `src/writingblocks.ts` using `presentableDiff` (or the 1.4 fallback), on unwrapped prose, with paragraph breaks as changes, bounded by `scanLimit` and `timeout`. Add tests:
   - "diff marks replaced words as removed then added"
   - "no changes gives no marks"
   - "a split paragraph shows as a change"
   - "rebuilding the first draft from the segments gives it back exactly"
 
   Set the Test lines for "Changes show while revising", "No changes yet" and "Paragraph breaks count as changes". Verify `npm test` passes, and a 5,000-word heavily rewritten block diffs in under 100 ms in a test.
-- [ ] 4.2 Create `src/writingblockeditor.ts` (`registerEditorExtension`, Live Preview only). With the cursor inside a block:
-  - Review marks: added text highlighted, removed text struck through, debounced and mapped through edits
-  - the comment collapsed to a "First draft kept" widget
+- [ ] 4.2 In `src/writingblockeditor.ts`, with the cursor inside a block (the folded first draft is already done):
+  - Review marks: added text highlighted, removed text struck through as widgets, recomputed on each edit (bounded by the diff's timeout)
+  - added or removed paragraph breaks shown as a marked ¶
   - Edited shows clean text
 
   Verify by hand in `test-vault` while typing, pasting, splitting paragraphs, undoing and redoing, in split panes and on a phone with autocorrect, swipe and dictation.
 - [ ] 4.3 Draft mode after review:
-  - Live Preview: a block widget showing the first draft, and a `transactionFilter` that drops typing into it with the notice
+  - Live Preview: the block is locked: the cursor can't enter it (a selection landing inside moves below it), so Obsidian keeps it rendered and Inkwell draws the first draft in it. Edits touching it are refused with the notice.
   - reading view: the first draft rendered
 
   Add "typing into a reviewed block in Draft mode is refused" to `tests/writingblocks.test.ts`, testing the pure range check the filter uses, and set the "Looking back at the first draft" Test line with a note that the notice is checked by hand. Verify `npm test`, then by hand on desktop and phone.
-- [ ] 4.4 Draw Review and Edited in reading view and rendered callouts in `src/writingblockview.ts`. Set the "Reading the revision" Test line to "edited shows current text with no marks" in `tests/writingblocks.test.ts` (the pure render input), added here. Verify `npm test`, then by hand.
+- [x] 4.4 Draw Review and Edited in reading view and rendered callouts in `src/writingblockview.ts`. Set the "Reading the revision" Test line to "edited shows current text with no marks" in `tests/writingblocks.test.ts` (the pure render input), added here. Verify `npm test`, then by hand.
 
 ## 5. Moving work up and the template
 
