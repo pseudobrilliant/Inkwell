@@ -6,26 +6,26 @@ Test lines named below go in this change's `specs/writing-blocks/spec.md`, repla
 
 These tests describe current code and pass before anything else changes.
 
-- [ ] 1.1 In `tests/wordcount.test.ts`, add tests that pin current `countWords` behaviour:
+- [x] 1.1 In `tests/wordcount.test.ts`, add tests that pin current `countWords` behaviour:
   - multi-line `%%` comments, several comments in one note, and an unclosed `%%`
   - a callout's `[!writing]` header line, which is counted today
   - tab-indented lines
 
   Verify `npm test` passes on unchanged source.
-- [ ] 1.2 Export `workSection` from `src/became.ts` (no other change). In a new `tests/became.test.ts`, pin:
+- [x] 1.2 Export `workSection` from `src/became.ts` (no other change). In a new `tests/became.test.ts`, pin:
   - Work section found, ending at the next `#`/`##` but not at `###`
   - no Work section, an empty Work section, and Work as the last section
   - `## ` inside a `%%` comment ends the section today
   - an exercise flow against the fake vault: the exercise body is unchanged, `became` and `from` are set, and the draft holds the Work text
 
   Verify `npm test` passes.
-- [ ] 1.3 In `tests/promote.test.ts`, pin `splitScenes`:
+- [x] 1.3 In `tests/promote.test.ts`, pin `splitScenes`:
   - `***` and a heading inside a `%%` comment split today
   - `> ***` does not split
   - no words are lost across splits
 
   Verify `npm test` passes.
-- [ ] 1.4 Add `@codemirror/merge` (dependency, bundled), and `@codemirror/state`, `@codemirror/view` and `@codemirror/language` (dev, types only; already external) at the installed versions. Build once with a throwaway `presentableDiff` import and record the size `main.js` grows by in design.md decision 3; if over about 10 KB, switch to a small word-token diff there. Verify `npm run build` passes, then remove the throwaway import.
+- [x] 1.4 Add `@codemirror/merge` (dependency, bundled), and `@codemirror/state`, `@codemirror/view` and `@codemirror/language` (dev, types only; already external) at the installed versions. Build once with a throwaway `presentableDiff` import and record the size `main.js` grows by in design.md decision 3; if over about 10 KB, switch to a small word-token diff there. Verify `npm run build` passes, then remove the throwaway import.
 
 ## 2. Block format, creation and look
 

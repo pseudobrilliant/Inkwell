@@ -8,7 +8,7 @@ export function isExercise(plugin: InkwellPlugin, file: TFile | null): file is T
 }
 
 /** The "## Work" section of an exercise, or the whole body if there isn't one. */
-function workSection(text: string): string {
+export function workSection(text: string): string {
   return sectionText(text, "Work") ?? stripFrontmatter(text).trim();
 }
 

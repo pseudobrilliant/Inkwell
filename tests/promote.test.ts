@@ -46,6 +46,22 @@ describe("splitScenes", () => {
   it("returns nothing for an empty draft", () => {
     expect(splitScenes("\n\n")).toEqual([]);
   });
+
+  it("splits at a *** or heading inside a comment", () => {
+    const scenes = splitScenes("The boat sat.\n%% kept\n***\nOld text.\n# Old heading\nMore.\n%%");
+    expect(scenes.map((s) => s.text)).toEqual(["The boat sat.\n%% kept", "Old text.", "More.\n%%"]);
+  });
+
+  it("does not split at a *** inside a callout", () => {
+    expect(splitScenes("> [!writing]\n> The boat sat.\n> ***\n> The sea came back.")).toHaveLength(1);
+  });
+
+  it("loses no words across splits", () => {
+    const draft = "# Arrival\nShe came by boat.\n***\nIt rained all night.\n## Morning\nThe sea was calm.";
+    const words = (s: string) => s.match(/[\p{L}']+/gu) ?? [];
+    const kept = splitScenes(draft).flatMap((s) => words(s.text));
+    expect(kept).toEqual(words(draft.replace(/^#+ .*$/gm, "")));
+  });
 });
 
 const STORY = "02 - Stories/Tide";
