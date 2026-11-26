@@ -14,6 +14,7 @@ import {
   shiftEnterAt,
   withLineBreaks,
   lockedRanges,
+  writingAt,
   outsideLocked,
   touchesLocked,
   diffSegments,
@@ -600,5 +601,24 @@ describe("Shift+Enter: a line break in the same paragraph", () => {
   it("knows which of Obsidian's line breaks are Shift+Enter breaks", () => {
     const [b] = findBlocks("> [!writing]\n> One,\\\n> two.\n> Three.\n>\n> Four.");
     expect(breakKinds(b!)).toEqual([[true, false], []]);
+  });
+});
+
+describe("writing in a block", () => {
+  it("knows when the cursor is in a block's writing, and not in a locked one", () => {
+    const note = "Before.\n> [!writing]\n> Line one.\n> Line two.\n\nAfter.";
+    expect(writingAt(note, note.indexOf("Line one."))).toBe(true);
+    expect(writingAt(note, note.indexOf("two.") + 4)).toBe(true);
+    // Above it, on its header, and below it: not writing.
+    expect(writingAt(note, 0)).toBe(false);
+    expect(writingAt(note, note.indexOf("[!writing]"))).toBe(false);
+    expect(writingAt(note, note.indexOf("After."))).toBe(false);
+    // A reviewed block in Draft mode is locked; in Review or Edited the writer can write in it again.
+    const reviewed = "> [!writing]\n> Revised.\n\n%% writing-block first-draft writing\nFirst.\n%%";
+    expect(writingAt(reviewed, reviewed.indexOf("Revised."))).toBe(false);
+    const inReview = reviewed.replace("first-draft writing", "first-draft review");
+    expect(writingAt(inReview, inReview.indexOf("Revised."))).toBe(true);
+    // The opened first draft is edited by hand, not written in.
+    expect(writingAt(inReview, inReview.indexOf("First."))).toBe(false);
   });
 });

@@ -30,6 +30,7 @@ import {
   shiftEnterAt,
   touchesLocked,
   widenJoin,
+  writingAt,
   type KeyEdit,
   type WritingBlock,
 } from "./writingblocks";
@@ -421,8 +422,52 @@ const keepCursorVisible = EditorState.transactionFilter.of((tr: Transaction) => 
   return [tr, { selection: EditorSelection.cursor(moved), sequential: true }];
 });
 
+/**
+ * Tells the host when the writer starts or stops writing in a block. Only a focused editor counts as writing, so a
+ * note left open in another pane never claims it; losing focus alone doesn't end it (a click on the toolbar, the
+ * command palette), but focusing another editor, or closing this one, does.
+ */
+function writingWatch(host: WritingBlockHost) {
+  return ViewPlugin.fromClass(
+    class {
+      private writing = false;
+
+      constructor(readonly view: EditorView) {
+        this.check();
+      }
+
+      update(u: ViewUpdate) {
+        if (u.docChanged || u.selectionSet || u.focusChanged || u.startState.field(editorLivePreviewField, false) !== u.state.field(editorLivePreviewField, false)) {
+          this.check();
+        }
+      }
+
+      destroy() {
+        this.set(false);
+      }
+
+      check() {
+        const { state } = this.view;
+        if (!this.view.hasFocus) {
+          // Another editor took focus: it reports for itself, so this one stops.
+          if (this.writing && this.view.dom.ownerDocument.activeElement?.closest(".cm-editor")) this.set(false);
+          return;
+        }
+        const sel = state.selection;
+        this.set(livePreview(state) && sel.ranges.length === 1 && writingAt(state.doc.toString(), sel.main.head));
+      }
+
+      set(writing: boolean) {
+        if (writing === this.writing) return;
+        this.writing = writing;
+        host.onWritingInBlock(writing);
+      }
+    }
+  );
+}
+
 export function writingBlockEditor(host: WritingBlockHost): Extension {
-  return [blockField(host), blockKeys, guardEdits, keepCursorVisible, renderedToolbars(host)];
+  return [blockField(host), blockKeys, guardEdits, keepCursorVisible, renderedToolbars(host), writingWatch(host)];
 }
 
 /** "New writing block": wrap the selection, convert the tabbed run under the cursor, or add an empty block. */

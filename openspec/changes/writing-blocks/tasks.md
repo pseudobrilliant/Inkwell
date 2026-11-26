@@ -131,6 +131,11 @@ These tests describe current code and pass before anything else changes.
 - [x] 5b.1 Pure fixes with tests in `tests/writingblocks.test.ts` ("keeping the block whole"): the first draft ends at the first `%%`; whole-paragraph deletes and deletes to a line's start keep `>`; header edits refused (`breaksHeader`); the cursor never rests on the header or the fold's edges (`cursorStop`); the locked block's end is locked; typing under a block keeps a blank line (`keepApart`); Enter never leaves; Down leaves at the end of a note (`leaveAtEnd`); Backspace in an empty block leaves an empty line.
 - [ ] 5b.2 By hand in `test-vault`, desktop (done 2026-11-26) and phone (still to do): Left/Up from the first paragraph, Obsidian's edit-block button, triple-click and delete, Cmd+Backspace, Delete at the end of the heading above, arrowing past a reviewed block and a locked one, clicking "First draft kept", Enter twice, Down at the end of a note.
 
+## 5c. Typewriter Mode while writing (2026-11-26)
+
+- [x] 5c.1 Pure `writingAt` in `src/writingblocks.ts`, a `writingWatch` view plugin in `src/writingblockeditor.ts` that reports through `WritingBlockHost.onWritingInBlock`, and `src/integrations/typewriter-mode.ts` (the only file that knows Typewriter Mode) running its enable and disable commands. Tests in `tests/writingblocks.test.ts` and `tests/typewriter-mode.test.ts`. Verify `npm test`.
+- [ ] 5c.2 By hand in the writing vault (Typewriter Mode 1.6.1), desktop and phone: click into a block and out, arrow out, switch panes between blocks, close the note while in a block, open the command palette while in a block.
+
 ## 6. Docs, ADR, check
 
 - [x] 6.1 Update the README: writing blocks, the three modes, converting tabbed blocks, and turning on KTR's "Don't count comments". Update CLAUDE.md:

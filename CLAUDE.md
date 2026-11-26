@@ -80,6 +80,7 @@ Writing blocks are not a mode. They're a core component that supports features a
 - **The first draft** is kept in a `%% writing-block first-draft <mode> … %%` comment just below the block. Review shows a live diff against it, so nothing is accepted or rejected.
 - **Behaviour:** [`openspec/specs/writing-blocks/spec.md`](openspec/specs/writing-blocks/spec.md). The format: [ADR 0006](openspec/decisions/0006-writing-block-first-draft-in-a-comment.md).
 - **Code:** `src/writingblock*.ts` are self-contained. They import only Obsidian, CodeMirror and each other (lint enforces it), so they could become their own plugin later. That isn't planned. Inkwell's side, such as the KTR notice and the commands, is `src/blockhost.ts`.
+- **Typewriter Mode:** if installed, it's turned on while the writer is writing in a block and off when they leave, through its own enable/disable commands. The editor reports through `WritingBlockHost.onWritingInBlock`; all Typewriter Mode access lives in `src/integrations/typewriter-mode.ts`.
 - **Next:** the timer moves into the block's toolbar (`openspec/ideas/writing-block-timer.md`), and other block types may follow (`writing-block-types.md`).
 
 ## Movement between modes

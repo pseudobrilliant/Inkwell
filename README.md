@@ -58,6 +58,7 @@ A writing block is a box for the writing itself, apart from the prompt, goal and
   - **Edited** shows the revised text, clean.
 - **Your first draft stays in the note.** The first time you review a block, Inkwell saves its text as the first draft, in a hidden comment just below it, folded to one line. Click it if you ever want to edit it by hand. Nothing ever needs accepting or rejecting.
 - **Keep the Rhythm:** turn on its "Don't count comments" setting, so the hidden first draft isn't counted as new words. Inkwell reminds you the first time you review if it's off.
+- **Typewriter Mode:** if you have the Typewriter Mode plugin, Inkwell turns it on while you write in a block and off when you leave, so its focus tools are there only while you write. Its own settings (folders, platforms, which features are on) still apply.
 - Moving work up (**This became a story**, **Promote**) takes a block's current text as plain paragraphs, never the first draft.
 - Without Inkwell, a block is an ordinary callout and the first draft an ordinary comment, so nothing is lost.
 

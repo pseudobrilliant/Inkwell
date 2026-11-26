@@ -383,6 +383,30 @@ Test: tests/keep-the-rhythm.test.ts › "reads whether comments are ignored, or 
 
 Test: tests/keep-the-rhythm.test.ts › "reads whether comments are ignored, or null when unavailable" [the notice is checked by hand]
 
+### Requirement: Typewriter Mode while writing
+WHERE the Typewriter Mode plugin is installed and enabled, WHEN the cursor moves into a block's writing in the focused editor in Live Preview, Inkwell SHALL turn Typewriter Mode on, and WHEN the writer stops writing in a block (the cursor leaves it, another editor takes focus, or the note closes), Inkwell SHALL turn it off. Inkwell SHALL use Typewriter Mode's own enable and disable commands, so its other settings still apply. A reviewed block locked in Draft mode is not written in.
+
+#### Scenario: Into and out of a block
+- **GIVEN** Typewriter Mode installed and enabled
+- **WHEN** the writer clicks into a writing block, then clicks below it
+- **THEN** Typewriter Mode turns on, then off
+
+Test: tests/writingblocks.test.ts › "knows when the cursor is in a block's writing, and not in a locked one" [the editor and Typewriter Mode are checked by hand]
+
+#### Scenario: Moving between blocks in two editors
+- **GIVEN** a block being written in one pane
+- **WHEN** the writer clicks into a block in another pane
+- **THEN** Typewriter Mode stays on
+
+Test: tests/typewriter-mode.test.ts › "turns Typewriter Mode on entering a block and off leaving it, in either order across editors"
+
+#### Scenario: Typewriter Mode absent
+- **GIVEN** Typewriter Mode not installed, or disabled
+- **WHEN** the writer enters and leaves a block
+- **THEN** nothing happens
+
+Test: tests/typewriter-mode.test.ts › "does nothing when Typewriter Mode isn't installed or enabled"
+
 ### Requirement: Word counts
 Inkwell's word counts SHALL count a writing block's current text only: neither the `[!writing]` header line nor the first draft.
 

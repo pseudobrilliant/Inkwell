@@ -335,6 +335,15 @@ export function inBlockWriting(text: string, pos: number): boolean {
   return bodyLineAt(text, pos) !== null;
 }
 
+/**
+ * Whether the writer is writing in a block at this offset: in its writing and free to edit it (not a reviewed block
+ * locked in Draft mode). The host is told when this changes, such as to turn a focus plugin on and off.
+ */
+export function writingAt(text: string, pos: number): boolean {
+  const at = bodyLineAt(text, pos);
+  return at !== null && !(at.block.firstDraft && at.block.mode === "writing");
+}
+
 // ---------- "New writing block" ----------
 
 export interface BlockInsert {

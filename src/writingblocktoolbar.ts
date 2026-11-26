@@ -13,6 +13,11 @@ import { BLOCK_MODES, findBlocks, setMode, type BlockMode, type TextChange, type
 export interface WritingBlockHost {
   /** Called when a block first leaves Draft mode and its first draft is saved. */
   onFirstDraftSaved(): void;
+  /**
+   * Called when the writer starts or stops writing in a block: the cursor moves into or out of one in the focused
+   * editor (Live Preview), or that editor closes. Called only when the answer changes, for each editor.
+   */
+  onWritingInBlock(writing: boolean): void;
 }
 
 export interface BlockType {

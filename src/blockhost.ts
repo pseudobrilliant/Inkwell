@@ -8,10 +8,16 @@ import { blockAtLine, findBlocks, type BlockMode } from "./writingblocks";
 import { switchInEditor, type WritingBlockHost } from "./writingblocktoolbar";
 import { newWritingBlock, writingBlockEditor } from "./writingblockeditor";
 import { registerWritingBlockView } from "./writingblockview";
+import { TypewriterMode } from "./integrations/typewriter-mode";
 
-/** Keep the Rhythm counts comments unless told not to; the first draft lives in one. Inkwell never changes KTR's settings. */
+/**
+ * Keep the Rhythm counts comments unless told not to; the first draft lives in one. Inkwell never changes KTR's settings.
+ * Typewriter Mode, if installed, is on only while the writer is writing in a block.
+ */
 function blockHost(plugin: InkwellPlugin): WritingBlockHost {
+  const typewriter = new TypewriterMode(plugin.app);
   return {
+    onWritingInBlock: (writing) => typewriter.writingInBlock(writing),
     onFirstDraftSaved: () => {
       void plugin.ktr.ignoresComments().then((ignored) => {
         if (ignored === false) {
