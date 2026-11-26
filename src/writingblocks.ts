@@ -220,6 +220,15 @@ function lineInfo(text: string, starts: number[], index: number): LineAt {
   return { index, from, to, text: text.slice(from, to) };
 }
 
+/**
+ * Whether a line ends with a Markdown hard line break (`\`): the next line continues the same paragraph, without a
+ * first-line indent (Shift+Enter). An even run of backslashes is literal text, not a break.
+ */
+export function endsWithBreak(line: string): boolean {
+  const m = line.replace(/\r$/, "").match(/\\+$/);
+  return !!m && m[0].length % 2 === 1;
+}
+
 /** Length of a callout line's `>` and the one space after it. */
 export function prefixLength(line: string): number {
   return line.match(/^>\s?/)?.[0].length ?? 0;
@@ -259,8 +268,23 @@ export function enterAt(text: string, pos: number): KeyEdit | null {
     // A blank line between the block and what comes next: text straight after a callout line would join it.
     return { changes: [{ from: line.from, to: line.to, insert: "\n" }], cursor: line.from + 1 };
   }
-  const cut = Math.max(pos, line.from + p);
+  const cut = splitPoint(line, p, pos);
   return { changes: [{ from: cut, to: cut, insert: "\n> " }], cursor: cut + 3 };
+}
+
+/** Where to split a line at the cursor: after its hidden `> `, and before its hidden line-break `\`. */
+function splitPoint(line: LineAt, p: number, pos: number): number {
+  const end = endsWithBreak(line.text) ? line.to - 1 : line.to;
+  return Math.min(Math.max(pos, line.from + p), end);
+}
+
+/** Shift+Enter: a new line in the same paragraph, saved as a Markdown hard line break (`\` at the end of the line). */
+export function shiftEnterAt(text: string, pos: number): KeyEdit | null {
+  const at = bodyLineAt(text, pos);
+  if (!at) return null;
+  const { line } = at;
+  const cut = splitPoint(line, prefixLength(line.text), pos);
+  return { changes: [{ from: cut, to: cut, insert: "\\\n> " }], cursor: cut + 4 };
 }
 
 /**
@@ -285,7 +309,8 @@ export function backspaceAt(text: string, pos: number): KeyEdit | null {
     return { changes: [], cursor: pos };
   }
   const prev = lineInfo(text, starts, line.index - 1);
-  return { changes: [{ from: prev.to, to: line.from + p, insert: "" }], cursor: prev.to };
+  const from = endsWithBreak(prev.text) ? prev.to - 1 : prev.to;
+  return { changes: [{ from, to: line.from + p, insert: "" }], cursor: from };
 }
 
 /** Delete at the end of a paragraph: join the next paragraph of the block onto it. */
@@ -293,10 +318,11 @@ export function deleteAt(text: string, pos: number): KeyEdit | null {
   const at = bodyLineAt(text, pos);
   if (!at) return null;
   const { block, line, starts } = at;
-  if (pos < line.to) return null;
+  const end = endsWithBreak(line.text) ? line.to - 1 : line.to;
+  if (pos < end) return null;
   if (line.index === block.end) return { changes: [], cursor: pos };
   const next = lineInfo(text, starts, line.index + 1);
-  return { changes: [{ from: line.to, to: next.from + prefixLength(next.text), insert: "" }], cursor: pos };
+  return { changes: [{ from: end, to: next.from + prefixLength(next.text), insert: "" }], cursor: end };
 }
 
 /** Text pasted into a block, with every new line quoted so it stays inside. */
@@ -402,7 +428,12 @@ export function widenJoin(text: string, from: number, to: number): { from: numbe
     for (let n = b.start + 1; n <= b.end; n++) {
       const line = lineInfo(text, starts, n);
       const p = prefixLength(line.text);
-      if (p > 0 && from < line.from && to >= line.from && to < line.from + p) return { from, to: line.from + p };
+      if (from >= line.from || to < line.from) continue;
+      // The line break before this line is being removed: take its `> `, and the previous line's `\` break mark.
+      const prev = lineInfo(text, starts, n - 1);
+      const wideFrom = n > b.start + 1 && from === prev.to && endsWithBreak(prev.text) ? prev.to - 1 : from;
+      const wideTo = p > 0 && to < line.from + p ? line.from + p : to;
+      if (wideFrom !== from || wideTo !== to) return { from: wideFrom, to: wideTo };
     }
   }
   return { from, to };
@@ -482,13 +513,10 @@ export interface ReviewSpan {
   text: string;
 }
 
-/** Shown for a paragraph break that was added or removed. */
-export const BREAK_MARK = "¶";
-
 /**
  * The review as paragraphs of spans, for drawing a rendered block: the current text's paragraphs, with removed
- * text in place. An added break ends its paragraph with a marked ¶; a removed one shows as a struck ¶ in the
- * paragraph it joined.
+ * text in place. Paragraph breaks aren't marked: an added one simply starts a paragraph, and a removed one leaves
+ * the joined text together.
  */
 export function reviewParagraphs(segments: DiffSegment[]): ReviewSpan[][] {
   const paras: ReviewSpan[][] = [[]];
@@ -498,12 +526,14 @@ export function reviewParagraphs(segments: DiffSegment[]): ReviewSpan[][] {
   for (const seg of segments) {
     const parts = seg.text.split("\n");
     parts.forEach((part, i) => {
+      // A removed Shift+Enter break: its `\` isn't shown either.
+      if (seg.kind === "removed" && i < parts.length - 1 && endsWithBreak(part)) part = part.slice(0, -1);
       if (i > 0) {
-        if (seg.kind === "removed") push("removed", BREAK_MARK);
-        else {
-          if (seg.kind === "added") push("added", BREAK_MARK);
-          paras.push([]);
+        // A removed break joins its text with a space; a kept or added one starts a paragraph.
+        if (seg.kind === "removed") {
+          if (part || parts[i - 1]) push("removed", " ");
         }
+        else paras.push([]);
       }
       push(seg.kind, part);
     });
@@ -550,4 +580,49 @@ export function touchesLocked(ranges: LockedRange[], from: number, to: number): 
     if (to > from) return from < r.to && to > r.from;
     return from > r.from && from < r.to;
   });
+}
+
+// ---------- Paragraphs and line breaks, for drawing ----------
+
+/**
+ * Paragraphs as lines of spans: a line whose text ends with a line-break `\` continues into the next line of the
+ * same paragraph (drawn without a first-line indent). The `\` itself is never shown.
+ */
+export function withLineBreaks(paras: ReviewSpan[][]): ReviewSpan[][][] {
+  const out: ReviewSpan[][][] = [];
+  let continuing = false;
+  for (const spans of paras) {
+    const line = spans.map((sp) => ({ ...sp }));
+    const k = line.length - 1;
+    const last = line[k];
+    const breaks = !!last && last.kind !== "removed" && endsWithBreak(last.text);
+    if (breaks && last) {
+      last.text = last.text.slice(0, -1);
+      if (!last.text) line.splice(k, 1);
+    }
+    const para = continuing ? out[out.length - 1] : undefined;
+    if (para) para.push(line);
+    else out.push([line]);
+    continuing = breaks;
+  }
+  return out;
+}
+
+/**
+ * For each paragraph Obsidian renders in a block (lines separated by blank lines), whether each of its line breaks
+ * is a Shift+Enter line break (true) or the start of a new paragraph of writing (false).
+ */
+export function breakKinds(block: WritingBlock): boolean[][] {
+  const groups: boolean[][] = [];
+  let current: string[] = [];
+  const flush = () => {
+    if (current.length) groups.push(current.slice(0, -1).map((l) => endsWithBreak(l)));
+    current = [];
+  };
+  for (const line of block.lines) {
+    if (line.trim() === "") flush();
+    else current.push(line);
+  }
+  flush();
+  return groups;
 }

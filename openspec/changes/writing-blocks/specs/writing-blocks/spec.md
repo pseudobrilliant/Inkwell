@@ -125,6 +125,23 @@ WHILE a writing block has never been reviewed, Inkwell SHALL show it in Draft mo
 
 Test: tests/writingblocks.test.ts › "a block with no comment is in Draft mode"
 
+### Requirement: Line breaks inside a paragraph
+WHILE the cursor is inside a writing block in Live Preview, Shift+Enter SHALL start a new line in the same paragraph, saved as a Markdown hard line break: a `\` at the end of the line before it. The new line SHALL have no first-line indent, while editing and when rendered, and the `\` SHALL be hidden while editing. Joining the two lines SHALL remove the `\`.
+
+#### Scenario: Shift+Enter continues the paragraph
+- **GIVEN** the cursor after "The door was open, and" in a writing block
+- **WHEN** the writer presses Shift+Enter and types "I walked in."
+- **THEN** the note holds `> The door was open, and\` and `> I walked in.`, and "I walked in." shows on its own line, not indented
+
+Test: tests/writingblocks.test.ts › "shift+enter breaks the line and saves a \\ at its end" [the drawing is checked by hand]
+
+#### Scenario: Backspace undoes the line break
+- **GIVEN** the cursor at the start of a Shift+Enter line
+- **WHEN** the writer presses Backspace
+- **THEN** the two lines become one, with no `\` left in the writing
+
+Test: tests/writingblocks.test.ts › "joining a line break removes its \\"
+
 ### Requirement: Entering review keeps the first draft
 WHEN a writing block first leaves Draft mode (to Review or Edited), Inkwell SHALL save its current text as the first draft, in an Obsidian comment one blank line below the block, opening with `%% writing-block first-draft <mode>` and closing with `%%`. Later mode changes SHALL NOT change the first draft.
 
@@ -184,11 +201,11 @@ Test: tests/writingblocks.test.ts › "diff marks replaced words as removed then
 
 Test: tests/writingblocks.test.ts › "no changes gives no marks"
 
-#### Scenario: Paragraph breaks count as changes
-- **WHEN** in Review the writer splits one paragraph into two
-- **THEN** the new break shows as a change
+#### Scenario: Paragraph breaks aren't marked
+- **WHEN** in Review the writer splits one paragraph into two, or joins two
+- **THEN** the block shows the new paragraphs with no mark for the break, and words added or removed around it are still marked
 
-Test: tests/writingblocks.test.ts › "a split paragraph shows as a change"
+Test: tests/writingblocks.test.ts › "paragraph breaks change the layout without a mark"
 
 ### Requirement: Edited mode
 WHILE a block is in Edited mode, Inkwell SHALL show its current text clean, with no marks. The writer SHALL be able to edit the text in Edited mode.
@@ -300,7 +317,7 @@ WHEN the writer runs "This became a story" on an exercise, or "Promote story to 
 - **THEN** the new draft holds the block's current text as plain paragraphs
 - **AND** the exercise is unchanged except for `became`
 
-Test: none yet
+Test: tests/became.test.ts › "a story starts from the block's current text"
 
 #### Scenario: Promoting keeps the first draft out of scenes
 - **GIVEN** a story draft with a reviewed block whose first draft contains `***`
@@ -308,7 +325,7 @@ Test: none yet
 - **THEN** the scenes hold only current text, split at breaks in the current text only
 - **AND** the original draft, with the block and its comment, is kept in the project's `Archive/`
 
-Test: none yet
+Test: tests/promote.test.ts › "scenes hold only current text, and the original draft is archived first"
 
 ### Requirement: Exercise template
 Inkwell's built-in exercise template SHALL start its `## Work` section with an empty writing block. Template files the writer already has SHALL NOT be changed.
@@ -318,4 +335,4 @@ Inkwell's built-in exercise template SHALL start its `## Work` section with an e
 - **WHEN** the writer creates an exercise
 - **THEN** its Work section holds an empty writing block
 
-Test: none yet
+Test: tests/blocks.test.ts › "the built-in exercise template starts Work with a writing block"

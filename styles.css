@@ -494,3 +494,8 @@ body {
   color: var(--text-muted);
   cursor: default;
 }
+
+/* A Shift+Enter line: the same paragraph, so no first-line indent. */
+.markdown-source-view.mod-cm6 .cm-line.inkwell-wb-line.inkwell-wb-cont {
+  text-indent: 0 !important;
+}

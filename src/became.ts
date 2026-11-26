@@ -2,14 +2,18 @@ import { Notice, TFile } from "obsidian";
 import type InkwellPlugin from "./main";
 import { askStoryDetails, createShortStory } from "./stories";
 import { sectionText, stripFrontmatter, fmOf, type Frontmatter, fmStr } from "./util";
+import { unwrapBlocks } from "./writingblocks";
 
 export function isExercise(plugin: InkwellPlugin, file: TFile | null): file is TFile {
   return !!file && fmOf(plugin.app, file)?.type === "exercise";
 }
 
-/** The "## Work" section of an exercise, or the whole body if there isn't one. */
+/**
+ * The "## Work" section of an exercise, or the whole body if there isn't one. Writing blocks in it come out as
+ * plain paragraphs of their current text: the story starts from the revision, never the kept first draft.
+ */
 export function workSection(text: string): string {
-  return sectionText(text, "Work") ?? stripFrontmatter(text).trim();
+  return unwrapBlocks(sectionText(text, "Work") ?? stripFrontmatter(text).trim()).trim();
 }
 
 /** Promote an exercise into a short story. The exercise is copied, never changed except for `became`. */

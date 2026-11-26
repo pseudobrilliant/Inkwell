@@ -51,4 +51,17 @@ describe("exerciseBecameStory", () => {
     expect(app.fmOfPath(EX)).toMatchObject({ type: "exercise", became: "[[Low Tide]]" });
     expect(app.textOf(EX)?.replace(/^---[\s\S]*?---\n/, "")).toBe(body.replace(/^---[\s\S]*?---\n/, ""));
   });
+
+  it("a story starts from the block's current text", async () => {
+    const withBlock = note(
+      "## Work\n> [!writing]\n> The boat came back.\n> Then the sea.\n\n%% writing-block first-draft edited\nThe boat sat.\n***\nOld ending.\n%%\n\n## Reflection\nGood."
+    );
+    expect(workSection(withBlock)).toBe("The boat came back.\nThen the sea.");
+    const app = new FakeApp().seed({ [EX]: withBlock });
+    await exerciseBecameStory(fakePlugin(app), app.file(EX));
+    const draft = app.textOf("02 - Stories/Low Tide/Low Tide - Draft.md") ?? "";
+    expect(draft).toContain("The boat came back.\nThen the sea.");
+    expect(draft).not.toMatch(/\[!writing\]|first-draft|The boat sat|Old ending/);
+    expect(app.textOf(EX)?.endsWith("## Reflection\nGood.")).toBe(true);
+  });
 });

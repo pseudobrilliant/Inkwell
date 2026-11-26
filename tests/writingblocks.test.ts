@@ -9,6 +9,10 @@ import {
   findBlocks,
   newBlockAt,
   quotePasted,
+  breakKinds,
+  endsWithBreak,
+  shiftEnterAt,
+  withLineBreaks,
   lockedRanges,
   outsideLocked,
   touchesLocked,
@@ -355,15 +359,17 @@ describe("review: what changed since the first draft", () => {
     expect(diffSegments("Same text.\nTwo.", "Same text.\nTwo.")).toEqual([{ kind: "same", text: "Same text.\nTwo.", at: 0 }]);
   });
 
-  it("a split paragraph shows as a change", () => {
-    const segs = diffSegments("One. Two.", "One.\nTwo.");
-    expect(segs.some((g) => g.kind !== "same" && g.text.includes("\n"))).toBe(true);
-    const paras = reviewParagraphs(segs);
-    expect(paras).toHaveLength(2);
-    expect(paras[0]?.some((sp) => sp.kind === "added" && sp.text === "¶")).toBe(true);
+  it("paragraph breaks change the layout without a mark", () => {
+    const text = (p: { text: string }[]) => p.map((sp) => sp.text).join("");
+    const split = reviewParagraphs(diffSegments("One. Two.", "One.\nTwo."));
+    expect(split).toHaveLength(2);
+    expect(split.flat().some((sp) => sp.text.includes("¶"))).toBe(false);
     const joined = reviewParagraphs(diffSegments("One.\nTwo.", "One. Two."));
     expect(joined).toHaveLength(1);
-    expect(joined[0]?.some((sp) => sp.kind === "removed" && sp.text === "¶")).toBe(true);
+    expect(joined.flat().some((sp) => sp.text.includes("¶"))).toBe(false);
+    // The removed break leaves nothing behind (the space the writer typed in its place is an added change).
+    expect(joined[0]!.filter((sp) => sp.kind === "removed")).toEqual([]);
+    expect(text(joined[0]!)).toBe("One. Two.");
   });
 
   it("rebuilding the first draft from the segments gives it back exactly", () => {
@@ -426,5 +432,44 @@ describe("Draft mode after review", () => {
     expect(outsideLocked(ranges, inside, note.length, note.length)).toBe(r.from - 1);
     // Not inside: nothing to do.
     expect(outsideLocked(ranges, 2, 0, note.length)).toBeNull();
+  });
+});
+
+describe("Shift+Enter: a line break in the same paragraph", () => {
+  it("shift+enter breaks the line and saves a \\ at its end", () => {
+    expect(press(shiftEnterAt, "> [!writing]\n> The door was open, and| I walked in.")).toBe(
+      "> [!writing]\n> The door was open, and\\\n> | I walked in."
+    );
+    expect(findBlocks("> [!writing]\n> One,\\\n> two.")[0]?.lines).toEqual(["One,\\", "two."]);
+  });
+
+  it("never splits a line between its text and its hidden \\", () => {
+    // Cursor at the very end, after the hidden \: Enter and Shift+Enter split before it.
+    expect(press(enterAt, "> [!writing]\n> One,\\|\n> two.")).toBe("> [!writing]\n> One,\n> |\\\n> two.");
+    expect(press(shiftEnterAt, "> [!writing]\n> One,\\|\n> two.")).toBe("> [!writing]\n> One,\\\n> |\\\n> two.");
+  });
+
+  it("joining a line break removes its \\", () => {
+    expect(press(backspaceAt, "> [!writing]\n> One,\\\n> |two.")).toBe("> [!writing]\n> One,|two.");
+    expect(press(deleteAt, "> [!writing]\n> One,|\\\n> two.")).toBe("> [!writing]\n> One,|two.");
+    const text = "> [!writing]\n> One,\\\n> two.";
+    const two = text.indexOf("> two.");
+    expect(widenJoin(text, two - 1, two)).toEqual({ from: two - 2, to: two + 2 });
+  });
+
+  it("an even run of backslashes is text, not a line break", () => {
+    expect(endsWithBreak("C:\\")).toBe(true);
+    expect(endsWithBreak("a literal \\\\")).toBe(false);
+    expect(endsWithBreak("none")).toBe(false);
+  });
+
+  it("draws continued lines in the same paragraph, without the \\", () => {
+    const paras = withLineBreaks(plainParagraphs("One,\\\ntwo.\nNew paragraph."));
+    expect(paras.map((p) => p.map((line) => line.map((sp) => sp.text).join("")))).toEqual([["One,", "two."], ["New paragraph."]]);
+  });
+
+  it("knows which of Obsidian's line breaks are Shift+Enter breaks", () => {
+    const [b] = findBlocks("> [!writing]\n> One,\\\n> two.\n> Three.\n>\n> Four.");
+    expect(breakKinds(b!)).toEqual([[true, false], []]);
   });
 });

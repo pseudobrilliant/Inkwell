@@ -66,10 +66,10 @@ describe("splitScenes", () => {
 
 const STORY = "02 - Stories/Tide";
 
-function storyVault() {
+function storyVault(draft = "---\ntype: draft\nversion: 2\n---\n# Low Water\nThe boat sat.\n***\nThen the sea came back.") {
   return new FakeApp().seed({
     [`${STORY}/Tide.md`]: "---\ntype: story\nstatus: drafting\ntarget_wordcount: 3000\n---\n# Tide\nHub notes.",
-    [`${STORY}/Tide - Draft.md`]: "---\ntype: draft\nversion: 2\n---\n# Low Water\nThe boat sat.\n***\nThen the sea came back.",
+    [`${STORY}/Tide - Draft.md`]: draft,
     [`${STORY}/Mara.md`]: "---\ntype: character\n---\nThe captain.",
     [`${STORY}/Harbor.md`]: "---\ntype: place\n---\nOld term for a location.",
     [`${STORY}/Notes/Research.md`]: "Tide tables.",
@@ -122,6 +122,22 @@ describe("promoteToLongForm", () => {
     expect(app.fmOfPath("03 - Projects/Tide/Tide.md")).toMatchObject({ type: "storyline", title: "Tide", target_wordcount: 60000, language: "en" });
     expect(app.trashed).toEqual([STORY]);
     expect(app.paths().some((p) => p.startsWith("02 - Stories/"))).toBe(false);
+  });
+
+  it("scenes hold only current text, and the original draft is archived first", async () => {
+    const draftText =
+      "---\ntype: draft\nversion: 2\n---\n> [!writing]\n> The boat sat.\n> ***\n> Then the sea came back.\n\n%% writing-block first-draft edited\nA first try.\n***\nNever kept.\n# Old heading\nGone.\n%%\n";
+    const plugin = fakePlugin(storyVault(draftText));
+    const { app } = plugin;
+    await promoteToLongForm(plugin, storyFromFolder(plugin, app.folder(STORY)));
+
+    const scenes = app.paths().filter((p) => p.includes("/Scenes/"));
+    expect(scenes).toHaveLength(2);
+    const sceneText = scenes.map((p) => app.textOf(p) ?? "").join("\n");
+    expect(sceneText).toContain("The boat sat.");
+    expect(sceneText).toContain("Then the sea came back.");
+    expect(sceneText).not.toMatch(/first try|Never kept|Old heading|\[!writing\]|%%/);
+    expect(app.textOf("03 - Projects/Tide/Archive/Tide - Draft.md")).toBe(draftText);
   });
 
   it("refuses when a project of that name exists, changing nothing", async () => {

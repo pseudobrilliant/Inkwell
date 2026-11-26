@@ -10,10 +10,10 @@ import { editorLivePreviewField, Notice, type Editor } from "obsidian";
 import {
   backspaceAt,
   blockAtLine,
-  BREAK_MARK,
   damagesFirstDraft,
   deleteAt,
   diffSegments,
+  endsWithBreak,
   enterAt,
   findBlocks,
   guardedDrafts,
@@ -23,6 +23,7 @@ import {
   outsideLocked,
   prefixLength,
   quotePasted,
+  shiftEnterAt,
   touchesLocked,
   widenJoin,
   type KeyEdit,
@@ -111,24 +112,13 @@ class RemovedWidget extends WidgetType {
   }
 
   toDOM(view: EditorView): HTMLElement {
-    const el = view.dom.createSpan({ cls: "inkwell-wb-removed", text: this.text.split("\n").join(` ${BREAK_MARK} `) });
+    const shown = this.text.replace(/\\?\n/g, " ");
+    const el = view.dom.createSpan({ cls: "inkwell-wb-removed", text: shown });
     el.remove();
     return el;
   }
 }
 
-/** A paragraph break added since the first draft, marked at the end of the line it ends. */
-class AddedBreakWidget extends WidgetType {
-  eq(): boolean {
-    return true;
-  }
-
-  toDOM(view: EditorView): HTMLElement {
-    const el = view.dom.createSpan({ cls: "inkwell-wb-added inkwell-wb-break", text: BREAK_MARK });
-    el.remove();
-    return el;
-  }
-}
 const addedMark = Decoration.mark({ class: "inkwell-wb-added" });
 
 /** Review marks for a block, as decorations: its text offsets mapped to the note through each line's hidden `> `. */
@@ -151,16 +141,15 @@ function reviewDecorations(state: EditorState, b: WritingBlock, firstDraft: stri
   const out: Range<Decoration>[] = [];
   for (const seg of diffSegments(firstDraft, b.text)) {
     if (seg.kind === "removed") {
+      // A removed paragraph break on its own isn't marked: the joined text shows it.
+      if (seg.text.replace(/\\?\n/g, "").trim() === "") continue;
       out.push(Decoration.widget({ widget: new RemovedWidget(seg.text), side: -1 }).range(toDoc(seg.at)));
     } else if (seg.kind === "added") {
       let at = seg.at;
       for (const part of seg.text.split("\n").map((t, i, all) => ({ t, brk: i < all.length - 1 }))) {
         if (part.t) out.push(addedMark.range(toDoc(at), toDoc(at + part.t.length)));
         at += part.t.length;
-        if (part.brk) {
-          out.push(Decoration.widget({ widget: new AddedBreakWidget(), side: 1 }).range(toDoc(at)));
-          at += 1;
-        }
+        if (part.brk) at += 1;
       }
     }
   }
@@ -203,6 +192,8 @@ function build(state: EditorState, host: WritingBlockHost): BlockDecorations {
       const cls = ["inkwell-wb-line"];
       if (n === b.start + 1) cls.push("inkwell-wb-first");
       if (n === b.end) cls.push("inkwell-wb-last");
+      // A Shift+Enter line: same paragraph, no first-line indent.
+      if (n > b.start + 1 && endsWithBreak(b.lines[n - b.start - 2] ?? "")) cls.push("inkwell-wb-cont");
       decos.push(Decoration.line({ class: cls.join(" ") }).range(line.from));
       const p = prefixLength(line.text);
       if (p > 0) {
@@ -210,6 +201,11 @@ function build(state: EditorState, host: WritingBlockHost): BlockDecorations {
         if (n > b.start + 1) hidden.push(hide.range(line.from, line.from + p));
       }
       if (line.text.slice(p).length === 0) decos.push(indentAnchor.range(line.to));
+      // The `\` that saves a Shift+Enter line break is hidden; the cursor skips it.
+      if (endsWithBreak(line.text) && line.to - 1 >= line.from + p) {
+        decos.push(hide.range(line.to - 1, line.to));
+        hidden.push(hide.range(line.to - 1, line.to));
+      }
     }
   }
   return { decorations: Decoration.set(decos, true), hidden: Decoration.set(hidden, true) };
@@ -310,6 +306,7 @@ function runKey(key: (text: string, pos: number) => KeyEdit | null) {
 const blockKeys = Prec.highest(
   keymap.of([
     { key: "Enter", run: runKey(enterAt) },
+    { key: "Shift-Enter", run: runKey(shiftEnterAt) },
     { key: "Backspace", run: runKey(backspaceAt) },
     { key: "Mod-Backspace", run: runKey(backspaceAt) },
     { key: "Alt-Backspace", run: runKey(backspaceAt) },

@@ -109,7 +109,7 @@ These tests describe current code and pass before anything else changes.
   Set the Test lines for "Changes show while revising", "No changes yet" and "Paragraph breaks count as changes". Verify `npm test` passes, and a 5,000-word heavily rewritten block diffs in under 100 ms in a test.
 - [ ] 4.2 In `src/writingblockeditor.ts`, with the cursor inside a block (the folded first draft is already done):
   - Review marks: added text highlighted, removed text struck through as widgets, recomputed on each edit (bounded by the diff's timeout)
-  - added or removed paragraph breaks shown as a marked ¶
+  - added or removed paragraph breaks not marked: the layout shows them
   - Edited shows clean text
 
   Verify by hand in `test-vault` while typing, pasting, splitting paragraphs, undoing and redoing, in split panes and on a phone with autocorrect, swipe and dictation.
@@ -122,9 +122,9 @@ These tests describe current code and pass before anything else changes.
 
 ## 5. Moving work up and the template
 
-- [ ] 5.1 Pass `workSection`'s result through `unwrapBlocks`. Add "a story starts from the block's current text" to `tests/became.test.ts` (fake vault) and update the 1.2 tests whose behaviour changes. Set the "A story starts from the revised text" Test line. Verify `npm test` passes.
-- [ ] 5.2 In `promoteToLongForm`, call `unwrapBlocks` on the draft body before `splitScenes`. Add "scenes hold only current text, and the original draft is archived first" to `tests/promote.test.ts`, with `***` in a first draft. Set the "Promoting keeps the first draft out of scenes" Test line. Verify `npm test` passes.
-- [ ] 5.3 Start the built-in exercise template's `## Work` with an empty writing block in `src/templates.ts`. Add "the built-in exercise template starts Work with a writing block" to `tests/blocks.test.ts` (templates suite), and set the "New exercise has a block" Test line. Verify `npm test` passes and a new exercise in `test-vault` has the block.
+- [x] 5.1 Pass `workSection`'s result through `unwrapBlocks`. Add "a story starts from the block's current text" to `tests/became.test.ts` (fake vault) and update the 1.2 tests whose behaviour changes. Set the "A story starts from the revised text" Test line. Verify `npm test` passes.
+- [x] 5.2 In `promoteToLongForm`, call `unwrapBlocks` on the draft body before `splitScenes`. Add "scenes hold only current text, and the original draft is archived first" to `tests/promote.test.ts`, with `***` in a first draft. Set the "Promoting keeps the first draft out of scenes" Test line. Verify `npm test` passes.
+- [x] 5.3 Start the built-in exercise template's `## Work` with an empty writing block in `src/templates.ts`. Add "the built-in exercise template starts Work with a writing block" to `tests/blocks.test.ts` (templates suite), and set the "New exercise has a block" Test line. Verify `npm test` passes and a new exercise in `test-vault` has the block.
 
 ## 6. Docs, ADR, check
 
