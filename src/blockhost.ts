@@ -1,6 +1,6 @@
 /**
  * Inkwell's side of writing blocks: what it does around them, kept out of the block code itself
- * (openspec/changes/writing-blocks/design.md, decision 10). The blocks call this through `WritingBlockHost`.
+ * (openspec/changes/archive/2026-11-26-writing-blocks/design.md, decision 10). The blocks call this through `WritingBlockHost`.
  */
 import { Notice } from "obsidian";
 import type InkwellPlugin from "./main";

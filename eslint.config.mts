@@ -33,7 +33,7 @@ export default defineConfig(
     rules: { "obsidianmd/ui/sentence-case": ["warn", { brands: ["Inkwell", "Obsidian", "Keep the Rhythm", "StoryLine", "Bases"] }] },
   },
   {
-    // Writing blocks are a self-contained component (openspec/changes/writing-blocks/design.md, decision 10): they
+    // Writing blocks are a self-contained component (openspec/changes/archive/2026-11-26-writing-blocks/design.md, decision 10): they
     // import only Obsidian, CodeMirror and each other, and the rest of Inkwell calls into them, never the reverse.
     // The core rule is used because Obsidian's config already sets the TypeScript one.
     files: ["src/writingblock*.ts"],

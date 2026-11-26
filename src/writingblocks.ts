@@ -1,5 +1,5 @@
 /**
- * Writing blocks (see openspec/changes/writing-blocks, ADR 0006).
+ * Writing blocks (spec: openspec/specs/writing-blocks; ADR 0006).
  *
  * A writing block is a `> [!writing]` callout holding the writing as it is now. Once reviewed, the first draft
  * and the block's mode sit in an Obsidian comment one blank line below it:

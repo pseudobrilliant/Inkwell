@@ -117,7 +117,7 @@ Contribution is tracked at four levels. Each answers a different question.
 
 ## Design records
 
-- **Behaviour** lives in `openspec/specs/<capability>/spec.md`: one living spec per capability, with requirements in EARS sentences and scenarios that name their tests. Conventions are in `openspec/config.yaml`. So far: `writing-timer`. The other capabilities are still described in the sections above.
+- **Behaviour** lives in `openspec/specs/<capability>/spec.md`: one living spec per capability, with requirements in EARS sentences and scenarios that name their tests. Conventions are in `openspec/config.yaml`. So far: `writing-timer`, `writing-blocks`. The other capabilities are still described in the sections above.
 - **Ideas and open questions** live in `openspec/ideas/<id>.md`, one short file each, indexed in `openspec/ideas/README.md`. They are not OpenSpec changes, so `changes/` only holds work in progress.
 - **Changes in progress** live in `openspec/changes/<id>/`. Picking up an idea makes it a proposal (the `openspec-propose` skill, or `npx openspec new change <id>`) and deletes the idea file. Once it's built, archive it (`npx openspec archive <id>`), which merges its spec changes into the specs.
 - **Decisions** live in `openspec/decisions/` as ADRs. Write one for a decision that's hard to reverse or that picks between real options. Never rewrite an accepted ADR: supersede it with a new one. See `openspec/decisions/README.md`.
