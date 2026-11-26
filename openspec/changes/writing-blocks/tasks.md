@@ -129,7 +129,7 @@ These tests describe current code and pass before anything else changes.
 ## 5b. Keeping the block whole (from the review, 2026-11-26)
 
 - [x] 5b.1 Pure fixes with tests in `tests/writingblocks.test.ts` ("keeping the block whole"): the first draft ends at the first `%%`; whole-paragraph deletes and deletes to a line's start keep `>`; header edits refused (`breaksHeader`); the cursor never rests on the header or the fold's edges (`cursorStop`); the locked block's end is locked; typing under a block keeps a blank line (`keepApart`); Enter never leaves; Down leaves at the end of a note (`leaveAtEnd`); Backspace in an empty block leaves an empty line.
-- [ ] 5b.2 By hand in `test-vault`, desktop and phone: Left/Up from the first paragraph, Obsidian's edit-block button, triple-click and delete, Cmd+Backspace, Delete at the end of the heading above, arrowing past a reviewed block and a locked one, clicking "First draft kept", Enter twice, Down at the end of a note.
+- [ ] 5b.2 By hand in `test-vault`, desktop (done 2026-11-26) and phone (still to do): Left/Up from the first paragraph, Obsidian's edit-block button, triple-click and delete, Cmd+Backspace, Delete at the end of the heading above, arrowing past a reviewed block and a locked one, clicking "First draft kept", Enter twice, Down at the end of a note.
 
 ## 6. Docs, ADR, check
 
