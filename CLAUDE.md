@@ -45,13 +45,13 @@ Feeding the well is the ethos behind Capture. It has two sides, and both go thro
 ### Mode 1: Practice. Show up.
 - **Purpose:** low-stakes, daily writing. Quantity over polish. Always gives you something to write today, even with no project.
 - **Structure:** `01 - Practice/` → `Journal/` (`type: journal`) and `Exercises/`, which holds `Prompts/` (`type: prompt`, one note per prompt), `Drills/` (`type: drill`, one note per drill, from the drill template), and `Writing/` (`type: exercise`: the writing you did; setting `folders.writings`).
-- **Tools:** today's journal, new exercise (with a time goal; its Work section starts with a writing block), new prompt, random prompt (least used and oldest first), new drill, exercise from a drill (the open drill note, or a pick; the drill's `minutes` sets the timer goal), add starter drills (five common drills, skips existing), prompt of the day (`inkwell-prompt` block), prompts table (Bases), writing timer. See `src/journal.ts`, `src/exercise.ts`, `src/prompts.ts`, `src/drills.ts`, `src/timer.ts`, `src/timerstate.ts`.
+- **Tools:** today's journal (its Writing section is a writing block), new exercise (with a time goal; its Work section starts with a writing block), new prompt, random prompt (least used and oldest first), new drill, exercise from a drill (the open drill note, or a pick; the drill's `minutes` sets the timer goal), add starter drills (five common drills, skips existing), prompt of the day (`inkwell-prompt` block), prompts table (Bases), writing timer. See `src/journal.ts`, `src/exercise.ts`, `src/prompts.ts`, `src/drills.ts`, `src/timer.ts`, `src/timerstate.ts`.
 - **Writing timer:** one timer at a time on an exercise or journal. It starts on the first keystroke, pauses by itself when you stop typing, and stop adds whole minutes to `writing_min`. Works on mobile, and each device times its own writing. An exercise with a writing block is timed by block: only drafting in a Draft block counts, the timer is a tool in the block's toolbar (`WritingBlockHost.tools`) in place of the header button, and the block's first review stops and logs it. Behaviour: [`openspec/specs/writing-timer/spec.md`](openspec/specs/writing-timer/spec.md). Why device-local storage: [ADR 0003](openspec/decisions/0003-timer-state-in-device-local-storage.md). The state machine is pure (`src/timerstate.ts`); `src/timer.ts` is the UI around it.
-- **Progress signal:** did I write today? Journal entries, exercises done, minutes written, prompts used.
+- **Progress signal:** did I write today? Words written in blocks (a day counts as showed up only with words), journal entries, exercises done, minutes written, prompts used.
 
 ### Mode 2: Short form. Finish small things.
 - **Purpose:** short pieces that stay light: **one hub, one draft**. No scenes or heavy structure.
-- **Structure:** `02 - Stories/<Title>/` → hub `<Title>.md` (`type: story`), `<Title> - Draft.md` (`type: draft`), characters and locations, `Notes/`, `Archive/` (revision snapshots).
+- **Structure:** `02 - Stories/<Title>/` → hub `<Title>.md` (`type: story`), `<Title> - Draft.md` (`type: draft`, its writing in a writing block), characters and locations, `Notes/`, `Archive/` (revision snapshots).
 - **Tools:** new short story, story panel, story progress, status changes, revision snapshots (v2, v3, …), new character or location. See `src/stories.ts`, `src/storyview.ts`, `src/revisions.ts`.
 - **Progress signal:** status (idea → drafting → revising → done), draft words against `target_wordcount`, last worked on, revision count.
 
@@ -62,14 +62,15 @@ Feeding the well is the ethos behind Capture. It has two sides, and both go thro
 - **Progress signal:** total words across scenes against the target, words this week, scene statuses, next step.
 
 ### Shared view: Home
-- **Home** (`src/home.ts`, `src/homeblocks.ts`, `src/contribution.ts`) brings everything together: inbox, in-progress pieces, practice, prompt of the day, heatmap. It is built from code blocks (`inkwell-inbox`, `inkwell-in-progress`, `inkwell-prompt`, `inkwell-practice`, `inkwell-heatmap`) that work in any note. The **New…** picker creates any Inkwell note.
+- **Home** (`src/home.ts`, `src/homeblocks.ts`, `src/contribution.ts`) brings everything together: inbox, in-progress pieces, practice, prompt of the day, words and the heatmap. It is built from code blocks (`inkwell-inbox`, `inkwell-in-progress`, `inkwell-prompt`, `inkwell-practice`, `inkwell-contribution`, `inkwell-words`, `inkwell-heatmap`; the last two in `src/wordblocks.ts`) that work in any note. The **New…** picker creates any Inkwell note.
 
 ### Core component: writing blocks
 The writing block is the heart of the writing experience (constitution, design principles 1–3). Writing blocks are not a mode. They're a core component that supports features across Capture, Practice and the writing modes, starting with exercises.
 - **What it is:** a `> [!writing]` callout that holds the writing itself, edited as a styled box with the Markdown hidden. Its toolbar has Draft, Review and Edited.
 - **The first draft** is kept in a `%% writing-block first-draft <mode> … %%` comment just below the block. Review shows a live diff against it, so nothing is accepted or rejected.
 - **Behaviour:** [`openspec/specs/writing-blocks/spec.md`](openspec/specs/writing-blocks/spec.md). The format: [ADR 0006](openspec/decisions/0006-writing-block-first-draft-in-a-comment.md).
-- **Code:** `src/writingblock*.ts` are self-contained. They import only Obsidian, CodeMirror and each other (lint enforces it), so they could become their own plugin later. That isn't planned. Inkwell's side, such as the KTR notice and the commands, is `src/blockhost.ts`.
+- **Code:** `src/writingblock*.ts` are self-contained. They import only Obsidian, CodeMirror and each other (lint enforces it), so they could become their own plugin later. That isn't planned. Inkwell's side, such as the word log, the timer and the commands, is `src/blockhost.ts`.
+- **Words:** the editor reports the net words the writer types in a note's blocks through `WritingBlockHost.onBlockWords`, after a 2-second pause, on blur or on close. Counting is pure (`blockWords`, `countsAsWriting`, `BlockWordTally` in `src/writingblockwords.ts`, which also holds `countWords`). New drafts, scenes and journals start with a block, and the story and project panels offer "Put in a writing block" for writing that isn't in one.
 - **Typewriter Mode:** if installed, it's turned on while the writer is writing in a block and off when they leave, through its own enable/disable commands. The editor reports through `WritingBlockHost.onWritingInBlock`; all Typewriter Mode access lives in `src/integrations/typewriter-mode.ts`.
 - **Toolbar tools:** the host adds tools at the far right of the toolbar, after the modes (`BlockTool`, `WritingBlockHost.tools`). The first is the writing timer, shown in exercises only. `onFirstDraftSaved` gets the note's path and text.
 - **Next:** other block types may follow (`writing-block-types.md`).
@@ -78,22 +79,22 @@ The writing block is the heart of the writing experience (constitution, design p
 
 Work moves **up** as it grows: capture → practice → story → project.
 
-- **Exercise → story:** "This became a story" (`src/became.ts`). The story hub gets `from:` and the exercise gets `became:`. Writing blocks carry only their current text, as plain paragraphs.
-- **Story → project:** "Promote story to long form" (`src/promote.ts`). The draft is archived first, then writing blocks are unwrapped to their current text and the draft is split into scenes at headings or `***` breaks. Characters and locations move to `Codex/`, and the hub becomes the project note (`promoted:` date).
+- **Exercise → story:** "This became a story" (`src/became.ts`). The story hub gets `from:` and the exercise gets `became:`. The draft holds the exercise's current text in a writing block, without the first draft.
+- **Story → project:** "Promote story to long form" (`src/promote.ts`). The draft is archived first, then writing blocks are unwrapped to their current text, the draft is split into scenes at headings or `***` breaks, and each scene's text goes in a writing block. Characters and locations move to `Codex/`, and the hub becomes the project note (`promoted:` date).
 - Moving up is **always optional** and **always keeps a link back** to where the work started.
 
 ## Progress & motivation model
-
-> Being replaced by Inkwell's own word log ([ADR 0007](openspec/decisions/0007-inkwell-keeps-its-own-word-log.md)), with daily and weekly word goals (change `block-word-log`, then idea `word-goals`). The table and the KTR rules below describe the current code until that change lands.
 
 Contribution is tracked at four levels. Each answers a different question.
 
 | Level | Question it answers | What exists now | Status |
 |---|---|---|---|
-| **Session / day** | Did I show up today? | `inkwell-practice` (`src/contribution.ts`): days showed up this week, streak, exercises, prompts used, journal entries, minutes written (`writing_min`, from the writing timer), practice words. Also KTR's `ktr-entries` in the journal | built |
-| **Piece** | Is this story or project moving? | Words against `target_wordcount`, words this week, status, last worked on, status bar, Home in-progress list | built |
-| **Mode** | Where is my writing going: capture, practice, stories, or projects? | `inkwell-contribution` (`src/contribution.ts`): counts per objective for a week, month, year, or all time (captures, resources added/reading/done, exercises, journals, prompts, stories started or grown from practice, revisions, projects, scenes) plus KTR words per mode | built |
-| **Lifetime / streak** | What has all this added up to? | KTR heatmap (`inkwell-heatmap`), KTR streak in `inkwell-practice`, all-time view of `inkwell-contribution`. Not yet: a dedicated writing-life view (milestones, pieces finished) | partial |
+| **Session / day** | Did I show up today? | `inkwell-practice` (`src/contribution.ts`): days showed up this week, streak, exercises, prompts used, journal entries, minutes written (`writing_min`, from the writing timer), practice words. `inkwell-words`: words today, this week and this month, and the streak. A day counts as showed up only when its block words are above zero | built |
+| **Piece** | Is this story or project moving? | Words against `target_wordcount`, words this week (from the log), status, last worked on, status bar, Home in-progress list | built |
+| **Mode** | Where is my writing going: capture, practice, stories, or projects? | `inkwell-contribution` (`src/contribution.ts`): counts per objective for a week, month, year, or all time (captures, resources added/reading/done, exercises, journals, prompts, stories started or grown from practice, revisions, projects, scenes) plus logged words per mode | built |
+| **Lifetime / streak** | What has all this added up to? | Inkwell's heatmap (`inkwell-heatmap`, also in the story and project panels), the current and longest streak, all-time view of `inkwell-contribution`. Not yet: a dedicated writing-life view (milestones, pieces finished) | partial |
+
+Every word number comes from the word log (see **Word log** under Rules). Daily and weekly word goals come next (idea `word-goals`).
 
 **Counting rule:** practice writing (journal, exercises) **never** counts toward a piece's progress. It **does** count toward the day and lifetime levels. Piece-level numbers come only from drafts and scenes.
 
@@ -122,6 +123,7 @@ Contribution is tracked at four levels. Each answers a different question.
 | `storyline` | Projects/<Title> | StoryLine fields (`title`, `bookId`, `language`) + `status`, `logline`, `target_wordcount`, `promoted` |
 | `scene` | …/Scenes | `id`, `title`, `sequence`, `act`, `chapter`, `status`, `pov`, `characters`, `location`, `target_wordcount` |
 | `character` / `location` | story folder or `Codex/` | `project`, `tagline`, … |
+| `word-log` | `99 - System/Inkwell/Word log/<device>/` | `device`, `month` (`YYYY-MM`), then a table of Date, Note (vault path) and net Words. One note per device per month; only that device writes it |
 | `resource` | Resources | `kind`, `status` (`to-do`, `in-progress`, `done`), `author` (or `teacher` for a class), `where`, `start`/`end` (a class's dates), `url`, `created`, `captured`, `from` (link to the note it was captured from). Older kinds read as aliases: `course` → `class`, `craft-book` → `book`, `link`/`website`/`video`/`podcast`/`tool` → `other` |
 
 - Use `target_wordcount` everywhere (StoryLine's name), so promotion needs no renaming.
@@ -134,16 +136,13 @@ Contribution is tracked at four levels. Each answers a different question.
 - **Obsidian plugin guidelines** (enforced by lint): sentence case for all UI text, including command names and notices. Don't disable `obsidianmd/*` rules inline (the config forbids it), so reword the text instead. Use `instanceof`/`getFileByPath`/`getFolderByPath` rather than casting to `TFile`/`TFolder`. Use `activeDocument`/`activeWindow`, not `document`/`window` globals (for popout windows), except timers: lint requires `window.setInterval`/`window.setTimeout`. Build DOM with `createEl`, never `innerHTML`. Styles go in `styles.css` with Obsidian CSS variables, never `el.style`. No default hotkeys. Use the Vault API, not `vault.adapter`. The one exception is reading another plugin's file under `configDir`, which the vault doesn't index. TypeScript is `strict` with `noUncheckedIndexedAccess`.
 - **Scene order:** `sequence` uses gaps of 10 (10, 20, 30…), so a reorder usually rewrites one file. Scene file names follow StoryLine: `<act>-<sequence> <title>`.
 - **StoryLine compatibility:** long-form notes use StoryLine's frontmatter (tested against StoryLine 1.11.12). Long-form statuses default to StoryLine's (`idea, outlined, draft, written, revised, final`). Short-form statuses: `idea, drafting, revising, done`.
-- **Keep the Rhythm (KTR):** to be removed ([ADR 0007](openspec/decisions/0007-inkwell-keeps-its-own-word-log.md)). Until then:
-  - Optional. Inkwell works fully without it, and KTR-based numbers are simply hidden.
-  - All KTR access lives in `src/integrations/keep-the-rhythm.ts`. Nothing else reads KTR data.
-  - Read-only. Never write KTR data or settings.
-  - Version-gated (`KTR_TESTED_VERSIONS`). On an untested version, hide stats rather than show wrong numbers. After each KTR update, check the numbers against KTR's own views before adding the version.
-  - Per-piece numbers count only draft and scene files.
-  - Inkwell keeps no word log, streak, or heatmap of its own. Known risk: KTR's live history is per device (IndexedDB). Its `data.json`, which Inkwell reads, is a copy written about a second after activity, and when it syncs in from another device KTR merges entries by auto-numbered `id`, which each device assigns on its own, so one device's day can overwrite another's. Expect undercounts across phone and desktop.
-  - Parsing and sums over KTR's data are pure functions (`usableData`, `dailyWordsIn`, `streakIn`, `weekStartFor`, `ignoresCommentsIn`), tested against a trimmed `data.json`.
-  - Writing blocks keep their first draft in a comment, so KTR's "Don't count comments" setting (`settings.ignoreComments`) must be on for honest counts. Inkwell reads it to warn on the first review, and never sets it.
-- **Settings** hold folders, template paths, status lists, and default targets (`src/settings.ts`). Never hard-code folder names. The settings file syncs across devices, so keep fast-changing or per-device state out of it: use `app.saveLocalStorage` (the timer, the last capture kind). `onExternalSettingsChange` reloads settings when sync changes the file, so a save never overwrites another device's change. Loading goes through the pure `mergeSettings` (defaults, migrations); controls go through `controlValue`/`applyControlValue`.
+- **Word log** ([spec](openspec/changes/block-word-log/specs/word-log/spec.md), ADRs [0007](openspec/decisions/0007-inkwell-keeps-its-own-word-log.md) and [0008](openspec/decisions/0008-word-log-is-per-device-monthly-notes.md)):
+  - Only the writer's typing in writing blocks counts: the net change in a note's block words, per note per day. The block editor reports it (`WritingBlockHost.onBlockWords`), counting only transactions with a writer's user event (`countsAsWriting`). Inkwell's own rewrites (`vault.create`, `vault.process`, mode switches) and sync never count, so never route them through a user event.
+  - Each device writes only its own notes, `<folders.wordLog>/<device>/<YYYY-MM>.md`, and readers add up every device's. The device id is in local storage. Renames rewrite this device's notes only.
+  - All word numbers go through `plugin.words` (`WordLog` in `src/wordlogstore.ts`), never by reading the log notes elsewhere. Its methods never return null.
+  - The format, the sums, the streak, the week start and the heatmap's layout are pure functions in `src/wordlog.ts`; block word counting and the tally are pure in `src/writingblockwords.ts`.
+  - Per-piece numbers count only draft and scene files (`modeMatchers` in `src/contribution.ts`). `all` leaves out resources and the log itself.
+- **Settings** hold folders, template paths, status lists, and default targets (`src/settings.ts`). Never hard-code folder names. The settings file syncs across devices, so keep fast-changing or per-device state out of it: use `app.saveLocalStorage` (the timer, the last capture kind, the word log's device id). `onExternalSettingsChange` reloads settings when sync changes the file, so a save never overwrites another device's change. Loading goes through the pure `mergeSettings` (defaults, migrations); controls go through `controlValue`/`applyControlValue`.
 - **Settings tab is declarative** (Obsidian 1.13+, so `minAppVersion` is 1.13.0). Add a setting by adding a definition in `getSettingDefinitions()`, which makes it appear in Obsidian's settings search. Don't add a `display()` method. Nested settings use dotted control keys (`folders.inbox`). Every key must be handled in both `getControlValue` and `setControlValue`, where values are normalized (trimmed, with defaults as fallback).
 
 ### Build, test, release
@@ -164,4 +163,4 @@ npm run deploy:test  # build and copy into ./test-vault
 
 ## Open questions & growing edges
 
-Open questions are ideas in `openspec/ideas/` (see its README for the index). The gated one (`long-form-views`) waits on evidence named in its ADR. The `block-word-log` change (in progress) replaces Keep the Rhythm with Inkwell's own word log, counted from writing blocks; the KTR rules above hold until it's built. Work in progress is listed by `npx openspec list`. New key concepts start as an idea, not here.
+Open questions are ideas in `openspec/ideas/` (see its README for the index). The gated one (`long-form-views`) waits on evidence named in its ADR. Work in progress is listed by `npx openspec list`. New key concepts start as an idea, not here.

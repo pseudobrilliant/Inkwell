@@ -42,8 +42,8 @@ Test lines named below go in this change's `specs/word-log/spec.md` and `specs/w
 
 ## 7. Docs, ADRs, check
 
-- [ ] 7.1 Update the README: a "Words" section (what counts, the log folder, each device's own files, the week start), the new blocks on Home, "Put in a writing block", and no more Keep the Rhythm. Verify it reads correctly.
-- [ ] 7.2 Update CLAUDE.md: the progress table and the counting rule on the log, the KTR rules replaced by short word-log rules (only typing in blocks counts, each device writes only its own files, all access through `plugin.words`, pure core in `src/wordlog.ts`), `type: word-log` in the data model, the journal and movement summaries, and the Home blocks. Also remove the "Being replaced" note. In `openspec/config.yaml`, drop `ktr-integration`. Verify `grep -n "KTR\|Keep the Rhythm" CLAUDE.md` finds only history.
+- [x] 7.1 Update the README: a "Words" section (what counts, the log folder, each device's own files, the week start), the new blocks on Home, "Put in a writing block", and no more Keep the Rhythm. Verify it reads correctly.
+- [x] 7.2 Update CLAUDE.md: the progress table and the counting rule on the log, the KTR rules replaced by short word-log rules (only typing in blocks counts, each device writes only its own files, all access through `plugin.words`, pure core in `src/wordlog.ts`), `type: word-log` in the data model, the journal and movement summaries, and the Home blocks. Also remove the "Being replaced" note. In `openspec/config.yaml`, drop `ktr-integration`. Verify `grep -n "KTR\|Keep the Rhythm" CLAUDE.md` finds only history.
 - [ ] 7.3 Mark ADR 0008 accepted and add it to `openspec/decisions/README.md`. Point ADR 0007's link to the block-word-log idea at the archived change. Verify `npm run spec` passes.
 - [ ] 7.4 Run `npm run check` and verify it passes with zero lint errors. Run `npm run deploy:test` and walk through every scenario in both specs once in `test-vault`, on desktop and on a phone with sync between them: typing, paste, cut, undo, a mode switch, promote, a rename, and two devices on the same day.
 
