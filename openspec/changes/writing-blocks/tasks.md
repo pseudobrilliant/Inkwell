@@ -29,8 +29,8 @@ These tests describe current code and pass before anything else changes.
 
 ## 2. Block format, creation and look
 
-- [ ] 2.1 In `test-vault`, check by hand whether Enter inside a callout in Live Preview continues `> `, on desktop and phone. Record the result in design.md's first risk. If it doesn't, plan the Enter keymap for task 2.4.
-- [ ] 2.2 Create `src/writingblocks.ts` with:
+- [x] 2.1 In `test-vault`, check by hand how Obsidian edits a callout in Live Preview. Result: with the cursor inside, it shows the raw `> [!writing]` and `>` markers, which the writer doesn't want; they want to type in a styled box, like today's tabbed blocks. Spec gained "Writing inside the block" and "Paragraphs inside the block", and design decision 4 now hides the Markdown and owns Enter and Backspace (task 2.6).
+- [x] 2.2 Create `src/writingblocks.ts` with:
   - find blocks and their comments, with line ranges, title, text and mode
   - wrap selected lines
   - convert a tab-indented run
@@ -45,9 +45,28 @@ These tests describe current code and pass before anything else changes.
   - "a missing or unreadable comment means never reviewed"
 
   Set the Test lines for "A writing callout is a writing block", "Two blocks in one note", "Wrapping a selection", "Old tabbed writing becomes a block", "A new block is in Writing mode" and "Comment deleted by hand". Verify `npm test` passes.
-- [ ] 2.3 Make `countWords` ignore writing header lines. Update the 1.1 test that pinned the header being counted, and add "counts only a block's current text" to `tests/wordcount.test.ts`; set the "Counting a reviewed block" Test line. Verify `npm test` passes.
-- [ ] 2.4 Add the "New writing block" command (`editorCallback`, plus `editor-menu` entry) in `src/main.ts`: an empty block with the cursor inside, a wrapped selection, or a converted tabbed run. Add the Enter keymap if 2.1 needs it. Add "inserts an empty block with the cursor on its line" to `tests/writingblocks.test.ts` and set the "Empty block at the cursor" Test line. Verify `npm test`, then by hand in `test-vault`.
+- [x] 2.3 Make `countWords` ignore writing header lines. Update the 1.1 test that pinned the header being counted, and add "counts only a block's current text" to `tests/wordcount.test.ts`; set the "Counting a reviewed block" Test line. Verify `npm test` passes.
+- [ ] 2.4 Add the "New writing block" command (`editorCallback`, plus `editor-menu` entry) in `src/main.ts`: an empty block with the cursor inside, a wrapped selection, or a converted tabbed run. Add "inserts an empty block with the cursor on its line" to `tests/writingblocks.test.ts` and set the "Empty block at the cursor" Test line. Verify `npm test`, then by hand in `test-vault`.
 - [ ] 2.5 Add writing block CSS to `styles.css`: hidden icon, box, `var(--font-monospace)`, first-line indent per paragraph. Use classes and Obsidian variables only. Add the `<br>`-splitting post processor in `src/writingblockview.ts`. Verify in `test-vault` against the screenshot's look, in Live Preview and reading view, light and dark, with Strict line breaks on and off.
+- [ ] 2.6 Create `src/writingblockeditor.ts` (`registerEditorExtension`, Live Preview only):
+  - with the cursor in a block, line decorations with the same classes as 2.5's rendered block
+  - the header text and each `> ` hidden as atomic ranges
+  - a high-precedence keymap for Enter and Backspace inside blocks only
+
+  Put the key logic in pure functions in `src/writingblocks.ts` (`enterAt`, `backspaceAt`, returning the change and new cursor). Add to `tests/writingblocks.test.ts`:
+  - "enter starts a new paragraph in the block"
+  - "enter on an empty last line leaves the block"
+  - "backspace at a paragraph's start joins it to the one before"
+  - "backspace on the only empty line removes the block"
+
+  Set the Test lines for "Enter stays in the block", "Enter twice leaves the block" and "Backspace joins paragraphs". Verify `npm test`, then by hand in `test-vault`:
+  - no `>` or `[!writing]` shows while typing
+  - clicking in and out doesn't move the box
+  - arrow keys skip the hidden Markdown
+  - undo works
+  - on a phone: autocorrect, swipe and dictation
+
+  Stop and return to the writer if Obsidian fights the hidden Markdown (see design.md's fallback).
 
 ## 3. Modes and the first draft
 

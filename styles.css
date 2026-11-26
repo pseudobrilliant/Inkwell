@@ -313,3 +313,90 @@
 .inkwell-timer-time:empty {
   display: none;
 }
+
+/* ---------- Writing blocks ----------
+   A `> [!writing]` callout looks like a page of typewritten prose: a box, a typewriter face, and a first-line
+   indent on every paragraph. The same look applies to the rendered callout (reading view, and Live Preview with
+   the cursor elsewhere) and to its lines while the cursor is inside (src/writingblockeditor.ts), so moving in and
+   out doesn't move anything. Each value falls back to the writer's own `--writing-block-*` snippet variables. */
+body {
+  --inkwell-wb-font: var(--writing-block-font, "Courier Prime", "American Typewriter", "Courier New", var(--font-monospace));
+  --inkwell-wb-size: var(--writing-block-size, 1.05em);
+  --inkwell-wb-line-height: var(--writing-block-line-height, 1.95);
+  --inkwell-wb-pad-y: var(--writing-block-pad-y, 2.25em);
+  /* Space between the box's sides and the writing: the same on the left and right. */
+  --inkwell-wb-pad-x: 1em;
+  --inkwell-wb-indent: 2.5em;
+  --inkwell-wb-text: var(--writing-block-text, var(--text-normal));
+  --inkwell-wb-bg: var(--writing-block-bg, var(--background-secondary));
+  --inkwell-wb-accent: var(--writing-block-accent, var(--background-modifier-border));
+}
+
+/* Rendered */
+.callout[data-callout="writing"] {
+  --callout-color: var(--inkwell-wb-accent);
+  /* Size set on the box itself, so its padding (in em) matches the editing lines, which use the same size. */
+  font-size: var(--inkwell-wb-size);
+  background: var(--inkwell-wb-bg);
+  border: none;
+  border-left: 3px solid var(--inkwell-wb-accent);
+  border-radius: var(--radius-s);
+  box-shadow: none;
+  mix-blend-mode: normal;
+  padding: var(--inkwell-wb-pad-y) var(--inkwell-wb-pad-x);
+  margin: 1em 0;
+}
+.callout[data-callout="writing"] > .callout-title {
+  display: none;
+}
+.callout[data-callout="writing"] > .callout-content {
+  padding: 0;
+  font-family: var(--inkwell-wb-font);
+  line-height: var(--inkwell-wb-line-height);
+  color: var(--inkwell-wb-text);
+  letter-spacing: 0.01em;
+  /* Break a long word at the edge, as the editor does, rather than letting it run out of the box. */
+  overflow-wrap: anywhere;
+}
+.callout[data-callout="writing"] > .callout-content > p {
+  margin: 0;
+  text-indent: var(--inkwell-wb-indent);
+}
+.callout[data-callout="writing"] > .callout-content > p:not(.inkwell-wb-para) + p {
+  margin-top: 1em;
+}
+
+/* Editing: the block's lines while the cursor is inside it. Obsidian's quote and callout line styles are reset. */
+.markdown-source-view.mod-cm6 .cm-line.inkwell-wb-line {
+  background: var(--inkwell-wb-bg);
+  border-left: 3px solid var(--inkwell-wb-accent);
+  font-family: var(--inkwell-wb-font);
+  font-size: var(--inkwell-wb-size);
+  line-height: var(--inkwell-wb-line-height);
+  color: var(--inkwell-wb-text);
+  letter-spacing: 0.01em;
+  /* Obsidian indents quote lines itself (a hanging indent for the hidden `>`); these must win over it so the
+     writing sits where it does in the rendered block. */
+  padding-inline: var(--inkwell-wb-pad-x) !important;
+  text-indent: var(--inkwell-wb-indent) !important;
+}
+.markdown-source-view.mod-cm6 .cm-line.inkwell-wb-line::before {
+  display: none;
+}
+.markdown-source-view.mod-cm6 .cm-line.inkwell-wb-line .cm-quote,
+.markdown-source-view.mod-cm6 .cm-line.inkwell-wb-line .cm-callout {
+  color: inherit;
+  font-family: inherit;
+  font-style: normal;
+  background: none;
+}
+.markdown-source-view.mod-cm6 .cm-line.inkwell-wb-first {
+  padding-top: var(--inkwell-wb-pad-y);
+  border-top-left-radius: var(--radius-s);
+  border-top-right-radius: var(--radius-s);
+}
+.markdown-source-view.mod-cm6 .cm-line.inkwell-wb-last {
+  padding-bottom: var(--inkwell-wb-pad-y);
+  border-bottom-left-radius: var(--radius-s);
+  border-bottom-right-radius: var(--radius-s);
+}

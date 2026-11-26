@@ -16,14 +16,14 @@ Inkwell SHALL treat a callout of type `writing` (`> [!writing]`, with an optiona
 - **WHEN** Inkwell reads the note
 - **THEN** it finds one writing block titled "Opening" whose text is "The chapel door had never had a lock."
 
-Test: none yet
+Test: tests/writingblocks.test.ts › "finds a writing callout and its text"
 
 #### Scenario: Two blocks in one note
 - **GIVEN** a note with two writing callouts separated by other text
 - **WHEN** Inkwell reads the note
 - **THEN** it finds two blocks, each with its own text and mode
 
-Test: none yet
+Test: tests/writingblocks.test.ts › "finds two blocks, each with its own mode"
 
 ### Requirement: New writing block
 WHEN the writer runs "New writing block", Inkwell SHALL insert an empty writing block at the cursor, or, IF text is selected, THEN wrap the selected lines in a writing block, keeping their words and paragraph breaks.
@@ -32,14 +32,14 @@ WHEN the writer runs "New writing block", Inkwell SHALL insert an empty writing 
 - **WHEN** the writer runs "New writing block" with nothing selected
 - **THEN** `> [!writing]` and one empty block line are inserted at the cursor, with the cursor on the empty line
 
-Test: none yet
+Test: tests/writingblocks.test.ts › "inserts an empty block with the cursor on its line" [the command is checked by hand]
 
 #### Scenario: Wrapping a selection
 - **GIVEN** two selected paragraphs
 - **WHEN** the writer runs "New writing block"
 - **THEN** they become one writing block with the same words and both paragraphs
 
-Test: none yet
+Test: tests/writingblocks.test.ts › "wraps a selection, keeping words and paragraphs" [the command is checked by hand]
 
 ### Requirement: Convert a tabbed block
 WHEN the writer runs "New writing block" with the cursor in a run of tab-indented lines and nothing selected, Inkwell SHALL convert that run into a writing block, removing the leading tabs, keeping every word and each line as its own paragraph.
@@ -49,17 +49,58 @@ WHEN the writer runs "New writing block" with the cursor in a run of tab-indente
 - **WHEN** the writer puts the cursor in them and runs "New writing block"
 - **THEN** they become a writing block with two paragraphs and no leading tabs
 
-Test: none yet
+Test: tests/writingblocks.test.ts › "converts tab-indented lines into a block" [the command is checked by hand]
 
 ### Requirement: Look
-Inkwell SHALL show a writing block as a box with the editor's monospace font and a first-line indent on every paragraph, in Live Preview and reading view, with no callout icon.
+Inkwell SHALL show a writing block as a box in a typewriter font (falling back to the editor's monospace font) with a first-line indent on every paragraph, with no callout title or icon. It SHALL look the same in reading view and in Live Preview, whether the cursor is inside the block or not.
 
 #### Scenario: Paragraphs are indented
 - **GIVEN** a writing block with two paragraphs
 - **WHEN** the writer views it in Live Preview or reading view
-- **THEN** both paragraphs start indented, in the monospace font
+- **THEN** both paragraphs start indented, in the typewriter font, with no "Writing" title
 
 Test: none yet [checked by hand in test-vault]
+
+#### Scenario: Moving into the block changes nothing
+- **GIVEN** a writing block in Live Preview
+- **WHEN** the writer clicks into it, then clicks out
+- **THEN** the box, font and indents stay the same
+
+Test: none yet [checked by hand in test-vault]
+
+### Requirement: Writing inside the block
+WHILE the cursor is inside a writing block in Live Preview, Inkwell SHALL hide the block's Markdown (the `> [!writing]` header line and the `> ` starting each line), and the cursor SHALL never land inside it. Source mode SHALL show the Markdown.
+
+#### Scenario: Typing shows only the writing
+- **GIVEN** a writing block in Live Preview
+- **WHEN** the writer clicks into it and types
+- **THEN** no `>` or `[!writing]` is visible, and arrow keys move only through the writing
+
+Test: none yet [checked by hand in test-vault]
+
+### Requirement: Paragraphs inside the block
+WHILE the cursor is inside a writing block in Live Preview, Enter SHALL start a new paragraph in the block, and Enter on an empty last line after at least one paragraph SHALL leave the block, removing that empty line. Pasted lines SHALL stay inside the block. Backspace at the start of a paragraph SHALL join it to the one before, and on the block's only empty line SHALL remove the block.
+
+#### Scenario: Enter stays in the block
+- **GIVEN** the cursor at the end of a paragraph in a writing block
+- **WHEN** the writer presses Enter and types
+- **THEN** the new text is a new paragraph inside the block, saved as a `> ` line
+
+Test: tests/writingblocks.test.ts › "enter starts a new paragraph in the block" [the keymap is checked by hand]
+
+#### Scenario: Enter twice leaves the block
+- **GIVEN** the cursor at the end of the block's last paragraph
+- **WHEN** the writer presses Enter twice
+- **THEN** the cursor is on a new line below the block, and the block ends with that paragraph
+
+Test: tests/writingblocks.test.ts › "enter on an empty last line leaves the block" [the keymap is checked by hand]
+
+#### Scenario: Backspace joins paragraphs
+- **GIVEN** the cursor at the start of the block's second paragraph
+- **WHEN** the writer presses Backspace
+- **THEN** the two paragraphs become one
+
+Test: tests/writingblocks.test.ts › "backspace at a paragraph's start joins it to the one before" [the keymap is checked by hand]
 
 ### Requirement: Writing mode before review
 WHILE a writing block has never been reviewed, Inkwell SHALL show it in Writing mode: just the writing, which the writer edits normally. Nothing besides the block itself is written to the note.
@@ -68,7 +109,7 @@ WHILE a writing block has never been reviewed, Inkwell SHALL show it in Writing 
 - **WHEN** the writer creates a writing block and types in it
 - **THEN** the block is in Writing mode, and the note holds only the callout
 
-Test: none yet
+Test: tests/writingblocks.test.ts › "a block with no comment is in Writing mode"
 
 ### Requirement: Entering review keeps the first draft
 WHEN a writing block enters Review for the first time, Inkwell SHALL save its current text as the first draft, in an Obsidian comment placed directly below the block, opening with `%% writing-block first-draft review` and closing with `%%`. Later mode changes SHALL NOT change the first draft.
@@ -166,7 +207,7 @@ IF a block's comment is missing, or its opening line can't be read, THEN Inkwell
 - **WHEN** the writer views the block
 - **THEN** it is in Writing mode, showing its current text
 
-Test: none yet
+Test: tests/writingblocks.test.ts › "a missing or unreadable comment means never reviewed"
 
 ### Requirement: Keep the Rhythm comment setting
 WHERE Keep the Rhythm is installed and its "Don't count comments" setting is off, WHEN a block enters Review for the first time, Inkwell SHALL show a notice that the first draft will be counted as new words unless that setting is turned on. Inkwell SHALL NOT change Keep the Rhythm's settings.
@@ -193,7 +234,7 @@ Inkwell's word counts SHALL count a writing block's current text only: neither t
 - **WHEN** Inkwell counts the note's words
 - **THEN** the block adds 10
 
-Test: none yet
+Test: tests/wordcount.test.ts › "counts only a block's current text"
 
 ### Requirement: Moving work up
 WHEN the writer runs "This became a story" on an exercise, or "Promote story to long form" on a story, Inkwell SHALL carry each writing block forward as its current text, as plain paragraphs, without the callout or the first draft. Breaks and headings inside the first draft SHALL NOT split scenes.

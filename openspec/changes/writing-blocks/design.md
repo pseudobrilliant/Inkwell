@@ -45,11 +45,15 @@ I have been here before.
 
 **4. Live Preview: `src/writingblockeditor.ts`** (`registerEditorExtension`, gated on `editorLivePreviewField`).
 - **Cursor outside the block:** Obsidian renders the callout through post processors, so the reading-view code (decision 5) handles it.
-- **Cursor inside the block:** a `StateField` builds decorations from the pure parse.
+- **Cursor inside the block:** a `StateField` builds decorations from the pure parse. The writer sees only the writing, styled like the rendered block (task 2.1 found Obsidian shows the raw `> [!writing]` and `>` here, which the writer doesn't want).
+  - Every block line gets `Decoration.line` with a class for the box, monospace font and first-line indent.
+  - The header line's text and each line's `> ` are `Decoration.replace` ranges, also given to `EditorView.atomicRanges`, so the cursor and arrow keys skip them and a click never lands inside. The header line collapses to the box's top padding, and later holds the mode buttons.
+  - A keymap at high precedence, active only inside a block, owns Enter (new `> ` line; on an empty last line, remove it and leave the block) and Backspace (at a paragraph's start, join it to the previous line; on the only empty line, remove the block). Other keys are untouched.
   - Review: inserted ranges get `Decoration.mark`, and removed text is a struck-through `Decoration.widget`. The diff is debounced (about 150 ms), and decorations are mapped through edits in between.
-  - Writing after review: the block is replaced by a block widget showing the first draft. A `transactionFilter` drops `input`/`delete` user events that touch that range and shows the notice. This is the only place typing is filtered.
+  - Writing after review: the block is replaced by a block widget showing the first draft. A `transactionFilter` drops `input`/`delete` user events that touch that range and shows the notice. This, and the keymap above, are the only places Inkwell handles keys.
   - Every reviewed mode: the comment collapses to a small "First draft kept" widget.
-- Mode switches and the first review are single editor transactions with their own `userEvent`, so undo reverses them. The `> ` prefix stays visible: hiding it would make the cursor jump.
+- Mode switches and the first review are single editor transactions with their own `userEvent`, so undo reverses them.
+- **Fallback:** if Obsidian's own callout handling fights the hidden Markdown, the block could use today's tab-indented text as its format instead, at the cost of links and emphasis inside the writing (Markdown treats it as code). That would need ADR 0006 revised before archiving.
 
 **5. Reading view and rendered callouts: `src/writingblockview.ts`** (`registerMarkdownPostProcessor` for `.callout[data-callout="writing"]`).
 - Gets the full note text from `ctx.getSectionInfo(el)` and finds the comment below the section.
@@ -78,7 +82,8 @@ I have been here before.
 
 ## Risks / Trade-offs
 
-- [Obsidian's Enter key in a callout may not add `> `, ending the block] → verify first (task 2.1). If it doesn't, add an Enter keymap inside writing blocks that continues the prefix; it applies only in blocks.
+- [Obsidian swaps its rendered callout for the source when the cursor enters, so the box could jump] → the editing decorations and the rendered callout share one set of CSS rules, checked by clicking in and out (task 2.6).
+- [The keymap and atomic prefixes interfere with phone keyboards] → no rewriting of typed text, only Enter and Backspace at line edges; checked on a phone with autocorrect, swipe and dictation (task 2.6).
 - [The first draft counts as new KTR words if "Don't count comments" is off] → notice on first review; documented in the README. KTR doesn't recount old history when the setting changes.
 - [Decorations fight Obsidian's own callout rendering in Live Preview] → only decorate while the cursor is inside; otherwise rely on the post processor. Checked by hand.
 - [Long blocks make the diff slow] → debounce, `scanLimit`/`timeout`; checked with a 5,000-word block.
