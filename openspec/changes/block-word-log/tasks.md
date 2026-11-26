@@ -23,10 +23,10 @@ Test lines named below go in this change's `specs/word-log/spec.md` and `specs/w
 
 ## 4. Moving the numbers onto the log
 
-- [ ] 4.1 Switch `src/contribution.ts` to `plugin.words`. Showing up comes from logged words only, and the journal and exercise fallbacks are removed. Practice words and words per mode always show. Update the doc comments. Test `practiceWeek` and `contributionFor` against the fake vault with a seeded log, and fill in the Test lines for "Words per mode and per piece". Verify `npm test` passes.
-- [ ] 4.2 Switch `src/storyview.ts` and the in-progress list in `src/homeblocks.ts` to `plugin.words` for words this week. Verify `npm run build` passes, and that the story panel shows words this week in `test-vault`.
-- [ ] 4.3 Draw the heatmap in Inkwell (design decision 6): `inkwell-heatmap` with `weeks`, `of` and `stops`, and the same renderer in the story and project panels, styled in `styles.css`. Test the grid's days and levels as a pure function. Fill in the Test lines for "Heatmap". Verify `npm test` passes, and check it by hand in light and dark themes and on a phone-sized window.
-- [ ] 4.4 Add the `inkwell-words` block. Test its numbers as a pure function over days, and fill in the Test line for "The words block". Verify `npm test` passes.
+- [x] 4.1 Switch `src/contribution.ts` to `plugin.words`. Showing up comes from logged words only, and the journal and exercise fallbacks are removed. Practice words and words per mode always show. Update the doc comments. Test `practiceWeek` and `contributionFor` against the fake vault with a seeded log, and fill in the Test lines for "Words per mode and per piece". Verify `npm test` passes.
+- [x] 4.2 Switch `src/storyview.ts` and the in-progress list in `src/homeblocks.ts` to `plugin.words` for words this week. Verify `npm run build` passes, and that the story panel shows words this week in `test-vault`.
+- [x] 4.3 Draw the heatmap in Inkwell (design decision 6): `inkwell-heatmap` with `weeks`, `of` and `stops`, and the same renderer in the story and project panels, styled in `styles.css`. Test the grid's days and levels as a pure function. Fill in the Test lines for "Heatmap". Verify `npm test` passes, and check it by hand in light and dark themes and on a phone-sized window.
+- [x] 4.4 Add the `inkwell-words` block. Test its numbers as a pure function over days, and fill in the Test line for "The words block". Verify `npm test` passes.
 
 ## 5. Blocks where writing happens
 

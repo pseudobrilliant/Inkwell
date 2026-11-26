@@ -1,10 +1,10 @@
-import { Component, debounce, ItemView, MarkdownRenderer, moment, setIcon, TFile, TFolder, WorkspaceLeaf } from "obsidian";
+import { debounce, ItemView, moment, setIcon, TFile, TFolder, WorkspaceLeaf } from "obsidian";
 import { fmOf, type Frontmatter, fmStr } from "./util";
 import type InkwellPlugin from "./main";
-import { ktrString } from "./integrations/keep-the-rhythm";
 import { promoteToLongForm } from "./promote";
 import { listLongProjects, LongProject, newScene, projectForFile, projectFromFolder, projectProgress } from "./projects";
 import { countWords } from "./wordcount";
+import { renderHeatmap } from "./wordblocks";
 import { listRevisions, snapshotDraft } from "./revisions";
 import { formatProgress, listStories, newCodexNote, Story, storyForFile, storyFromFolder, storyProgress } from "./stories";
 
@@ -13,7 +13,6 @@ export const STORY_VIEW = "inkwell-story";
 export class StoryView extends ItemView {
   private story: Story | null = null;
   private project: LongProject | null = null;
-  private md: Component | null = null;
 
   constructor(leaf: WorkspaceLeaf, private plugin: InkwellPlugin) {
     super(leaf);
@@ -62,10 +61,6 @@ export class StoryView extends ItemView {
     await this.render();
   }
 
-  async onClose() {
-    this.md?.unload();
-  }
-
   private open(file: TFile) {
     void this.app.workspace.getLeaf(false).openFile(file);
   }
@@ -74,8 +69,6 @@ export class StoryView extends ItemView {
     const el = this.contentEl;
     el.empty();
     el.addClass("inkwell-story-view");
-    this.md?.unload();
-    this.md = this.addChild(new Component());
 
     // Re-resolve: the folder may have been renamed, promoted or deleted.
     if (this.story) {
@@ -107,8 +100,8 @@ export class StoryView extends ItemView {
     stats.createDiv({ text: formatProgress(p) + (p.target ? ` · ${Math.round((p.words / p.target) * 100)}%` : "") });
     const draft = story.draft;
     if (draft) {
-      const week = await plugin.ktr.wordsThisWeek((path) => path === draft.path);
-      if (week !== null) stats.createDiv({ text: `${week.toLocaleString()} words this week` });
+      const week = await plugin.words.wordsThisWeek((path) => path === draft.path);
+      stats.createDiv({ text: `${week.toLocaleString()} words this week` });
     }
     stats.createDiv({
       cls: "inkwell-muted",
@@ -156,17 +149,11 @@ export class StoryView extends ItemView {
       row(`v${cur} · current`, p.words, draft);
     }
 
-    // Keep the Rhythm heatmap for this draft
-    if (draft && plugin.ktr.status().ok) {
+    // Writing days for this draft
+    if (draft) {
       const sec = el.createDiv({ cls: "inkwell-story-section" });
       sec.createDiv({ cls: "inkwell-label", text: "Writing days" });
-      await MarkdownRenderer.render(
-        this.app,
-        plugin.ktr.heatmapBlock(`filePath == ${ktrString(draft.path)}`, 12),
-        sec.createDiv(),
-        draft.path,
-        this.md
-      );
+      await renderHeatmap(sec, plugin, (path) => path === draft.path, { weeks: 12 });
     }
   }
 
@@ -240,8 +227,8 @@ export class StoryView extends ItemView {
     const stats = prog.createDiv({ cls: "inkwell-story-stats" });
     stats.createDiv({ text: formatProgress(p) + (p.target ? ` · ${Math.round((p.words / p.target) * 100)}%` : "") });
     const scenesPrefix = `${project.folder.path}/Scenes/`;
-    const week = await plugin.ktr.wordsThisWeek((path) => path.startsWith(scenesPrefix));
-    if (week !== null) stats.createDiv({ text: `${week.toLocaleString()} words this week` });
+    const week = await plugin.words.wordsThisWeek((path) => path.startsWith(scenesPrefix));
+    stats.createDiv({ text: `${week.toLocaleString()} words this week` });
     stats.createDiv({
       cls: "inkwell-muted",
       text: p.lastWorked ? `Last worked ${moment(p.lastWorked).fromNow()}` : "No scenes yet",
@@ -284,18 +271,10 @@ export class StoryView extends ItemView {
     const research = this.filesUnder(`${project.folder.path}/Research`);
     if (research.length) this.fileList(el, "Research", research);
 
-    // Keep the Rhythm heatmap for this project's scenes
-    if (plugin.ktr.status().ok) {
-      const hs = el.createDiv({ cls: "inkwell-story-section" });
-      hs.createDiv({ cls: "inkwell-label", text: "Writing days" });
-      await MarkdownRenderer.render(
-        this.app,
-        plugin.ktr.heatmapBlock(`filePath starts_with ${ktrString(scenesPrefix)}`, 12),
-        hs.createDiv(),
-        project.hub?.path ?? "",
-        this.md!
-      );
-    }
+    // Writing days for this project's scenes
+    const hs = el.createDiv({ cls: "inkwell-story-section" });
+    hs.createDiv({ cls: "inkwell-label", text: "Writing days" });
+    await renderHeatmap(hs, plugin, (path) => path.startsWith(scenesPrefix), { weeks: 12 });
   }
 
   private fileList(el: HTMLElement, label: string, files: TFile[], onAdd?: () => unknown) {

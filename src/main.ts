@@ -12,6 +12,7 @@ import { snapshotDraft } from "./revisions";
 import { promoteToLongForm } from "./promote";
 import { registerHomeBlocks } from "./homeblocks";
 import { registerContributionBlocks } from "./contribution";
+import { registerWordBlocks } from "./wordblocks";
 import { openHome } from "./home";
 import { pick } from "./modals";
 import { formatProgress, newCodexNote, newShortStory, showStoryProgress, Story, storyForFile, storyProgress } from "./stories";
@@ -128,6 +129,7 @@ export default class InkwellPlugin extends Plugin {
     storyCommand("promote-long-form", "Promote story to long form", (s) => promoteToLongForm(this, s));
     registerHomeBlocks(this);
     registerContributionBlocks(this);
+    registerWordBlocks(this);
 
     // Writing blocks
     registerWritingBlocks(this);

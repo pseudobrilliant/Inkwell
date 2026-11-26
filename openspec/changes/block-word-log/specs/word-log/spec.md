@@ -117,14 +117,14 @@ Inkwell SHALL add up logged words by where the note is: practice (journals and e
 - **WHEN** the story panel shows the story
 - **THEN** it shows 400 words this week
 
-Test: none yet
+Test: tests/contribution.test.ts › "a story's words this week count only its draft"
 
 #### Scenario: Your contribution by mode
 - **GIVEN** this month's log has 1,000 practice words, 2,000 draft words and 500 scene words
 - **WHEN** `inkwell-contribution` shows this month
 - **THEN** it shows 1,000 practice words, 2,000 draft words, 500 scene words and 3,500 words in all
 
-Test: none yet
+Test: tests/contribution.test.ts › "adds up this month's words by mode"
 
 ### Requirement: Showing up and the streak
 A day SHALL count as showed up WHEN the writer's logged words for that day, across all writing, add up to more than zero. The streak SHALL be the number of showed-up days in a row up to today, or up to yesterday while today has no words yet. Inkwell SHALL also keep the longest streak.
@@ -134,7 +134,7 @@ A day SHALL count as showed up WHEN the writer's logged words for that day, acro
 - **WHEN** "Practice this week" shows today
 - **THEN** today isn't marked as showed up
 
-Test: none yet
+Test: tests/contribution.test.ts › "an exercise without writing doesn't count as showing up"
 
 #### Scenario: The streak before writing today
 - **GIVEN** words logged on each of the last 5 days, and none yet today
@@ -158,14 +158,14 @@ The `inkwell-heatmap` block SHALL show one square per day for the last N weeks (
 - **WHEN** the note renders
 - **THEN** it shows 48 weeks of days, shaded by all the writer's words
 
-Test: none yet
+Test: tests/wordblocks.test.ts › "Home's heatmap shows 48 weeks of all the writer's words"
 
 #### Scenario: A day with no words
 - **GIVEN** a day with nothing logged
 - **WHEN** the heatmap shows it
 - **THEN** its square is empty, and hovering it shows the date and 0 words
 
-Test: none yet
+Test: tests/wordlog.test.ts › "lays out weeks of days ending with this week, with empty days and future days"
 
 ### Requirement: The words block
 The `inkwell-words` block SHALL show the writer's words today, this week, and this month with the month's daily average, and the current and longest streak, all from the log across all writing.
@@ -175,7 +175,7 @@ The `inkwell-words` block SHALL show the writer's words today, this week, and th
 - **WHEN** the `inkwell-words` block renders
 - **THEN** it shows 300 today, 1,200 this week, 4,500 this month at 300 a day, and a 6-day streak
 
-Test: none yet
+Test: tests/wordlog.test.ts › "shows today, this week, this month with its daily average, and the streak"
 
 ### Requirement: No Keep the Rhythm
 Inkwell SHALL NOT read Keep the Rhythm's data or settings, or embed its blocks. Its built-in Home and journal templates SHALL use Inkwell's own blocks instead. Notes the writer already has SHALL NOT be changed.
