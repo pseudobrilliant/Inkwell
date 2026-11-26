@@ -6,25 +6,24 @@ Open questions and possible features that nobody is working on yet. They live he
 
 - **One file per idea**, `<id>.md` in kebab-case. The id becomes the change id when it's picked up.
 - **Keep it short:** Status, likely capabilities, ADRs, Why, what could change, and out of scope. No requirements, design or tasks yet.
-- **Status:** `open` (free to pick up) or `gated by ADR NNNN` (wait for the evidence that ADR names before picking it up).
+- **Status:** `open` (free to pick up), `planned` (decided, waiting on another change) or `gated by ADR NNNN` (wait for the evidence that ADR names before picking it up).
 - **Picking one up:** run `npx openspec new change <id>` (or the `openspec-propose` skill), start the proposal from the idea's Why and constraints, and delete the idea file in the same commit. Git keeps its history.
 - **Dropping one:** delete the file. If the reason is worth keeping, write it in the commit message, or as a `rejected` ADR if it chose between real options.
 
 ## Index
 
+Kept short on purpose: only ideas that build on what we're working on now (writing blocks). Other ideas were dropped on 2026-11-26 and are in git history.
+
 | Idea | Status | Likely capabilities |
 |---|---|---|
-| [capture-habit-signal](capture-habit-signal.md) | open | contribution, capture |
-| [contribution-trends](contribution-trends.md) | open | contribution |
-| [fetch-link-titles](fetch-link-titles.md) | open | capture, resources |
-| [long-form-views](long-form-views.md) | gated by ADR 0004 | long-form |
-| [manuscript-view](manuscript-view.md) | open | long-form |
-| [own-word-log](own-word-log.md) | gated by ADR 0002 | ktr-integration, practice-stats, piece-progress, contribution |
-| [reading-habit-signal](reading-habit-signal.md) | open (after record-resource-finished-date) | contribution, resources |
-| [record-resource-finished-date](record-resource-finished-date.md) | open | resources, contribution |
-| [shared-cast](shared-cast.md) | open | short-form, long-form |
-| [timer-for-drafts-and-scenes](timer-for-drafts-and-scenes.md) | open | writing-timer, piece-progress |
-| [weekly-review](weekly-review.md) | open | capture, practice, short-form, piece-progress |
 | [writing-block-timer](writing-block-timer.md) | open (after writing-blocks) | writing-timer, writing-blocks |
 | [writing-block-types](writing-block-types.md) | open (after writing-blocks) | writing-blocks |
-| [writing-life-view](writing-life-view.md) | open | contribution, short-form, long-form |
+| [block-word-log](block-word-log.md) | planned (after writing-blocks) | word-log, contribution, piece-progress, writing-blocks |
+
+### Gated
+
+Not backlog. These hold the place an ADR's follow-up points to, and wait on its evidence.
+
+| Idea | Status | Likely capabilities |
+|---|---|---|
+| [long-form-views](long-form-views.md) | gated by ADR 0004 | long-form |

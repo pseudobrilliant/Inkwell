@@ -181,4 +181,4 @@ npm run deploy:test  # build and copy into ./test-vault
 
 ## Open questions & growing edges
 
-Open questions are ideas in `openspec/ideas/` (see its README for the index). Gated ones (`long-form-views`, `own-word-log`) wait on evidence named in their ADRs. Work in progress is listed by `npx openspec list`. New key concepts start as an idea, not here.
+Open questions are ideas in `openspec/ideas/` (see its README for the index). The gated one (`long-form-views`) waits on evidence named in its ADR. `block-word-log` is planned to replace Keep the Rhythm with Inkwell's own word log, counted from writing blocks; the KTR rules above hold until it's built. Work in progress is listed by `npx openspec list`. New key concepts start as an idea, not here.
