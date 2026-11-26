@@ -15,6 +15,7 @@ Many writing tools are built around publishing a finished manuscript: compiling,
 - **Showing up.** A daily journal, prompts, and exercises give you something to write today, even when you have no project.
 - **Catching ideas.** Quick capture sends a thought to your Inbox with one keystroke, from desktop or phone. You sort it later.
 - **Feeding the well.** The same popup saves the work you want to learn from (a poem, a novel or craft book, a blog post, a class, a video) to your Resources, with a note to fill in when you read it.
+- **Writing, reflecting, writing again.** Writing blocks give the writing itself a home: draft in a clean box, then review what you changed since the first draft, then read the edited version.
 - **Turning practice into stories.** When an exercise turns into something more, you can promote it to a short story, and Inkwell keeps a link back to where it started.
 - **Keeping stories and projects organized.** Each short story gets a simple folder with a hub note, a draft, its characters and places, and a record of past revisions. A project gets scenes, a codex for characters and locations, and room for notes and research.
 - **Seeing your progress.** A Home dashboard shows your inbox, what's in progress, the prompt of the day, and your writing activity.
@@ -47,12 +48,26 @@ Inkwell helps you organize and write projects, but it stops short of publishing 
 - **Resources table:** a Bases table of what to read, grouped by status, plus everything you've saved.
 - **Exercise from a resource:** start a timed exercise that responds to or imitates a resource (the open one, or one you pick). Its **Try This** section becomes the prompt.
 
+### Writing blocks
+A writing block is a box for the writing itself, apart from the prompt, goal and notes around it. It looks like a typed page: a typewriter font, each paragraph indented like a tab. You can use one in any note, and new exercises start with one.
+- **New writing block** (command or right-click): adds an empty block, wraps the selected text in one, or turns writing you indented with tabs into one.
+- **Write in the box:** you only ever see your writing, never Markdown. Enter always starts a new paragraph, and the down arrow takes you out of the block below it. **Shift+Enter** starts a new line in the same paragraph, without the indent, for verse or a sign-off.
+- **Draft, Review, Edited:** every block has a toolbar with three modes, and you can switch between them at any time.
+  - **Draft** is where you write. Once you've reviewed, Draft shows your first draft, read-only.
+  - **Review** shows what you've changed since the first draft while you keep revising: added words are highlighted and underlined, removed words are struck through.
+  - **Edited** shows the revised text, clean.
+- **Your first draft stays in the note.** The first time you review a block, Inkwell saves its text as the first draft, in a hidden comment just below it, folded to one line. Click it if you ever want to edit it by hand. Nothing ever needs accepting or rejecting.
+- **Keep the Rhythm:** turn on its "Don't count comments" setting, so the hidden first draft isn't counted as new words. Inkwell reminds you the first time you review if it's off.
+- **Typewriter Mode:** if you have the Typewriter Mode plugin, Inkwell turns it on while you write in a block and off when you leave, so its focus tools are there only while you write. Its own settings (folders, platforms, which features are on) still apply.
+- Moving work up (**This became a story**, **Promote**) takes a block's current text as plain paragraphs, never the first draft.
+- Without Inkwell, a block is an ordinary callout and the first draft an ordinary comment, so nothing is lost.
+
 ### Practice
 - **Today's journal:** opens or creates today's journal entry.
 - **Prompts:** one small note per prompt, tracking how often and how recently you've used it, with a sortable Prompts table.
 - **Random prompt:** picks the prompts you've used least and longest ago first.
 - **Prompt of the day:** appears in the journal and on Home.
-- **Exercises:** start an exercise from a prompt with a time goal.
+- **Exercises:** start an exercise from a prompt with a time goal. Its Work section starts with a writing block.
 - **Drills:** repeatable practice for one skill (freewriting, sensory detail, dialogue…). Create your own with **New drill**, add five common ones with **Add starter drills**, and start a timed exercise from one with **Exercise from a drill** (it uses the open drill note, or asks which one).
 - **Writing timer:** exercises (new ones, including from a random prompt or a drill, and ones you reopen) and today's journal get a timer that starts when you begin typing. It pauses on its own when you stop typing for a while and picks up again when you type. Pause, reset, or stop it from the status bar, the timer button at the top of the note (on mobile too), or commands you can bind to hotkeys. Stopping adds the minutes to the note's `writing_min`, and **Practice this week** shows minutes written. Each device keeps its own timer.
 - **This became a story:** promote an exercise into a short story, with a link back to it.
@@ -69,7 +84,7 @@ Inkwell helps you organize and write projects, but it stops short of publishing 
 - **New scene:** adds a scene at the end of the current project (or one you pick), numbered so scenes stay in order.
 - **Project panel:** the same sidebar shows a project's status, word count against its target, words this week, next step, scenes in order with status and word count, characters, locations, notes, and research.
 - **Progress:** projects appear on Home's in-progress list and in the status bar, with total words across scenes.
-- **Promote a story:** if a short story outgrows one draft, Inkwell can turn it into a project, splitting the draft into scenes at headings or `***` breaks and moving its characters and locations into the codex. The original draft is archived first.
+- **Promote a story:** if a short story outgrows one draft, Inkwell can turn it into a project, splitting the draft into scenes at headings or `***` breaks and moving its characters and locations into the codex. Writing blocks become plain paragraphs of their current text first. The original draft is archived first.
 
 ### Home
 - A built-in **Home** dashboard (command + ribbon).

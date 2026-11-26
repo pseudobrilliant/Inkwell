@@ -20,6 +20,7 @@ import { createExercise, exerciseFromDrill, newExercise } from "./exercise";
 import { newProject, newScene, projectForFile, projectProgress } from "./projects";
 import { WritingTimer } from "./timer";
 import { createResourcesBase, exerciseFromResource } from "./resources";
+import { registerWritingBlocks } from "./blockhost";
 
 export default class InkwellPlugin extends Plugin {
   settings!: InkwellSettings;
@@ -123,6 +124,9 @@ export default class InkwellPlugin extends Plugin {
     storyCommand("promote-long-form", "Promote story to long form", (s) => promoteToLongForm(this, s));
     registerHomeBlocks(this);
     registerContributionBlocks(this);
+
+    // Writing blocks
+    registerWritingBlocks(this);
 
     this.addCommand({ id: "new-character", name: "New character", callback: () => newCodexNote(this, "character") });
     this.addCommand({ id: "new-location", name: "New location", callback: () => newCodexNote(this, "location") });

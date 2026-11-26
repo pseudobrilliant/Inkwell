@@ -40,4 +40,29 @@ describe("countWords", () => {
   it("handles Windows line endings in frontmatter", () => {
     expect(countWords("---\r\ntype: draft\r\n---\r\nTwo words")).toBe(2);
   });
+
+  it("ignores multi-line comments and several comments in one note", () => {
+    expect(countWords("One\n%% first draft\nkept here\n%%\ntwo %% hint %% three")).toBe(3);
+  });
+
+  it("counts the text after an unclosed comment mark", () => {
+    expect(countWords("One two %% three four")).toBe(4);
+  });
+
+  it("skips a writing block's header line, but not other callouts' headers", () => {
+    expect(countWords("> [!writing]\n> The door was open.")).toBe(4);
+    expect(countWords("> [!writing] Opening\n> The door was open.")).toBe(4);
+    expect(countWords("> [!note] A hint\n> The door was open.")).toBe(7);
+  });
+
+  it("counts only a block's current text", () => {
+    const title = "Five words in this title";
+    const current = "One two three four five six seven eight nine ten.";
+    const first = "Twelve words that were the first draft and are kept below it.";
+    expect(countWords(`> [!writing] ${title}\n> ${current}\n\n%% writing-block first-draft review\n${first}\n%%`)).toBe(10);
+  });
+
+  it("counts tab-indented lines like any prose", () => {
+    expect(countWords("\tIt has been a long time.\n\tI keep walking.")).toBe(9);
+  });
 });

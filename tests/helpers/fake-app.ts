@@ -222,6 +222,7 @@ export function fakePlugin(app = new FakeApp(), settings: Partial<InkwellSetting
       words: async () => null,
       dailyWords: async () => null,
       streak: async () => null,
+      ignoresComments: async () => null,
       weekStart: async () => "2026-11-23",
     },
   } as unknown as InkwellPlugin & { app: FakeApp };

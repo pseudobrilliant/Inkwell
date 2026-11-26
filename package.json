@@ -16,6 +16,9 @@
   },
   "license": "MIT",
   "devDependencies": {
+    "@codemirror/language": "^6.13.1",
+    "@codemirror/state": "6.5.0",
+    "@codemirror/view": "6.38.6",
     "@fission-ai/openspec": "^2.2.0",
     "@types/node": "^22.0.0",
     "esbuild": "^0.25.12",
@@ -29,5 +32,8 @@
     "typescript-eslint": "^8.73.0",
     "vitest": "^4.1.12",
     "yaml": "^2.9.1"
+  },
+  "dependencies": {
+    "@codemirror/merge": "^6.13.0"
   }
 }

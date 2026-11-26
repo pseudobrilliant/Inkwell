@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { moment } from "obsidian";
-import { dailyWordsIn, streakIn, usableData, weekStartFor, type KtrData } from "../src/integrations/keep-the-rhythm";
+import { dailyWordsIn, ignoresCommentsIn, streakIn, usableData, weekStartFor, type KtrData } from "../src/integrations/keep-the-rhythm";
 
 /** The shape of KTR 0.2.16's data.json (trimmed). */
 const data: KtrData = {
@@ -57,5 +57,13 @@ describe("Keep the Rhythm data", () => {
     expect(weekStartFor(wednesday, "MONDAY")).toBe("2026-11-23");
     expect(weekStartFor(wednesday, undefined)).toBe("2026-11-23");
     expect(weekStartFor(wednesday, "WEDNESDAY")).toBe("2026-11-25");
+  });
+
+  it("reads whether comments are ignored, or null when unavailable", () => {
+    expect(ignoresCommentsIn(data)).toBe(false);
+    expect(ignoresCommentsIn({ ...data, settings: { ignoreComments: true } })).toBe(true);
+    expect(ignoresCommentsIn({ ...data, settings: { ignoreComments: false } })).toBe(false);
+    // Unavailable data never reaches ignoresCommentsIn: ignoresComments() returns null first.
+    expect(usableData({ ...data, schema: "0.3", settings: { ignoreComments: true } })).toBeNull();
   });
 });

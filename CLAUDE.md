@@ -10,12 +10,13 @@ Inkwell is a **writing-practice toolkit** for Obsidian. It helps a writer show u
 
 Most writing software is built around the *end* of writing: compiling, formatting, exporting, submitting. Very little of it helps with the part that actually makes a writer: **writing regularly, catching ideas before they're lost, and letting small pieces grow into bigger ones.**
 
-Inkwell is built on four beliefs:
+Inkwell is built on five beliefs:
 
 1. **Practice is the work.** Daily writing, prompts, and exercises are the foundation. A finished manuscript is only one possible result.
 2. **Ideas are cheap to lose and expensive to recover.** Capturing has to be instant and must never get in the way of writing.
 3. **Feed the well.** Writers are made by what they take in as much as what they put out. The poem a teacher mentions or the craft book a friend recommends is raw material too, and it's as easy to lose as an idea.
-4. **Seeing your contribution keeps you going.** A writer who can see that they showed up today, that a story moved forward this week, and that a year of practice has added up will keep writing. Progress should be visible at every level, from a single day to a whole writing life.
+4. **Write, reflect, write again.** Revising is part of practice, not a separate stage. A writer should be able to see what they changed and read the result, without losing what they first wrote.
+5. **Seeing your contribution keeps you going.** A writer who can see that they showed up today, that a story moved forward this week, and that a year of practice has added up will keep writing. Progress should be visible at every level, from a single day to a whole writing life.
 
 <!-- Author's voice: add personal motivation, inspirations, influences here as they come into focus. -->
 
@@ -54,7 +55,7 @@ Feeding the well is the ethos behind Capture. It has two sides, and both go thro
 ### Mode 1: Practice. Show up.
 - **Purpose:** low-stakes, daily writing. Quantity over polish. Always gives you something to write today, even with no project.
 - **Structure:** `01 - Practice/` → `Journal/` (`type: journal`) and `Exercises/`, which holds `Prompts/` (`type: prompt`, one note per prompt), `Drills/` (`type: drill`, one note per drill, from the drill template), and `Writing/` (`type: exercise`: the writing you did; setting `folders.writings`).
-- **Tools:** today's journal, new exercise (with a time goal), new prompt, random prompt (least used and oldest first), new drill, exercise from a drill (the open drill note, or a pick; the drill's `minutes` sets the timer goal), add starter drills (five common drills, skips existing), prompt of the day (`inkwell-prompt` block), prompts table (Bases), writing timer. See `src/journal.ts`, `src/exercise.ts`, `src/prompts.ts`, `src/drills.ts`, `src/timer.ts`, `src/timerstate.ts`.
+- **Tools:** today's journal, new exercise (with a time goal; its Work section starts with a writing block), new prompt, random prompt (least used and oldest first), new drill, exercise from a drill (the open drill note, or a pick; the drill's `minutes` sets the timer goal), add starter drills (five common drills, skips existing), prompt of the day (`inkwell-prompt` block), prompts table (Bases), writing timer. See `src/journal.ts`, `src/exercise.ts`, `src/prompts.ts`, `src/drills.ts`, `src/timer.ts`, `src/timerstate.ts`.
 - **Writing timer:** one timer at a time on an exercise or journal. It starts on the first keystroke, pauses by itself when you stop typing, and stop adds whole minutes to `writing_min`. Works on mobile, and each device times its own writing. Behaviour: [`openspec/specs/writing-timer/spec.md`](openspec/specs/writing-timer/spec.md). Why device-local storage: [ADR 0003](openspec/decisions/0003-timer-state-in-device-local-storage.md). The state machine is pure (`src/timerstate.ts`); `src/timer.ts` is the UI around it.
 - **Progress signal:** did I write today? Journal entries, exercises done, minutes written, prompts used.
 
@@ -73,12 +74,21 @@ Feeding the well is the ethos behind Capture. It has two sides, and both go thro
 ### Shared view: Home
 - **Home** (`src/home.ts`, `src/homeblocks.ts`, `src/contribution.ts`) brings everything together: inbox, in-progress pieces, practice, prompt of the day, heatmap. It is built from code blocks (`inkwell-inbox`, `inkwell-in-progress`, `inkwell-prompt`, `inkwell-practice`, `inkwell-heatmap`) that work in any note. The **New…** picker creates any Inkwell note.
 
+### Core component: writing blocks
+Writing blocks are not a mode. They're a core component that supports features across Capture, Practice and the writing modes, starting with exercises.
+- **What it is:** a `> [!writing]` callout that holds the writing itself, edited as a styled box with the Markdown hidden. Its toolbar has Draft, Review and Edited.
+- **The first draft** is kept in a `%% writing-block first-draft <mode> … %%` comment just below the block. Review shows a live diff against it, so nothing is accepted or rejected.
+- **Behaviour:** [`openspec/specs/writing-blocks/spec.md`](openspec/specs/writing-blocks/spec.md). The format: [ADR 0006](openspec/decisions/0006-writing-block-first-draft-in-a-comment.md).
+- **Code:** `src/writingblock*.ts` are self-contained. They import only Obsidian, CodeMirror and each other (lint enforces it), so they could become their own plugin later. That isn't planned. Inkwell's side, such as the KTR notice and the commands, is `src/blockhost.ts`.
+- **Typewriter Mode:** if installed, it's turned on while the writer is writing in a block and off when they leave, through its own enable/disable commands. The editor reports through `WritingBlockHost.onWritingInBlock`; all Typewriter Mode access lives in `src/integrations/typewriter-mode.ts`.
+- **Next:** the timer moves into the block's toolbar (`openspec/ideas/writing-block-timer.md`), and other block types may follow (`writing-block-types.md`).
+
 ## Movement between modes
 
 Work moves **up** as it grows: capture → practice → story → project.
 
-- **Exercise → story:** "This became a story" (`src/became.ts`). The story hub gets `from:` and the exercise gets `became:`.
-- **Story → project:** "Promote story to long form" (`src/promote.ts`). The draft is archived first, then split into scenes at headings or `***` breaks. Characters and locations move to `Codex/`, and the hub becomes the project note (`promoted:` date).
+- **Exercise → story:** "This became a story" (`src/became.ts`). The story hub gets `from:` and the exercise gets `became:`. Writing blocks carry only their current text, as plain paragraphs.
+- **Story → project:** "Promote story to long form" (`src/promote.ts`). The draft is archived first, then writing blocks are unwrapped to their current text and the draft is split into scenes at headings or `***` breaks. Characters and locations move to `Codex/`, and the hub becomes the project note (`promoted:` date).
 - Moving up is **always optional** and **always keeps a link back** to where the work started.
 
 ## Progress & motivation model
@@ -107,7 +117,7 @@ Contribution is tracked at four levels. Each answers a different question.
 
 ## Design records
 
-- **Behaviour** lives in `openspec/specs/<capability>/spec.md`: one living spec per capability, with requirements in EARS sentences and scenarios that name their tests. Conventions are in `openspec/config.yaml`. So far: `writing-timer`. The other capabilities are still described in the sections above.
+- **Behaviour** lives in `openspec/specs/<capability>/spec.md`: one living spec per capability, with requirements in EARS sentences and scenarios that name their tests. Conventions are in `openspec/config.yaml`. So far: `writing-timer`, `writing-blocks`. The other capabilities are still described in the sections above.
 - **Ideas and open questions** live in `openspec/ideas/<id>.md`, one short file each, indexed in `openspec/ideas/README.md`. They are not OpenSpec changes, so `changes/` only holds work in progress.
 - **Changes in progress** live in `openspec/changes/<id>/`. Picking up an idea makes it a proposal (the `openspec-propose` skill, or `npx openspec new change <id>`) and deletes the idea file. Once it's built, archive it (`npx openspec archive <id>`), which merges its spec changes into the specs.
 - **Decisions** live in `openspec/decisions/` as ADRs. Write one for a decision that's hard to reverse or that picks between real options. Never rewrite an accepted ADR: supersede it with a new one. See `openspec/decisions/README.md`.
@@ -148,7 +158,8 @@ Contribution is tracked at four levels. Each answers a different question.
   - Version-gated (`KTR_TESTED_VERSIONS`). On an untested version, hide stats rather than show wrong numbers. After each KTR update, check the numbers against KTR's own views before adding the version.
   - Per-piece numbers count only draft and scene files.
   - Inkwell keeps no word log, streak, or heatmap of its own. Known risk: KTR's live history is per device (IndexedDB). Its `data.json`, which Inkwell reads, is a copy written about a second after activity, and when it syncs in from another device KTR merges entries by auto-numbered `id`, which each device assigns on its own, so one device's day can overwrite another's. Expect undercounts across phone and desktop.
-  - Parsing and sums over KTR's data are pure functions (`usableData`, `dailyWordsIn`, `streakIn`, `weekStartFor`), tested against a trimmed `data.json`.
+  - Parsing and sums over KTR's data are pure functions (`usableData`, `dailyWordsIn`, `streakIn`, `weekStartFor`, `ignoresCommentsIn`), tested against a trimmed `data.json`.
+  - Writing blocks keep their first draft in a comment, so KTR's "Don't count comments" setting (`settings.ignoreComments`) must be on for honest counts. Inkwell reads it to warn on the first review, and never sets it.
 - **Settings** hold folders, template paths, status lists, and default targets (`src/settings.ts`). Never hard-code folder names. The settings file syncs across devices, so keep fast-changing or per-device state out of it: use `app.saveLocalStorage` (the timer, the last capture kind). `onExternalSettingsChange` reloads settings when sync changes the file, so a save never overwrites another device's change. Loading goes through the pure `mergeSettings` (defaults, migrations); controls go through `controlValue`/`applyControlValue`.
 - **Settings tab is declarative** (Obsidian 1.13+, so `minAppVersion` is 1.13.0). Add a setting by adding a definition in `getSettingDefinitions()`, which makes it appear in Obsidian's settings search. Don't add a `display()` method. Nested settings use dotted control keys (`folders.inbox`). Every key must be handled in both `getControlValue` and `setControlValue`, where values are normalized (trimmed, with defaults as fallback).
 

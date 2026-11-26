@@ -25,4 +25,6 @@ Open questions and possible features that nobody is working on yet. They live he
 | [shared-cast](shared-cast.md) | open | short-form, long-form |
 | [timer-for-drafts-and-scenes](timer-for-drafts-and-scenes.md) | open | writing-timer, piece-progress |
 | [weekly-review](weekly-review.md) | open | capture, practice, short-form, piece-progress |
+| [writing-block-timer](writing-block-timer.md) | open (after writing-blocks) | writing-timer, writing-blocks |
+| [writing-block-types](writing-block-types.md) | open (after writing-blocks) | writing-blocks |
 | [writing-life-view](writing-life-view.md) | open | contribution, short-form, long-form |

@@ -12,5 +12,6 @@ Inkwell hides KTR stats on untested versions rather than show wrong numbers. A v
 3. **Diff the data shape.** Compare the vault's KTR `data.json` with the trimmed fixture used by `tests/keep-the-rhythm.test.ts`. Check every field `usableData`, `dailyWordsIn`, `streakIn` and `weekStartFor` read.
 4. **If the shape changed:** update the parsing, add a trimmed fixture for the new version next to the old one (keep the old one), and add tests for both.
 5. **Compare the numbers by hand with the user.** For the same vault, ask them to read KTR's own today count, streak and heatmap for a few days, and compare with Inkwell's `inkwell-practice` and `inkwell-heatmap` blocks. Don't skip this step, because it's the reason the gate exists.
-6. **Only when they match,** add the version to `KTR_TESTED_VERSIONS`, run `npm run check`, and commit with the versions compared and the days checked in the message.
-7. If they don't match and the cause isn't clear, leave the version out and write it up as a bug.
+6. **Check the comment setting.** Writing blocks keep their first draft in a `%% … %%` comment and rely on KTR's "Don't count comments" setting (`settings.ignoreComments` in `data.json`, read by `ignoresCommentsIn`). Confirm the setting still exists under that name and still strips `%% … %%`. With it on, review a writing block in the vault and switch its modes: KTR's day count must not change.
+7. **Only when they match,** add the version to `KTR_TESTED_VERSIONS`, run `npm run check`, and commit with the versions compared and the days checked in the message.
+8. If they don't match and the cause isn't clear, leave the version out and write it up as a bug.

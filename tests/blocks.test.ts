@@ -2,7 +2,8 @@ import { describe, expect, it } from "vitest";
 import { inInkwellFolders, opts } from "../src/homeblocks";
 import { sceneFileName } from "../src/projects";
 import { rankPrompts, type Prompt } from "../src/prompts";
-import { render } from "../src/templates";
+import { BUILTIN_TEMPLATES, render } from "../src/templates";
+import { findBlocks } from "../src/writingblocks";
 import { DEFAULT_SETTINGS } from "../src/settings";
 import type { TFile } from "obsidian";
 
@@ -27,6 +28,13 @@ describe("inInkwellFolders", () => {
 describe("templates", () => {
   it("fills {{vars}}, allowing spaces, and blanks unknown ones", () => {
     expect(render("# {{title}}\n{{ logline }}\n{{missing}}!", { title: "Tide", logline: "A boat." })).toBe("# Tide\nA boat.\n!");
+  });
+
+  it("the built-in exercise template starts Work with a writing block", () => {
+    const blocks = findBlocks(BUILTIN_TEMPLATES.exercise);
+    expect(blocks).toHaveLength(1);
+    expect(blocks[0]?.text).toBe("");
+    expect(BUILTIN_TEMPLATES.exercise.split("\n")[blocks[0]!.start - 1]).toBe("## Work");
   });
 });
 

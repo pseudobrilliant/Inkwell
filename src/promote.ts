@@ -1,6 +1,7 @@
 import { moment, normalizePath, Notice, TFile, TFolder } from "obsidian";
 import type InkwellPlugin from "./main";
 import { askForm } from "./modals";
+import { unwrapBlocks } from "./writingblocks";
 import { PROJECT_FOLDERS, sceneFileName } from "./projects";
 import type { Story } from "./stories";
 import { createNote, ensureFolder, moveFile, slugWords, stripFrontmatter, uniquePath, fmOf, type Frontmatter } from "./util";
@@ -55,7 +56,8 @@ export async function promoteToLongForm(plugin: InkwellPlugin, story: Story): Pr
     return;
   }
 
-  const scenes = splitScenes(stripFrontmatter(await app.vault.read(draft)));
+  // Writing blocks become plain paragraphs of their current text first, so breaks inside a kept first draft never split.
+  const scenes = splitScenes(unwrapBlocks(stripFrontmatter(await app.vault.read(draft))));
   const hubFm = fmOf(app, hub) ?? {};
   const v = await askForm(
     app,
