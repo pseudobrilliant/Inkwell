@@ -17,7 +17,7 @@ export interface Activity {
 }
 export interface KtrData {
   schema?: string;
-  settings?: { startOfTheWeek?: string };
+  settings?: { startOfTheWeek?: string; ignoreComments?: boolean };
   stats?: { currentStreak?: number; highestStreak?: number; dailyActivity?: Activity[] };
 }
 
@@ -99,6 +99,12 @@ export class KeepTheRhythm {
     return d ? streakIn(d) : null;
   }
 
+  /** Whether KTR's "Don't count comments" setting is on. Null when KTR is unavailable or untested. */
+  async ignoresComments(): Promise<boolean | null> {
+    const d = await this.data();
+    return d ? ignoresCommentsIn(d) : null;
+  }
+
   /** Markdown for KTR's own heatmap block, filtered by a KTR filter expression. */
   heatmapBlock(filter: string, weeks = 12): string {
     return ["```ktr-heatmap", filter, "", "OPTIONS", `WEEKS ${weeks}`, "```"].join("\n");
@@ -144,4 +150,9 @@ export function dailyWordsIn(d: KtrData, match: (path: string) => boolean, from:
 
 export function streakIn(d: KtrData): { current: number; highest: number } {
   return { current: Number(d.stats?.currentStreak) || 0, highest: Number(d.stats?.highestStreak) || 0 };
+}
+
+/** KTR's "Don't count comments" setting; off when it isn't set, as in KTR itself. */
+export function ignoresCommentsIn(d: KtrData): boolean {
+  return d.settings?.ignoreComments === true;
 }

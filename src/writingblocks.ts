@@ -330,3 +330,42 @@ export function newBlockAt(lines: string[], selection: { fromLine: number; toLin
   }
   return { from: fromLine + 1, to: fromLine, lines: fence(["", ...block], fromLine), cursorLine: 2, cursorCh: 2 };
 }
+
+// ---------- Modes and the first draft ----------
+
+/** Why a block can't enter review, or null if it can. */
+export function cannotReview(block: WritingBlock): string | null {
+  if (block.text.includes("%%")) {
+    return "This writing contains %%, which would end the hidden first draft early. Remove it to review.";
+  }
+  return null;
+}
+
+/** The comment that keeps a first draft, without the blank line before it. */
+export function firstDraftComment(text: string, mode: BlockMode): string[] {
+  return [`%% writing-block first-draft ${mode}`, ...text.split("\n"), "%%"];
+}
+
+export type ModeChange = { change: TextChange } | { refused: string } | { unchanged: true };
+
+/**
+ * Switch a block to a mode. The first switch away from Writing saves the block's text as the first draft below
+ * it; after that, only the mode word in the comment changes. The writing itself is never touched.
+ */
+export function setMode(text: string, block: WritingBlock, mode: BlockMode): ModeChange {
+  const starts = lineStarts(text);
+  const fd = block.firstDraft;
+  if (!fd) {
+    if (mode === "writing") return { unchanged: true };
+    const refused = cannotReview(block);
+    if (refused) return { refused };
+    const end = lineInfo(text, starts, block.end).to;
+    return { change: { from: end, to: end, insert: "\n\n" + firstDraftComment(block.text, mode).join("\n") } };
+  }
+  if (fd.mode === mode) return { unchanged: true };
+  const open = lineInfo(text, starts, fd.start);
+  const word = open.text.match(/(writing|review|edited)\s*$/);
+  if (!word || word.index === undefined) return { unchanged: true };
+  const from = open.from + word.index;
+  return { change: { from, to: from + fd.mode.length, insert: mode } };
+}

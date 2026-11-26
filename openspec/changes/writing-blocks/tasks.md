@@ -67,11 +67,11 @@ These tests describe current code and pass before anything else changes.
   - on a phone: autocorrect, swipe and dictation
 
   Stop and return to the writer if Obsidian fights the hidden Markdown (see design.md's fallback).
-- [ ] 2.7 Add an ESLint `no-restricted-imports` block for `src/writingblock*.ts` that fails on imports from other Inkwell modules (design decision 10). Verify `npm run lint` passes, then fails on a throwaway import of `./settings` in one of those files, removed afterwards.
+- [x] 2.7 Add an ESLint `no-restricted-imports` block for `src/writingblock*.ts` that fails on imports from other Inkwell modules (design decision 10). Verify `npm run lint` passes, then fails on a throwaway import of `./settings` in one of those files, removed afterwards.
 
 ## 3. Modes and the first draft
 
-- [ ] 3.1 In `src/writingblocks.ts`, add:
+- [x] 3.1 In `src/writingblocks.ts`, add:
   - build the first-draft comment (`%% writing-block first-draft <mode>`, the text, `%%`, after one blank line)
   - set the mode
   - refuse review when the text contains `%%`
@@ -84,7 +84,7 @@ These tests describe current code and pass before anything else changes.
   - "refuses review when the writing contains %%"
 
   Set the Test lines for "First review saves the first draft", "The first draft never moves", "Switching changes only the mode word", "Each block keeps its own mode" and "Writing that would end the comment early". Verify `npm test` passes.
-- [ ] 3.2 Add `ignoresComments()` to `src/integrations/keep-the-rhythm.ts`, reading `settings.ignoreComments` behind the version gate. Add "reads whether comments are ignored, or null when unavailable" to `tests/keep-the-rhythm.test.ts`. Set both Keep the Rhythm scenario Test lines, with a note that the notice itself is checked by hand. Verify `npm test` passes.
+- [x] 3.2 Add `ignoresComments()` to `src/integrations/keep-the-rhythm.ts`, reading `settings.ignoreComments` behind the version gate. Add "reads whether comments are ignored, or null when unavailable" to `tests/keep-the-rhythm.test.ts`. Set both Keep the Rhythm scenario Test lines, with a note that the notice itself is checked by hand. Verify `npm test` passes.
 - [ ] 3.3 Add the "Writing mode", "Review mode" and "Edited mode" commands (`editorCheckCallback`, only with the cursor in a block, plus `editor-menu`). Each is a single editor transaction with its own `userEvent`. Show the KTR notice on first review when `ignoresComments()` is false. Verify by hand in `test-vault`: modes switch, undo reverses each, the mode survives reload, and the notice appears only with the setting off.
 - [ ] 3.4 Add the block toolbar (design decision 9):
   - a block type definition for the writing block (modes Writing, Review, Edited; no tools yet), read from the callout's metadata

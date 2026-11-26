@@ -20,8 +20,7 @@ import { createExercise, exerciseFromDrill, newExercise } from "./exercise";
 import { newProject, newScene, projectForFile, projectProgress } from "./projects";
 import { WritingTimer } from "./timer";
 import { createResourcesBase, exerciseFromResource } from "./resources";
-import { newWritingBlock, writingBlockEditor } from "./writingblockeditor";
-import { registerWritingBlockView } from "./writingblockview";
+import { registerWritingBlocks } from "./blockhost";
 
 export default class InkwellPlugin extends Plugin {
   settings!: InkwellSettings;
@@ -127,14 +126,7 @@ export default class InkwellPlugin extends Plugin {
     registerContributionBlocks(this);
 
     // Writing blocks
-    this.registerEditorExtension(writingBlockEditor());
-    registerWritingBlockView(this);
-    this.addCommand({ id: "new-writing-block", name: "New writing block", editorCallback: (editor) => newWritingBlock(editor) });
-    this.registerEvent(
-      this.app.workspace.on("editor-menu", (menu, editor) => {
-        menu.addItem((i) => i.setTitle("New writing block").setIcon("pencil-line").onClick(() => newWritingBlock(editor)));
-      })
-    );
+    registerWritingBlocks(this);
 
     this.addCommand({ id: "new-character", name: "New character", callback: () => newCodexNote(this, "character") });
     this.addCommand({ id: "new-location", name: "New location", callback: () => newCodexNote(this, "location") });

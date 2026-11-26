@@ -112,7 +112,7 @@ WHILE a writing block has never been reviewed, Inkwell SHALL show it in Writing 
 Test: tests/writingblocks.test.ts › "a block with no comment is in Writing mode"
 
 ### Requirement: Entering review keeps the first draft
-WHEN a writing block enters Review for the first time, Inkwell SHALL save its current text as the first draft, in an Obsidian comment placed directly below the block, opening with `%% writing-block first-draft review` and closing with `%%`. Later mode changes SHALL NOT change the first draft.
+WHEN a writing block first leaves Writing mode (to Review or Edited), Inkwell SHALL save its current text as the first draft, in an Obsidian comment one blank line below the block, opening with `%% writing-block first-draft <mode>` and closing with `%%`. Later mode changes SHALL NOT change the first draft.
 
 #### Scenario: First review saves the first draft
 - **GIVEN** a block in Writing mode with the text "I have been here before."
@@ -120,14 +120,21 @@ WHEN a writing block enters Review for the first time, Inkwell SHALL save its cu
 - **THEN** a comment directly below the block holds "I have been here before." and the mode `review`
 - **AND** the block's own text is unchanged
 
-Test: none yet
+Test: tests/writingblocks.test.ts › "first review saves the text as the first draft below the block"
+
+#### Scenario: Going straight to Edited also keeps the first draft
+- **GIVEN** a block in Writing mode that was never reviewed
+- **WHEN** the writer switches it to Edited
+- **THEN** a comment below the block holds its text and the mode `edited`
+
+Test: tests/writingblocks.test.ts › "going straight to Edited also keeps the first draft"
 
 #### Scenario: The first draft never moves
 - **GIVEN** a reviewed block whose text has since been revised
 - **WHEN** the writer switches between Writing, Review and Edited several times
 - **THEN** the first draft in the comment is exactly what it was when review began
 
-Test: none yet
+Test: tests/writingblocks.test.ts › "the first draft never changes across mode switches"
 
 ### Requirement: Review mode
 WHILE a block is in Review, Inkwell SHALL show its current text with words added since the first draft highlighted and words removed since the first draft struck through, updating as the writer types. The writer SHALL be able to edit the text in Review.
@@ -187,7 +194,7 @@ Test: none yet [checked by hand in test-vault]
 - **WHEN** the writer picks Writing on the toolbar, then Review
 - **THEN** the block switches to each in turn
 
-Test: none yet
+Test: tests/writingblocks.test.ts › "picking modes in any order" [the toolbar itself is checked by hand]
 
 ### Requirement: Switching modes
 WHEN the writer picks a mode on a block's toolbar or runs "Writing mode", "Review mode" or "Edited mode" with the cursor in a block, Inkwell SHALL change only the mode word in the block's comment. The writing SHALL be unchanged, the mode SHALL be kept in the note so it shows the same after reloading or on another device, and undo SHALL reverse the switch.
@@ -197,14 +204,14 @@ WHEN the writer picks a mode on a block's toolbar or runs "Writing mode", "Revie
 - **WHEN** the writer switches it to Edited
 - **THEN** the comment's opening line reads `%% writing-block first-draft edited`, and nothing else in the note changes
 
-Test: none yet
+Test: tests/writingblocks.test.ts › "switching modes changes only the mode word"
 
 #### Scenario: Each block keeps its own mode
 - **GIVEN** two reviewed blocks in one note
 - **WHEN** the writer switches the first to Edited
 - **THEN** the second keeps its mode
 
-Test: none yet
+Test: tests/writingblocks.test.ts › "each block keeps its own mode"
 
 ### Requirement: Comment marks in the writing
 IF the writing contains `%%`, THEN Inkwell SHALL refuse to enter Review and show a notice, leaving the note unchanged.
@@ -214,7 +221,7 @@ IF the writing contains `%%`, THEN Inkwell SHALL refuse to enter Review and show
 - **WHEN** the writer switches it to Review
 - **THEN** a notice explains why, and the note is unchanged
 
-Test: none yet
+Test: tests/writingblocks.test.ts › "refuses review when the writing contains %%" [the notice is checked by hand]
 
 ### Requirement: Missing or damaged first draft
 IF a block's comment is missing, or its opening line can't be read, THEN Inkwell SHALL treat the block as never reviewed, and SHALL NOT change or remove the comment.
@@ -234,14 +241,14 @@ WHERE Keep the Rhythm is installed and its "Don't count comments" setting is off
 - **WHEN** a block enters Review for the first time
 - **THEN** the notice appears, and review continues
 
-Test: none yet
+Test: tests/keep-the-rhythm.test.ts › "reads whether comments are ignored, or null when unavailable" [the notice is checked by hand]
 
 #### Scenario: Setting on, or Keep the Rhythm absent
 - **GIVEN** Keep the Rhythm with "Don't count comments" on, or not installed
 - **WHEN** a block enters Review for the first time
 - **THEN** no notice appears
 
-Test: none yet
+Test: tests/keep-the-rhythm.test.ts › "reads whether comments are ignored, or null when unavailable" [the notice is checked by hand]
 
 ### Requirement: Word counts
 Inkwell's word counts SHALL count a writing block's current text only: neither the `[!writing]` header line nor the first draft.
