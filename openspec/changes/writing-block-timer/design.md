@@ -27,7 +27,7 @@ interface BlockTool {
   render(el: HTMLElement, ctx: { sourcePath: string; block: WritingBlock }): void;
 }
 ```
-`renderToolbar` gets the context and draws each tool into its own `span.inkwell-wb-tool`, before the modes. The tool decides for itself whether to show anything. Block code knows nothing about exercises, timers or modes the tool cares about.
+`renderToolbar` gets the context and draws each tool into its own `span.inkwell-wb-tool`, after the modes at the far right of the toolbar (the writer's choice, 2026-11-26). The tool decides for itself whether to show anything. Block code knows nothing about exercises, timers or modes the tool cares about.
 - *Alternative:* list tools per mode on `BlockType` (as decision 9 sketched). That pushes Inkwell's rules ("exercises only", "Draft before review") into the block type, which belongs to the blocks. It can still be added when `writing-block-types` lands, because the host list can feed it.
 
 **2. The source path reaches the toolbar.** In Live Preview, both `ToolbarWidget.toDOM` and `renderedToolbars` read `view.state.field(editorInfoField).file?.path`. Reading view uses `ctx.sourcePath`. With no path (an embed with no file), no tools are drawn.

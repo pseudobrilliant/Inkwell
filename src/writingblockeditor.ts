@@ -6,7 +6,7 @@
  */
 import { EditorSelection, EditorState, Prec, StateField, Transaction, type Extension, type Range } from "@codemirror/state";
 import { Decoration, EditorView, keymap, ViewPlugin, WidgetType, type DecorationSet, type ViewUpdate } from "@codemirror/view";
-import { editorLivePreviewField, Notice, type Editor } from "obsidian";
+import { editorInfoField, editorLivePreviewField, Notice, type Editor } from "obsidian";
 import {
   backspaceAt,
   blockAtLine,
@@ -50,6 +50,11 @@ function livePreview(state: EditorState): boolean {
   return state.field(editorLivePreviewField, false) ?? false;
 }
 
+/** The path of the note this editor shows, or null (an editor with no file). */
+function sourcePathOf(state: EditorState): string | null {
+  return state.field(editorInfoField, false)?.file?.path ?? null;
+}
+
 /** The block's toolbar, standing in for its `> [!writing]` header line while the cursor is in the block. */
 class ToolbarWidget extends WidgetType {
   constructor(
@@ -66,7 +71,11 @@ class ToolbarWidget extends WidgetType {
   toDOM(view: EditorView): HTMLElement {
     const line = view.dom.createDiv({ cls: "inkwell-wb-toolbar-line" });
     line.remove();
-    renderToolbar(line, this.block, (mode) => switchInView(view, this.block.start, mode, this.host));
+    const sourcePath = sourcePathOf(view.state);
+    renderToolbar(line, this.block, (mode) => switchInView(view, sourcePath, this.block.start, mode, this.host), {
+      sourcePath,
+      tools: this.host.tools,
+    });
     return line;
   }
 
@@ -288,7 +297,11 @@ function renderedToolbars(host: WritingBlockHost) {
           drawBlockBody(callout, block);
           current?.remove();
           callout.addClass("inkwell-wb-has-toolbar");
-          const bar = renderToolbar(callout, block, (mode) => switchInView(this.view, block.start, mode, host));
+          const sourcePath = sourcePathOf(this.view.state);
+          const bar = renderToolbar(callout, block, (mode) => switchInView(this.view, sourcePath, block.start, mode, host), {
+            sourcePath,
+            tools: host.tools,
+          });
           bar.dataset.block = key;
           callout.prepend(bar);
         }

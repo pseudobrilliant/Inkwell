@@ -10,9 +10,27 @@ import { Notice, type App, type Editor, type TFile } from "obsidian";
 import type { EditorView } from "@codemirror/view";
 import { BLOCK_MODES, findBlocks, setMode, type BlockMode, type TextChange, type WritingBlock } from "./writingblocks";
 
+/**
+ * A control the host adds to a block's toolbar, drawn at the far right, after the modes (design decision 9). The tool decides for
+ * itself whether to show anything for this block; the block code knows nothing about what it does.
+ */
+export interface BlockTool {
+  id: string;
+  /** Draw into `el` for this block, or leave it empty. Called on each toolbar draw. */
+  render(el: HTMLElement, ctx: { sourcePath: string; block: WritingBlock }): void;
+}
+
+/** Where a toolbar is drawn: the note it's in (null for an embed with no file), and the tools to draw. */
+export interface ToolbarContext {
+  sourcePath: string | null;
+  tools: readonly BlockTool[];
+}
+
 export interface WritingBlockHost {
-  /** Called when a block first leaves Draft mode and its first draft is saved. */
-  onFirstDraftSaved(): void;
+  /** Tools shown in every block's toolbar, at the far right after the modes. */
+  tools: readonly BlockTool[];
+  /** Called when a block first leaves Draft mode and its first draft is saved, with the note's path and text after it. */
+  onFirstDraftSaved(note: { sourcePath: string; text: string }): void;
   /**
    * Called when the writer starts or stops writing in a block: the cursor moves into or out of one in the focused
    * editor (Live Preview), or that editor closes. Called only when the answer changes, for each editor.
@@ -36,8 +54,8 @@ export function blockTypeOf(_block: WritingBlock): BlockType {
   return WRITING_BLOCK;
 }
 
-/** Draw a block's toolbar into `container`: its modes, the current one marked. */
-export function renderToolbar(container: HTMLElement, block: WritingBlock, onPick: (mode: BlockMode) => void): HTMLElement {
+/** Draw a block's toolbar into `container`: its modes, the current one marked, then the host's tools at the far right. */
+export function renderToolbar(container: HTMLElement, block: WritingBlock, onPick: (mode: BlockMode) => void, ctx: ToolbarContext): HTMLElement {
   const bar = container.createDiv({ cls: "inkwell-wb-toolbar" });
   bar.setAttr("role", "toolbar");
   const modes = bar.createDiv({ cls: "inkwell-wb-modes" });
@@ -57,6 +75,15 @@ export function renderToolbar(container: HTMLElement, block: WritingBlock, onPic
       if (mode !== block.mode) onPick(mode);
     });
   }
+  const { sourcePath } = ctx;
+  if (sourcePath !== null && ctx.tools.length) {
+    const tools = bar.createDiv({ cls: "inkwell-wb-tools" });
+    for (const tool of ctx.tools) {
+      const el = tools.createSpan({ cls: "inkwell-wb-tool" });
+      el.dataset.tool = tool.id;
+      tool.render(el, { sourcePath, block });
+    }
+  }
   return bar;
 }
 
@@ -74,19 +101,19 @@ function modeChange(text: string, line: number, mode: BlockMode, host: WritingBl
 }
 
 /** Switch a block in an open editor (Live Preview or source mode). One transaction, so undo reverses it. */
-export function switchInView(view: EditorView, line: number, mode: BlockMode, host: WritingBlockHost): void {
+export function switchInView(view: EditorView, sourcePath: string | null, line: number, mode: BlockMode, host: WritingBlockHost): void {
   const r = modeChange(view.state.doc.toString(), line, mode, host);
   if (!r) return;
   view.dispatch({ changes: r.change, userEvent: "inkwell.block-mode" });
-  if (r.firstSave) host.onFirstDraftSaved();
+  if (r.firstSave && sourcePath !== null) host.onFirstDraftSaved({ sourcePath, text: view.state.doc.toString() });
 }
 
 /** Switch a block through Obsidian's editor (commands). */
-export function switchInEditor(editor: Editor, line: number, mode: BlockMode, host: WritingBlockHost): void {
+export function switchInEditor(editor: Editor, sourcePath: string | null, line: number, mode: BlockMode, host: WritingBlockHost): void {
   const r = modeChange(editor.getValue(), line, mode, host);
   if (!r) return;
   editor.replaceRange(r.change.insert, editor.offsetToPos(r.change.from), editor.offsetToPos(r.change.to));
-  if (r.firstSave) host.onFirstDraftSaved();
+  if (r.firstSave && sourcePath !== null) host.onFirstDraftSaved({ sourcePath, text: editor.getValue() });
 }
 
 /**
@@ -95,6 +122,7 @@ export function switchInEditor(editor: Editor, line: number, mode: BlockMode, ho
  */
 export async function switchInFile(app: App, file: TFile, line: number, expected: string, mode: BlockMode, host: WritingBlockHost): Promise<boolean> {
   let firstSave = false;
+  let after = "";
   let moved = false;
   let done = false;
   await app.vault.process(file, (text) => {
@@ -107,9 +135,10 @@ export async function switchInFile(app: App, file: TFile, line: number, expected
     if (!r) return text;
     firstSave = r.firstSave;
     done = true;
-    return text.slice(0, r.change.from) + r.change.insert + text.slice(r.change.to);
+    after = text.slice(0, r.change.from) + r.change.insert + text.slice(r.change.to);
+    return after;
   });
   if (moved) new Notice("This block changed since it was shown. Try again.");
-  if (firstSave) host.onFirstDraftSaved();
+  if (firstSave) host.onFirstDraftSaved({ sourcePath: file.path, text: after });
   return done;
 }

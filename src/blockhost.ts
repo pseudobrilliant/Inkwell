@@ -13,12 +13,15 @@ import { TypewriterMode } from "./integrations/typewriter-mode";
 /**
  * Keep the Rhythm counts comments unless told not to; the first draft lives in one. Inkwell never changes KTR's settings.
  * Typewriter Mode, if installed, is on only while the writer is writing in a block.
+ * The writing timer is a toolbar tool, and a block's first review stops it (spec writing-timer).
  */
 function blockHost(plugin: InkwellPlugin): WritingBlockHost {
   const typewriter = new TypewriterMode(plugin.app);
   return {
+    tools: [plugin.timer.tool],
     onWritingInBlock: (writing) => typewriter.writingInBlock(writing),
-    onFirstDraftSaved: () => {
+    onFirstDraftSaved: ({ sourcePath, text }) => {
+      void plugin.timer.blockReviewed(sourcePath, text);
       void plugin.ktr.ignoresComments().then((ignored) => {
         if (ignored === false) {
           new Notice(
@@ -47,21 +50,21 @@ export function registerWritingBlocks(plugin: InkwellPlugin): void {
     plugin.addCommand({
       id,
       name,
-      editorCheckCallback: (checking, editor) => {
+      editorCheckCallback: (checking, editor, info) => {
         const block = blockAtLine(findBlocks(editor.getValue()), editor.getCursor().line);
         if (!block || block.mode === mode) return false;
-        if (!checking) switchInEditor(editor, block.start, mode, host);
+        if (!checking) switchInEditor(editor, info.file?.path ?? null, block.start, mode, host);
         return true;
       },
     });
   }
   plugin.registerEvent(
-    plugin.app.workspace.on("editor-menu", (menu, editor) => {
+    plugin.app.workspace.on("editor-menu", (menu, editor, info) => {
       menu.addItem((i) => i.setTitle("New writing block").setIcon("pencil-line").onClick(() => newWritingBlock(editor)));
       const block = blockAtLine(findBlocks(editor.getValue()), editor.getCursor().line);
       if (!block) return;
       for (const { mode, name } of MODE_COMMANDS) {
-        if (mode !== block.mode) menu.addItem((i) => i.setTitle(name).onClick(() => switchInEditor(editor, block.start, mode, host)));
+        if (mode !== block.mode) menu.addItem((i) => i.setTitle(name).onClick(() => switchInEditor(editor, info.file?.path ?? null, block.start, mode, host)));
       }
     })
   );

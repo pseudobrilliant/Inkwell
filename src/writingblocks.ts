@@ -344,6 +344,17 @@ export function writingAt(text: string, pos: number): boolean {
   return at !== null && !(at.block.firstDraft && at.block.mode === "writing");
 }
 
+/** Whether a block is still being drafted: in Draft mode and never reviewed, so it has no kept first draft. */
+export function drafting(block: WritingBlock): boolean {
+  return block.mode === "writing" && !block.firstDraft;
+}
+
+/** Whether an offset is in the writing of a block that is still being drafted (see `drafting`). */
+export function draftingAt(text: string, pos: number): boolean {
+  const at = bodyLineAt(text, pos);
+  return at !== null && drafting(at.block);
+}
+
 // ---------- "New writing block" ----------
 
 export interface BlockInsert {

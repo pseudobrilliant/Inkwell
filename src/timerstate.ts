@@ -3,6 +3,7 @@
  * Every function takes the time it should act at and returns a new state; nothing here reads the clock.
  * The UI, persistence and notices live in src/timer.ts.
  */
+import { drafting, draftingAt, findBlocks } from "./writingblocks";
 
 export interface TimerState {
   path: string;
@@ -115,4 +116,42 @@ export function isTimerState(v: unknown): v is TimerState {
     typeof s.lastTypedAt === "number" &&
     (s.startedAt === null || typeof s.startedAt === "number")
   );
+}
+
+// ---------- Timing by block (exercises with a writing block) ----------
+
+/**
+ * How a note is timed. An exercise with a writing block is timed by block: only drafting counts. A journal, or an
+ * exercise with no block, is timed as a whole note. Any other note gets no timer.
+ */
+export type Timing = "note" | "block" | "none";
+
+export function timing(type: string, text: string): Timing {
+  if (type === "exercise") return findBlocks(text).length ? "block" : "note";
+  return type === "journal" ? "note" : "none";
+}
+
+/** Whether any block in the note is still being drafted (Draft mode, never reviewed). */
+export function hasDraftLeft(text: string): boolean {
+  return findBlocks(text).some(drafting);
+}
+
+/** Whether a keystroke at `pos` counts as typing for the timer. */
+export function countsAsTyping(how: Timing, text: string, pos: number): boolean {
+  return how === "note" || (how === "block" && draftingAt(text, pos));
+}
+
+/**
+ * A block in note `path` was reviewed for the first time, leaving the note as `text`. If the timer is on that note it
+ * stops and logs; it is then armed again with the same goal if another block is still being drafted.
+ */
+export function afterFirstReview(s: TimerState | null, path: string, text: string): { log: boolean; rearmGoal: number | null } {
+  if (!s || s.path !== path) return { log: false, rearmGoal: null };
+  return { log: true, rearmGoal: hasDraftLeft(text) ? s.goalMin : null };
+}
+
+/** Share of the goal written, from 0 to 1 (full at the goal and after); null with no goal. */
+export function goalProgress(s: TimerState, now: number): number | null {
+  if (s.goalMin <= 0) return null;
+  return Math.min(1, elapsed(s, now) / (s.goalMin * 60_000));
 }
