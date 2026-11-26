@@ -67,6 +67,7 @@ These tests describe current code and pass before anything else changes.
   - on a phone: autocorrect, swipe and dictation
 
   Stop and return to the writer if Obsidian fights the hidden Markdown (see design.md's fallback).
+- [ ] 2.7 Add an ESLint `no-restricted-imports` block for `src/writingblock*.ts` that fails on imports from other Inkwell modules (design decision 10). Verify `npm run lint` passes, then fails on a throwaway import of `./settings` in one of those files, removed afterwards.
 
 ## 3. Modes and the first draft
 
@@ -85,7 +86,12 @@ These tests describe current code and pass before anything else changes.
   Set the Test lines for "First review saves the first draft", "The first draft never moves", "Switching changes only the mode word", "Each block keeps its own mode" and "Writing that would end the comment early". Verify `npm test` passes.
 - [ ] 3.2 Add `ignoresComments()` to `src/integrations/keep-the-rhythm.ts`, reading `settings.ignoreComments` behind the version gate. Add "reads whether comments are ignored, or null when unavailable" to `tests/keep-the-rhythm.test.ts`. Set both Keep the Rhythm scenario Test lines, with a note that the notice itself is checked by hand. Verify `npm test` passes.
 - [ ] 3.3 Add the "Writing mode", "Review mode" and "Edited mode" commands (`editorCheckCallback`, only with the cursor in a block, plus `editor-menu`). Each is a single editor transaction with its own `userEvent`. Show the KTR notice on first review when `ignoresComments()` is false. Verify by hand in `test-vault`: modes switch, undo reverses each, the mode survives reload, and the notice appears only with the setting off.
-- [ ] 3.4 Add mode buttons to the callout title in `src/writingblockview.ts`. In reading view they use `vault.process`, re-finding the block by line and checking its text first. Verify by hand in reading view and in Live Preview with the cursor outside the block, on desktop and phone.
+- [ ] 3.4 Add the block toolbar (design decision 9):
+  - a block type definition for the writing block (modes Writing, Review, Edited; no tools yet), read from the callout's metadata
+  - one toolbar component, drawn in the callout title when rendered and as the header-line widget while editing, with the current mode marked
+  - picking a mode: an editor transaction while editing, and `vault.process` in reading view, re-finding the block by line and checking its text first
+
+  Add "a writing callout's type defaults to the writing block" and "picking modes in any order" to `tests/writingblocks.test.ts`. Set the "Any mode, any order" Test line, and "The toolbar is always there" as checked by hand. Verify `npm test`, then by hand in reading view and Live Preview, with the cursor in and out of the block, on desktop and phone: the toolbar never moves and never shows Markdown.
 - [ ] 3.5 **Check KTR** in `test-vault` with "Don't count comments" on:
   - first review, switching modes, and toggling between Writing and Edited change the day's count by 0
   - replacing 3 words with 5 logs +2
@@ -123,7 +129,8 @@ These tests describe current code and pass before anything else changes.
 ## 6. Docs, ADR, check
 
 - [ ] 6.1 Update the README: writing blocks, the three modes, converting tabbed blocks, and turning on KTR's "Don't count comments". Update CLAUDE.md:
-  - Practice tools: a short writing-blocks summary linking the spec
+  - a short "Writing blocks" section: a core component used across Capture, Practice and the writing modes (not a mode), kept self-contained (design decision 10), linking the spec
+  - Practice tools: exercises start with a writing block
   - Movement: the current text only carries forward
   - the KTR rules: the comment setting
 

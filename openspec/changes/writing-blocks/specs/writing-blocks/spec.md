@@ -52,7 +52,7 @@ WHEN the writer runs "New writing block" with the cursor in a run of tab-indente
 Test: tests/writingblocks.test.ts › "converts tab-indented lines into a block" [the command is checked by hand]
 
 ### Requirement: Look
-Inkwell SHALL show a writing block as a box in a typewriter font (falling back to the editor's monospace font) with a first-line indent on every paragraph, with no callout title or icon. It SHALL look the same in reading view and in Live Preview, whether the cursor is inside the block or not.
+Inkwell SHALL show a writing block as a box in a typewriter font (falling back to the editor's monospace font) with a first-line indent on every paragraph, with no callout title or icon; the block's toolbar takes the title's place. It SHALL look the same in reading view and in Live Preview, whether the cursor is inside the block or not.
 
 #### Scenario: Paragraphs are indented
 - **GIVEN** a writing block with two paragraphs
@@ -172,8 +172,25 @@ WHILE a reviewed block is in Writing mode, Inkwell SHALL show the first draft in
 
 Test: none yet
 
+### Requirement: Block toolbar
+Inkwell SHALL show a toolbar across the top of every writing block, in reading view and in Live Preview whether or not the cursor is inside the block. For a writing block it SHALL show the three modes, Writing, Review and Edited, with the current one marked, and the writer SHALL be able to pick any of them at any time.
+
+#### Scenario: The toolbar is always there
+- **GIVEN** a writing block in Live Preview
+- **WHEN** the writer looks at it with the cursor elsewhere, then clicks into it and types
+- **THEN** the toolbar shows above the writing both times, with the current mode marked
+
+Test: none yet [checked by hand in test-vault]
+
+#### Scenario: Any mode, any order
+- **GIVEN** a block in Edited mode
+- **WHEN** the writer picks Writing on the toolbar, then Review
+- **THEN** the block switches to each in turn
+
+Test: none yet
+
 ### Requirement: Switching modes
-WHEN the writer picks a mode from the buttons on a block or runs "Writing mode", "Review mode" or "Edited mode" with the cursor in a block, Inkwell SHALL change only the mode word in the block's comment. The writing SHALL be unchanged, the mode SHALL be kept in the note so it shows the same after reloading or on another device, and undo SHALL reverse the switch.
+WHEN the writer picks a mode on a block's toolbar or runs "Writing mode", "Review mode" or "Edited mode" with the cursor in a block, Inkwell SHALL change only the mode word in the block's comment. The writing SHALL be unchanged, the mode SHALL be kept in the note so it shows the same after reloading or on another device, and undo SHALL reverse the switch.
 
 #### Scenario: Switching changes only the mode word
 - **GIVEN** a reviewed block in Review

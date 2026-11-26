@@ -18,4 +18,4 @@ Piece progress is measured in words, not minutes. The counting rule (practice ne
 
 ## Related
 
-The writing-blocks change (`openspec/changes/writing-blocks/`) could make the timer run only while typing inside a writing block. That would apply to any note, so it may answer this question too.
+[writing-block-timer](writing-block-timer.md) moves the timer into writing blocks. Drafts and scenes with a block would then be timed the same way, so it may answer this question too.

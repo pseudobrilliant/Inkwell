@@ -17,6 +17,7 @@ Current state that shapes the approach:
 - All block logic in one pure module, unit-tested without Obsidian.
 - Typing is never rewritten or intercepted except where the spec makes the block read-only, so phone keyboards, autocorrect and dictation behave normally.
 - The block's format leaves room for later features (types of block, the timer inside blocks) without changing the format already in notes.
+- Writing blocks are a self-contained component inside Inkwell (decision 10), so they could become their own plugin later. Splitting them out is not planned.
 
 **Non-Goals:**
 - Source mode gets no decorations: it shows the raw Markdown.
@@ -47,7 +48,7 @@ I have been here before.
 - **Cursor outside the block:** Obsidian renders the callout through post processors, so the reading-view code (decision 5) handles it.
 - **Cursor inside the block:** a `StateField` builds decorations from the pure parse. The writer sees only the writing, styled like the rendered block (task 2.1 found Obsidian shows the raw `> [!writing]` and `>` here, which the writer doesn't want).
   - Every block line gets `Decoration.line` with a class for the box, monospace font and first-line indent.
-  - The header line's text and each line's `> ` are `Decoration.replace` ranges, also given to `EditorView.atomicRanges`, so the cursor and arrow keys skip them and a click never lands inside. The header line collapses to the box's top padding, and later holds the mode buttons.
+  - The header line's text and each line's `> ` are `Decoration.replace` ranges, also given to `EditorView.atomicRanges`, so the cursor and arrow keys skip them and a click never lands inside. On the header line the hidden range is a widget: the block's toolbar (decision 9).
   - A keymap at high precedence, active only inside a block, owns Enter (new `> ` line; on an empty last line, remove it and leave the block) and Backspace (at a paragraph's start, join it to the previous line; on the only empty line, remove the block). Other keys are untouched.
   - Review: inserted ranges get `Decoration.mark`, and removed text is a struck-through `Decoration.widget`. The diff is debounced (about 150 ms), and decorations are mapped through edits in between.
   - Writing after review: the block is replaced by a block widget showing the first draft. A `transactionFilter` drops `input`/`delete` user events that touch that range and shows the notice. This, and the keymap above, are the only places Inkwell handles keys.
@@ -57,10 +58,10 @@ I have been here before.
 
 **5. Reading view and rendered callouts: `src/writingblockview.ts`** (`registerMarkdownPostProcessor` for `.callout[data-callout="writing"]`).
 - Gets the full note text from `ctx.getSectionInfo(el)` and finds the comment below the section.
-- Adds three mode buttons to the callout title.
+- Replaces the callout title with the block's toolbar (decision 9).
 - Review shows the diff. Writing after review renders the first draft.
 - Splits paragraphs at `<br>` so each line gets the first-line indent. With "Strict line breaks" on, Obsidian joins lines, so the block uses one paragraph per line regardless.
-- Mode buttons in reading view use `vault.process`. It re-finds the block by line number and checks the text matches before writing, and otherwise shows a notice and changes nothing. DOM via `createEl` only.
+- Toolbar mode picks in reading view use `vault.process`. It re-finds the block by line number and checks the text matches before writing, and otherwise shows a notice and changes nothing. DOM via `createEl` only.
 
 **6. Commands** (`src/main.ts`, also on `editor-menu`): "New writing block", "Writing mode", "Review mode", "Edited mode". Mode commands use `editorCheckCallback` and show only with the cursor in a block. No default hotkeys.
 
@@ -71,14 +72,23 @@ I have been here before.
 - `workSection` passes its result through `unwrapBlocks` and is exported for tests.
 - `promoteToLongForm` calls `unwrapBlocks` on the draft body before `splitScenes`. The original draft is still moved, untouched, into `Archive/` first.
 
+**9. The block toolbar, built for more than one kind of block.** One toolbar component draws into both places a block appears: the callout title (rendered, decision 5) and the header-line widget (editing, decision 4). So it looks the same in each, and is always visible, as the spec requires. What it shows comes from a block type definition: the modes and the tools for each mode. Only the writing block type exists in this change. Its modes are Writing, Review and Edited, and it has no tools yet. The timer (idea `writing-block-timer`) will be the first tool, and other types (idea `writing-block-types`) add definitions rather than new toolbars. The type is read from the callout's metadata (`[!writing|<type>]`), defaulting to the writing type, so notes written now never need rewriting. The toolbar holds only controls, never writing, and KTR counts nothing in it.
+
+**10. Writing blocks are a component, used by the rest of Inkwell.** Capture, Practice and the writing modes are Inkwell's platform. Writing blocks are a core component that supports features in them: exercises start with one, This Became a Story and Promote read them, and the timer will appear in their toolbar.
+- **Dependencies run one way.** `src/writingblock*.ts` import only Obsidian, CodeMirror and each other, never Practice, stories, projects, the timer or settings.
+- **Other parts plug in.** They call the blocks' functions (`unwrapBlocks`, `findBlocks`), and later register toolbar tools and block types. Blocks never call into them.
+- **Lint keeps it true.** An ESLint `no-restricted-imports` rule for `src/writingblock*.ts` fails on any other Inkwell import.
+
+The blocks could then become their own plugin without untangling them. A split is not planned: one plugin is simpler to install and to keep in step.
+
 **Mobile and sync:**
-- **Mobile:** everything is in the note. No desktop-only APIs. Typing is never rewritten. The mode buttons on the block are the touch path, and the commands work from the palette and the editor menu.
+- **Mobile:** everything is in the note. No desktop-only APIs. Typing is never rewritten. The block's toolbar is the touch path, and the commands work from the palette and the editor menu.
 - **Sync:** modes and the first draft sync with the note. Two devices editing one block at once is an ordinary sync conflict on a text file; nothing else stores block state.
 
 **Tests:**
 - Unit (`tests/writingblocks.test.ts`): parse, modes, comment format, wrap and convert, unwrap, countable, diff segments. Invariant: rebuilding the first draft from the segments gives it back exactly.
 - Fake vault: "This became a story" (`tests/became.test.ts`) and promote (`tests/promote.test.ts`), including the original being kept first.
-- By hand in `test-vault` on desktop and a phone: Live Preview decorations, read-only Writing mode, reading view buttons.
+- By hand in `test-vault` on desktop and a phone: Live Preview decorations, read-only Writing mode, the toolbar in reading view and Live Preview.
 
 ## Risks / Trade-offs
 

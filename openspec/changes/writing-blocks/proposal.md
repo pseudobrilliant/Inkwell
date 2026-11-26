@@ -4,12 +4,15 @@
 
 Write, reflect, write again. Today a writing block is prose indented with tabs, which Markdown treats as a code block, so Inkwell can't tell the writing apart from the prompt and reflection around it, and nothing helps the writer revise it. A writing block that Inkwell recognizes gives practice a unit of its own. Review, seeing what changed between the first draft and the revised one, is the first and most important feature built on it.
 
+Writing blocks are a core component of Inkwell, not a mode: they support features across Capture, Practice and the writing modes, starting with practice exercises. They are kept self-contained, so they could become their own plugin later, though that isn't planned.
+
 Picked up from the `writing-blocks` idea.
 
 ## What Changes
 
 - **Writing block:** a new kind of block, a `> [!writing]` callout, usable in any note. It has the look of today's tabbed blocks: a box, typewriter font and first-line indent. A command creates one, wrapping the selection or converting a tab-indented block.
-- **Three modes per block**, switched from buttons on the block or by command:
+- **A toolbar on every block**, always visible, rendered and while typing. It is the block's main control, and the place later block types and tools (the timer next) go.
+- **Three modes per block**, switched from the toolbar, freely and in any order, or by command:
   - **Writing:** before review, the block is just the writing. After review, Writing shows the text as first written, read-only.
   - **Review:** shows the changes since the first draft, with added text highlighted and removed text struck through, updating as the writer revises. The writer can type here.
   - **Edited:** the revised text, clean. The writer can type here.
@@ -37,7 +40,7 @@ None. The writing timer is unchanged. Practice, movement and KTR integration hav
 - **Dependencies:** `@codemirror/merge` for the diff, bundled into `main.js` (only its diff function, checked for size), plus `@codemirror/state`, `@codemirror/view` and `@codemirror/language` as dev dependencies for types (already external in `esbuild.config.mjs`).
 - **Tests:** new `tests/writingblocks.test.ts`; additions to `tests/wordcount.test.ts`, `tests/promote.test.ts` and a new `tests/became.test.ts`.
 - **Out of scope:**
-  - The timer running only inside writing blocks, types of block, per-block numbers. Each is a later change on the same block.
+  - The timer in the block's toolbar, timing the first write and replacing the note-level timer in notes with a block (idea `writing-block-timer`, the next change). Types of block (idea `writing-block-types`). Per-block numbers. Each is a later change on the same block and toolbar.
   - Rounds ("Write again"). Review always compares against the first draft.
   - Comments, suggestions, authors and sharing: Inkwell is not a collaboration or publishing tool.
   - A restore command; the first draft can be copied from Writing mode.
