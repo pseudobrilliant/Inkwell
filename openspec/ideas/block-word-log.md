@@ -20,7 +20,7 @@ We take inspiration from Keep the Rhythm and make our own version that fits Inkw
 - **Only typing in writing blocks counts:** net words per note per day, from the words in the note's blocks (`findBlocks`, `countWords`). The first draft is never counted. Programmatic rewrites and changes arriving by sync don't count.
 - **Blocks stay blocks when work moves up:** "This became a story" and "Promote" stop unwrapping blocks, and new drafts and scenes start with a block.
 - **Per-device log files in the vault:** each device writes only its own files, and readers add them up, so sync can never overwrite a day.
-- **Words now, minutes later:** the log format leaves room for minutes; the timer itself stays [writing-block-timer](writing-block-timer.md).
+- **Words now, minutes later:** the log format leaves room for minutes; the timer itself stays the `writing-block-timer` change.
 
 ## Open questions
 
