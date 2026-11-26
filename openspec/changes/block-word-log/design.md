@@ -80,14 +80,10 @@ Both are added through `getSettingDefinitions()`, `getControlValue` and `setCont
 - [The editor watch misses an edit path, such as a plugin that edits without a user event] → It undercounts, never overcounts. The by-hand checks in the tasks cover typing, paste, cut, undo and mobile input.
 - [Buffered words are lost if the app is killed] → At most 10 seconds of counts. They're also flushed on unload and on `visibilitychange` to hidden, which covers mobile apps going to the background.
 - [The log folder clutters the vault] → It sits under `99 - System`, beside the templates, and the folder can be changed in settings.
-- [Writers lose their KTR history in Inkwell's views] → They chose to start fresh. KTR's own blocks keep working in their existing notes while KTR stays installed.
 
 ## Migration Plan
 
-1. Install the update. The log starts empty, today's words start counting, and the streak starts at 0.
-2. Existing Home notes keep their `ktr-` blocks. The README shows how to swap them for `inkwell-heatmap` and `inkwell-words`, or to delete the Home note so Inkwell makes a new one.
-3. Old story drafts and scenes without a block show "Put in a writing block" in the panels.
-4. Rollback: install the previous version. It reads KTR again, and the log folder is left as plain notes.
+None. Nothing has been released, so there's no upgrade path. The log starts empty. In the test and writing vaults, delete the Home note to get the new one, and use "Put in a writing block" on drafts that predate blocks.
 
 ## Open Questions
 

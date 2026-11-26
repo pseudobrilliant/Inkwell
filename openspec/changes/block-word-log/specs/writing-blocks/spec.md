@@ -68,4 +68,4 @@ Test: none yet
 
 ### Requirement: Keep the Rhythm comment setting
 **Reason**: Inkwell no longer uses Keep the Rhythm ([ADR 0007](../../../../decisions/0007-inkwell-keeps-its-own-word-log.md)). Its own word log never counts the first draft, so there's nothing to warn about.
-**Migration**: None needed. Writers who keep Keep the Rhythm installed for themselves can still turn its "Don't count comments" setting on.
+**Migration**: None. Nothing has been released.

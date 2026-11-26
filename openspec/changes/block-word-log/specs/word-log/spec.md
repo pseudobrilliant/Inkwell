@@ -189,7 +189,7 @@ Test: none yet
 
 #### Scenario: An existing Home
 - **GIVEN** a Home note that holds `ktr-heatmap` and `ktr-slots` blocks
-- **WHEN** the writer opens Home after updating Inkwell
+- **WHEN** the writer opens Home
 - **THEN** the note is unchanged
 
 Test: none yet
