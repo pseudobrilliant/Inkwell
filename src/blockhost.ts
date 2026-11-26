@@ -26,7 +26,7 @@ function blockHost(plugin: InkwellPlugin): WritingBlockHost {
 }
 
 const MODE_COMMANDS: { mode: BlockMode; id: string; name: string }[] = [
-  { mode: "writing", id: "block-writing-mode", name: "Writing mode" },
+  { mode: "writing", id: "block-draft-mode", name: "Draft mode" },
   { mode: "review", id: "block-review-mode", name: "Review mode" },
   { mode: "edited", id: "block-edited-mode", name: "Edited mode" },
 ];

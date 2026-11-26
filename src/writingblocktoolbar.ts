@@ -11,7 +11,7 @@ import type { EditorView } from "@codemirror/view";
 import { BLOCK_MODES, findBlocks, setMode, type BlockMode, type TextChange, type WritingBlock } from "./writingblocks";
 
 export interface WritingBlockHost {
-  /** Called when a block first leaves Writing mode and its first draft is saved. */
+  /** Called when a block first leaves Draft mode and its first draft is saved. */
   onFirstDraftSaved(): void;
 }
 
@@ -23,7 +23,7 @@ export interface BlockType {
 /** The writing block: write, review your changes, read the edited text. More types come later (idea writing-block-types). */
 export const WRITING_BLOCK: BlockType = {
   id: "writing",
-  modes: BLOCK_MODES.map((mode) => ({ mode, label: mode === "writing" ? "Writing" : mode === "review" ? "Review" : "Edited" })),
+  modes: BLOCK_MODES.map((mode) => ({ mode, label: mode === "writing" ? "Draft" : mode === "review" ? "Review" : "Edited" })),
 };
 
 /** The type of a block. Only the writing block exists so far, so every writing callout is one. */
@@ -40,8 +40,12 @@ export function renderToolbar(container: HTMLElement, block: WritingBlock, onPic
     const button = modes.createEl("button", { cls: "inkwell-wb-mode", text: label });
     button.setAttr("aria-pressed", String(mode === block.mode));
     if (mode === block.mode) button.addClass("is-active");
-    // Keep the editor's cursor where it is: a click on the toolbar is not a click in the writing.
-    button.addEventListener("mousedown", (e) => e.preventDefault());
+    // Keep the editor's cursor where it is: a click on the toolbar is not a click in the writing,
+    // and on Obsidian's rendered callout, not a click that opens its Markdown.
+    button.addEventListener("mousedown", (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+    });
     button.addEventListener("click", (e) => {
       e.preventDefault();
       e.stopPropagation();

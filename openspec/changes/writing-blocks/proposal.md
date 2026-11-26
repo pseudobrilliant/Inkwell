@@ -13,7 +13,7 @@ Picked up from the `writing-blocks` idea.
 - **Writing block:** a new kind of block, a `> [!writing]` callout, usable in any note. It has the look of today's tabbed blocks: a box, typewriter font and first-line indent. A command creates one, wrapping the selection or converting a tab-indented block.
 - **A toolbar on every block**, always visible, rendered and while typing. It is the block's main control, and the place later block types and tools (the timer next) go.
 - **Three modes per block**, switched from the toolbar, freely and in any order, or by command:
-  - **Writing:** before review, the block is just the writing. After review, Writing shows the text as first written, read-only.
+  - **Draft:** before review, the block is just the writing. After review, Draft shows the text as first written, read-only.
   - **Review:** shows the changes since the first draft, with added text highlighted and removed text struck through, updating as the writer revises. The writer can type here.
   - **Edited:** the revised text, clean. The writer can type here.
 - **The first draft is kept in the same note**, in an Obsidian comment (`%% … %%`) directly below the block, saved the first time the block enters Review. Comments are hidden in reading view. Review always compares against this first draft.
@@ -43,5 +43,5 @@ None. The writing timer is unchanged. Practice, movement and KTR integration hav
   - The timer in the block's toolbar, timing the first write and replacing the note-level timer in notes with a block (idea `writing-block-timer`, the next change). Types of block (idea `writing-block-types`). Per-block numbers. Each is a later change on the same block and toolbar.
   - Rounds ("Write again"). Review always compares against the first draft.
   - Comments, suggestions, authors and sharing: Inkwell is not a collaboration or publishing tool.
-  - A restore command; the first draft can be copied from Writing mode.
+  - A restore command; the first draft can be copied from Draft mode.
 - **Weight on a lighter mode:** none by default. Practice notes gain a block only through the built-in exercise template. Review is opt-in per block, and a block that is never reviewed is just a callout.

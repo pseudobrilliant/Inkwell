@@ -402,8 +402,8 @@ body {
   border-bottom-right-radius: var(--radius-s);
 }
 
-/* Toolbar. The same element is drawn in three places: inside the callout (reading view), as the block's top line
-   while editing, and just above Obsidian's rendered callout (Live Preview, cursor elsewhere). */
+/* Toolbar. The same element is drawn inside the rendered callout (reading view, and Live Preview with the cursor
+   elsewhere) and as the block's top line while editing. */
 .inkwell-wb-toolbar {
   display: flex;
   align-items: center;
@@ -440,7 +440,7 @@ body {
   box-shadow: var(--shadow-s);
 }
 
-/* Reading view: the toolbar inside the callout, then the gap. */
+/* Rendered (reading view, and Live Preview with the cursor elsewhere): the toolbar inside the callout, then the gap. */
 .callout[data-callout="writing"].inkwell-wb-has-toolbar {
   padding-top: var(--inkwell-wb-toolbar-pad);
 }
@@ -456,17 +456,6 @@ body {
   border-top-right-radius: var(--radius-s);
   padding: var(--inkwell-wb-toolbar-pad) var(--inkwell-wb-pad-x) 0;
   font-size: var(--inkwell-wb-size);
-}
-
-/* Live Preview, cursor elsewhere: the toolbar sits on top of Obsidian's rendered callout, which becomes the rest of the box. */
-.markdown-source-view.mod-cm6 .inkwell-wb-toolbar-line + .cm-embed-block {
-  margin-top: 0;
-}
-.markdown-source-view.mod-cm6 .inkwell-wb-toolbar-line + .cm-embed-block .callout[data-callout="writing"] {
-  margin-top: 0;
-  padding-top: var(--inkwell-wb-gap);
-  border-top-left-radius: 0;
-  border-top-right-radius: 0;
 }
 
 /* The kept first draft, folded while editing. */

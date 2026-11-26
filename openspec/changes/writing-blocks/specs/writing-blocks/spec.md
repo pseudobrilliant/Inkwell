@@ -9,7 +9,7 @@ Decisions behind this spec: [ADR 0002](../../decisions/0002-rely-on-keep-the-rhy
 ## ADDED Requirements
 
 ### Requirement: Block format
-Inkwell SHALL treat a callout of type `writing` (`> [!writing]`, with an optional title after it) as a writing block, in any note. The block's lines hold the writing as it is now. The block SHALL be plain Markdown that reads as a callout without Inkwell.
+Inkwell SHALL treat a callout of type `writing` (`> [!writing]`, with an optional title after it) as a writing block, in any note. The block's lines hold the writing as it is now, including lines without `>` that Markdown joins to the callout. The block SHALL be plain Markdown that reads as a callout without Inkwell.
 
 #### Scenario: A writing callout is a writing block
 - **GIVEN** a note containing `> [!writing] Opening` followed by `> The chapel door had never had a lock.`
@@ -17,6 +17,13 @@ Inkwell SHALL treat a callout of type `writing` (`> [!writing]`, with an optiona
 - **THEN** it finds one writing block titled "Opening" whose text is "The chapel door had never had a lock."
 
 Test: tests/writingblocks.test.ts › "finds a writing callout and its text"
+
+#### Scenario: A line without > straight after the writing
+- **GIVEN** a writing block whose last line is followed directly by a line of text with no `>`
+- **WHEN** Inkwell reads the note
+- **THEN** that line is part of the block, as Obsidian shows it
+
+Test: tests/writingblocks.test.ts › "includes text straight after a line of writing, as Obsidian shows it"
 
 #### Scenario: Two blocks in one note
 - **GIVEN** a note with two writing callouts separated by other text
@@ -79,7 +86,7 @@ WHILE the cursor is inside a writing block in Live Preview, Inkwell SHALL hide t
 Test: none yet [checked by hand in test-vault]
 
 ### Requirement: Paragraphs inside the block
-WHILE the cursor is inside a writing block in Live Preview, Enter SHALL start a new paragraph in the block, and Enter on an empty last line after at least one paragraph SHALL leave the block, removing that empty line. Pasted lines SHALL stay inside the block. Backspace at the start of a paragraph SHALL join it to the one before, and on the block's only empty line SHALL remove the block.
+WHILE the cursor is inside a writing block in Live Preview, Enter SHALL start a new paragraph in the block, and Enter on an empty last line after at least one paragraph SHALL leave the block, removing that empty line. Pasted lines SHALL stay inside the block. Backspace at the start of a paragraph SHALL join it to the one before, and on the block's only empty line SHALL remove the block. However two paragraphs are joined, no `>` SHALL be left in the writing.
 
 #### Scenario: Enter stays in the block
 - **GIVEN** the cursor at the end of a paragraph in a writing block
@@ -102,20 +109,27 @@ Test: tests/writingblocks.test.ts › "enter on an empty last line leaves the bl
 
 Test: tests/writingblocks.test.ts › "backspace at a paragraph's start joins it to the one before" [the keymap is checked by hand]
 
-### Requirement: Writing mode before review
-WHILE a writing block has never been reviewed, Inkwell SHALL show it in Writing mode: just the writing, which the writer edits normally. Nothing besides the block itself is written to the note.
+#### Scenario: Joining never leaves a >
+- **GIVEN** two paragraphs in a block
+- **WHEN** the writer joins them by any route: a selection deleted across the line break, or Delete at the end of the first
+- **THEN** the joined paragraph contains no `>`
 
-#### Scenario: A new block is in Writing mode
+Test: tests/writingblocks.test.ts › "a join takes the next line's > with the line break" [the editor's handling is checked by hand]
+
+### Requirement: Draft mode before review
+WHILE a writing block has never been reviewed, Inkwell SHALL show it in Draft mode: just the writing, which the writer edits normally. Nothing besides the block itself is written to the note.
+
+#### Scenario: A new block is in Draft mode
 - **WHEN** the writer creates a writing block and types in it
-- **THEN** the block is in Writing mode, and the note holds only the callout
+- **THEN** the block is in Draft mode, and the note holds only the callout
 
-Test: tests/writingblocks.test.ts › "a block with no comment is in Writing mode"
+Test: tests/writingblocks.test.ts › "a block with no comment is in Draft mode"
 
 ### Requirement: Entering review keeps the first draft
-WHEN a writing block first leaves Writing mode (to Review or Edited), Inkwell SHALL save its current text as the first draft, in an Obsidian comment one blank line below the block, opening with `%% writing-block first-draft <mode>` and closing with `%%`. Later mode changes SHALL NOT change the first draft.
+WHEN a writing block first leaves Draft mode (to Review or Edited), Inkwell SHALL save its current text as the first draft, in an Obsidian comment one blank line below the block, opening with `%% writing-block first-draft <mode>` and closing with `%%`. Later mode changes SHALL NOT change the first draft.
 
 #### Scenario: First review saves the first draft
-- **GIVEN** a block in Writing mode with the text "I have been here before."
+- **GIVEN** a block in Draft mode with the text "I have been here before."
 - **WHEN** the writer switches it to Review
 - **THEN** a comment directly below the block holds "I have been here before." and the mode `review`
 - **AND** the block's own text is unchanged
@@ -123,7 +137,7 @@ WHEN a writing block first leaves Writing mode (to Review or Edited), Inkwell SH
 Test: tests/writingblocks.test.ts › "first review saves the text as the first draft below the block"
 
 #### Scenario: Going straight to Edited also keeps the first draft
-- **GIVEN** a block in Writing mode that was never reviewed
+- **GIVEN** a block in Draft mode that was never reviewed
 - **WHEN** the writer switches it to Edited
 - **THEN** a comment below the block holds its text and the mode `edited`
 
@@ -131,10 +145,27 @@ Test: tests/writingblocks.test.ts › "going straight to Edited also keeps the f
 
 #### Scenario: The first draft never moves
 - **GIVEN** a reviewed block whose text has since been revised
-- **WHEN** the writer switches between Writing, Review and Edited several times
+- **WHEN** the writer switches between Draft, Review and Edited several times
 - **THEN** the first draft in the comment is exactly what it was when review began
 
 Test: tests/writingblocks.test.ts › "the first draft never changes across mode switches"
+
+### Requirement: The first draft is protected
+IF an edit in Live Preview would change a block's kept first draft, or the blank line above it, while the cursor is not in the first draft, THEN Inkwell SHALL refuse the edit and show a notice. Deleting the whole block with its first draft SHALL be allowed, and so SHALL editing the first draft by hand with the cursor in it.
+
+#### Scenario: Backspace below the first draft
+- **GIVEN** a reviewed block, and the cursor at the start of the line below its folded first draft
+- **WHEN** the writer presses Backspace
+- **THEN** the note is unchanged and a notice explains why
+
+Test: tests/writingblocks.test.ts › "the kept first draft can't be edited by accident" [the refusal and notice are checked by hand]
+
+#### Scenario: Leaving the block keeps it apart
+- **GIVEN** the cursor on the block's empty last line
+- **WHEN** the writer presses Enter and types
+- **THEN** a blank line separates the new text from the block, so it is not part of it
+
+Test: tests/writingblocks.test.ts › "enter on an empty last line leaves the block"
 
 ### Requirement: Review mode
 WHILE a block is in Review, Inkwell SHALL show its current text with words added since the first draft highlighted and words removed since the first draft struck through, updating as the writer types. The writer SHALL be able to edit the text in Review.
@@ -169,18 +200,18 @@ WHILE a block is in Edited mode, Inkwell SHALL show its current text clean, with
 
 Test: none yet
 
-### Requirement: Writing mode after review
-WHILE a reviewed block is in Writing mode, Inkwell SHALL show the first draft in place of the current text, read-only. IF the writer tries to type in it, THEN Inkwell SHALL leave the note unchanged and show a notice to switch to Review or Edited to revise.
+### Requirement: Draft mode after review
+WHILE a reviewed block is in Draft mode, Inkwell SHALL show the first draft in place of the current text, read-only. IF the writer tries to type in it, THEN Inkwell SHALL leave the note unchanged and show a notice to switch to Review or Edited to revise.
 
 #### Scenario: Looking back at the first draft
 - **GIVEN** a reviewed block whose text has been revised
-- **WHEN** the writer switches it to Writing
+- **WHEN** the writer switches it to Draft
 - **THEN** the first draft shows, and typing in it changes nothing and shows the notice
 
 Test: none yet
 
 ### Requirement: Block toolbar
-Inkwell SHALL show a toolbar across the top of every writing block, in reading view and in Live Preview whether or not the cursor is inside the block. For a writing block it SHALL show the three modes, Writing, Review and Edited, with the current one marked, and the writer SHALL be able to pick any of them at any time.
+Inkwell SHALL show a toolbar across the top of every writing block, in reading view and in Live Preview whether or not the cursor is inside the block. For a writing block it SHALL show the three modes, Draft, Review and Edited, with the current one marked, and the writer SHALL be able to pick any of them at any time.
 
 #### Scenario: The toolbar is always there
 - **GIVEN** a writing block in Live Preview
@@ -191,13 +222,13 @@ Test: none yet [checked by hand in test-vault]
 
 #### Scenario: Any mode, any order
 - **GIVEN** a block in Edited mode
-- **WHEN** the writer picks Writing on the toolbar, then Review
+- **WHEN** the writer picks Draft on the toolbar, then Review
 - **THEN** the block switches to each in turn
 
 Test: tests/writingblocks.test.ts › "picking modes in any order" [the toolbar itself is checked by hand]
 
 ### Requirement: Switching modes
-WHEN the writer picks a mode on a block's toolbar or runs "Writing mode", "Review mode" or "Edited mode" with the cursor in a block, Inkwell SHALL change only the mode word in the block's comment. The writing SHALL be unchanged, the mode SHALL be kept in the note so it shows the same after reloading or on another device, and undo SHALL reverse the switch.
+WHEN the writer picks a mode on a block's toolbar or runs "Draft mode", "Review mode" or "Edited mode" with the cursor in a block, Inkwell SHALL change only the mode word in the block's comment. The writing SHALL be unchanged, the mode SHALL be kept in the note so it shows the same after reloading or on another device, and undo SHALL reverse the switch.
 
 #### Scenario: Switching changes only the mode word
 - **GIVEN** a reviewed block in Review
@@ -229,7 +260,7 @@ IF a block's comment is missing, or its opening line can't be read, THEN Inkwell
 #### Scenario: Comment deleted by hand
 - **GIVEN** a reviewed block whose comment the writer deleted
 - **WHEN** the writer views the block
-- **THEN** it is in Writing mode, showing its current text
+- **THEN** it is in Draft mode, showing its current text
 
 Test: tests/writingblocks.test.ts › "a missing or unreadable comment means never reviewed"
 

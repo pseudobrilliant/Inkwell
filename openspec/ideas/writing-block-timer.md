@@ -6,12 +6,12 @@
 
 ## Why
 
-The writing block's first step is Write, then Review, then Read. Timing belongs to the first write, and to the block: minutes should measure writing, not reading the prompt or reflecting afterwards. Today the timer times the whole exercise or journal note.
+The writing block's first step is Draft, then Review, then Edited. Timing belongs to the first write, and to the block: minutes should measure writing, not reading the prompt or reflecting afterwards. Today the timer times the whole exercise or journal note.
 
 ## What could change
 
 - The timer lives in the writing block's toolbar, as the first tool there.
-- It times the Writing mode only: it starts on the first keystroke inside the block, and Review and Edited aren't counted.
+- It times the Draft mode only: it starts on the first keystroke inside the block, and Review and Edited aren't counted.
 - In a note with a writing block, the block timer replaces the note-level timer. Notes without a block, such as journals today, keep the note timer.
 - Stopping adds the minutes to the note's `writing_min` when the note has that property.
 

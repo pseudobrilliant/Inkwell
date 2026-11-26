@@ -9,6 +9,9 @@ import {
   findBlocks,
   newBlockAt,
   quotePasted,
+  damagesFirstDraft,
+  guardedDrafts,
+  widenJoin,
   setMode,
   tabbedRunAt,
   unwrapBlocks,
@@ -36,7 +39,7 @@ describe("finding writing blocks", () => {
     ]);
   });
 
-  it("a block with no comment is in Writing mode", () => {
+  it("a block with no comment is in Draft mode", () => {
     const [b] = findBlocks("> [!writing]\n> Just written.");
     expect(b?.mode).toBe("writing");
     expect(b?.firstDraft).toBeNull();
@@ -150,7 +153,9 @@ describe("keys inside a block", () => {
   });
 
   it("enter on an empty last line leaves the block", () => {
-    expect(press(enterAt, "> [!writing]\n> The door.\n> |\nAfter.")).toBe("> [!writing]\n> The door.\n|\nAfter.");
+    // A blank line keeps what's typed next out of the block (Markdown would join it to the callout).
+    expect(press(enterAt, "> [!writing]\n> The door.\n> |\nAfter.")).toBe("> [!writing]\n> The door.\n\n|\nAfter.");
+    expect(findBlocks(press(enterAt, "> [!writing]\n> The door.\n> |")!.replace("|", "Next."))[0]?.text).toBe("The door.");
     const reviewedBlock = "> [!writing]\n> The door.\n> |\n\n%% writing-block first-draft review\nA door.\n%%";
     expect(press(enterAt, reviewedBlock)).toBe("> [!writing]\n> The door.\n\n%% writing-block first-draft review\nA door.\n%%\n|");
     expect(findBlocks(press(enterAt, reviewedBlock)!.replace("|", ""))[0]?.firstDraft?.text).toBe("A door.");
@@ -184,7 +189,7 @@ describe("keys inside a block", () => {
 
   it("delete at a paragraph's end joins the next one", () => {
     expect(press(deleteAt, "> [!writing]\n> One.|\n> Two.")).toBe("> [!writing]\n> One.|Two.");
-    expect(press(deleteAt, "> [!writing]\n> Last.|\nAfter.")).toBe("> [!writing]\n> Last.|\nAfter.");
+    expect(press(deleteAt, "> [!writing]\n> Last.|\n\nAfter.")).toBe("> [!writing]\n> Last.|\n\nAfter.");
   });
 
   it("quotes every new line of pasted text", () => {
@@ -256,7 +261,7 @@ describe("the block toolbar", () => {
       const block = findBlocks(`${header}\n> Text.`)[0]!;
       expect(blockTypeOf(block)).toBe(WRITING_BLOCK);
     }
-    expect(WRITING_BLOCK.modes.map((m) => m.label)).toEqual(["Writing", "Review", "Edited"]);
+    expect(WRITING_BLOCK.modes.map((m) => m.label)).toEqual(["Draft", "Review", "Edited"]);
   });
 
   it("picking modes in any order", () => {
@@ -265,5 +270,65 @@ describe("the block toolbar", () => {
       text = switchTo(text, mode);
       expect(findBlocks(text)[0]?.mode).toBe(mode);
     }
+  });
+});
+
+describe("lines Markdown counts as part of the block", () => {
+  it("includes text straight after a line of writing, as Obsidian shows it", () => {
+    const [b] = findBlocks("> [!writing]\n> One.\nTwo, no prefix.\nThree.\n\nAfter.");
+    expect(b?.lines).toEqual(["One.", "Two, no prefix.", "Three."]);
+  });
+
+  it("ends at a blank line, a heading, a list or a comment, and after a blank > line", () => {
+    for (const next of ["## Reflection", "- item", "%% hint %%", "```"]) {
+      expect(findBlocks(`> [!writing]\n> One.\n${next}`)[0]?.lines).toEqual(["One."]);
+    }
+    expect(findBlocks("> [!writing]\n> One.\n>\nNot in.")[0]?.lines).toEqual(["One.", ""]);
+  });
+
+  it("finds the first draft below a block whose last lines have no > (the writer's note)", () => {
+    const note = [
+      ">[!writing]",
+      ">The door was open.",
+      "> Second line.",
+      "Third line, no prefix.",
+      "",
+      "%% writing-block first-draft writing",
+      "The door was open.",
+      "%%",
+    ].join("\n");
+    const [b] = findBlocks(note);
+    expect(b?.lines).toEqual(["The door was open.", "Second line.", "Third line, no prefix."]);
+    expect(b?.firstDraft?.text).toBe("The door was open.");
+  });
+});
+
+describe("guards while editing", () => {
+  it("a join takes the next line's > with the line break", () => {
+    const text = "> [!writing]\n> One.\n> Two.";
+    const two = text.indexOf("> Two.");
+    // Deleting just the line break (cursor before the hidden "> ", or a selection ending there).
+    expect(widenJoin(text, two - 1, two)).toEqual({ from: two - 1, to: two + 2 });
+    expect(widenJoin(text, two - 3, two + 1)).toEqual({ from: two - 3, to: two + 2 });
+    // Deletions that don't end at a line's start are left alone.
+    expect(widenJoin(text, two + 2, two + 4)).toEqual({ from: two + 2, to: two + 4 });
+  });
+
+  it("the kept first draft can't be edited by accident", () => {
+    const text = "> [!writing]\n> One.\n\n%% writing-block first-draft review\nOne.\n%%\nAfter.";
+    const drafts = guardedDrafts(text);
+    const after = text.indexOf("After.");
+    const inComment = text.indexOf("One.\n%%");
+    // Backspace at the start of the line below joins it onto the closing %%: refused.
+    expect(damagesFirstDraft(drafts, after - 1, after, after, after)).toBe(true);
+    // Typing on the blank line between block and comment: refused.
+    expect(damagesFirstDraft(drafts, text.indexOf("\n\n%%") + 1, text.indexOf("\n\n%%") + 1, 0, 0)).toBe(true);
+    // Typing on the line below, or in the writing: fine.
+    expect(damagesFirstDraft(drafts, after, after, after, after)).toBe(false);
+    expect(damagesFirstDraft(drafts, 16, 16, 16, 16)).toBe(false);
+    // With the cursor in the comment, the writer is editing it by hand: allowed.
+    expect(damagesFirstDraft(drafts, inComment, inComment + 1, inComment, inComment)).toBe(false);
+    // Deleting the whole block with its draft: allowed.
+    expect(damagesFirstDraft(drafts, 0, after, 0, after)).toBe(false);
   });
 });

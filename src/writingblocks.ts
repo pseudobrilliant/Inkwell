@@ -53,6 +53,17 @@ function unquote(line: string): string {
   return clean(line).replace(/^>\s?/, "");
 }
 
+/**
+ * A line without `>` that Markdown still counts as part of the callout: text straight after a line of writing
+ * (CommonMark's "lazy continuation"). Obsidian shows it inside the box, so the block includes it too. Lines that
+ * start something else (a heading, list, fence, rule, table or comment) end the block instead.
+ */
+function isLazyLine(line: string): boolean {
+  const l = clean(line);
+  if (l.trim() === "") return false;
+  return !/^\s{0,3}(#{1,6}(\s|$)|```|~~~|([-*_])(\s*\3){2,}\s*$|[-*+]\s|\d{1,9}[.)]\s|<|%%|\|)/.test(l);
+}
+
 /** Whether a line is a writing block's header. */
 export function isHeader(line: string): boolean {
   return HEADER.test(clean(line));
@@ -97,7 +108,13 @@ export function findBlocks(text: string): WritingBlock[] {
     const m = line.match(HEADER);
     if (!m) continue;
     let end = i;
-    while (end + 1 < lines.length && /^>/.test(lines[end + 1] ?? "")) end++;
+    for (;;) {
+      const next = lines[end + 1];
+      if (next === undefined) break;
+      if (/^>/.test(next)) end++;
+      else if (isLazyLine(next) && clean(unquote(lines[end] ?? "")).trim() !== "") end++;
+      else break;
+    }
     const body = lines.slice(i + 1, end + 1).map(unquote);
     const firstDraft = readFirstDraft(lines, end);
     blocks.push({
@@ -238,7 +255,8 @@ export function enterAt(text: string, pos: number): KeyEdit | null {
         cursor: close.to + 1 - removed,
       };
     }
-    return { changes: [{ from: line.from, to: line.to, insert: "" }], cursor: line.from };
+    // A blank line between the block and what comes next: text straight after a callout line would join it.
+    return { changes: [{ from: line.from, to: line.to, insert: "\n" }], cursor: line.from + 1 };
   }
   const cut = Math.max(pos, line.from + p);
   return { changes: [{ from: cut, to: cut, insert: "\n> " }], cursor: cut + 3 };
@@ -368,4 +386,66 @@ export function setMode(text: string, block: WritingBlock, mode: BlockMode): Mod
   if (!word || word.index === undefined) return { unchanged: true };
   const from = open.from + word.index;
   return { change: { from, to: from + fd.mode.length, insert: mode } };
+}
+
+// ---------- Guards while editing ----------
+
+/**
+ * Widen a deletion that removes the line break before a line of writing so it takes that line's `> ` too.
+ * However the join happens (a selection, a key Inkwell doesn't handle), the `> ` never ends up mid-line.
+ */
+export function widenJoin(text: string, from: number, to: number): { from: number; to: number } {
+  if (to <= from) return { from, to };
+  const starts = lineStarts(text);
+  for (const b of findBlocks(text)) {
+    for (let n = b.start + 1; n <= b.end; n++) {
+      const line = lineInfo(text, starts, n);
+      const p = prefixLength(line.text);
+      if (p > 0 && from < line.from && to >= line.from && to < line.from + p) return { from, to: line.from + p };
+    }
+  }
+  return { from, to };
+}
+
+/** A block's kept first draft, with the blank line above it and the line break after it, as offsets. */
+export interface GuardedDraft {
+  /** The whole block, header to closing `%%`: deleting all of it at once is allowed. */
+  blockFrom: number;
+  /** The blank line above the comment, through the line break after its closing `%%`. */
+  from: number;
+  to: number;
+  /** The comment itself, `%%` to `%%`: with the cursor in here, the writer is editing it by hand. */
+  commentFrom: number;
+  commentTo: number;
+}
+
+export function guardedDrafts(text: string): GuardedDraft[] {
+  const starts = lineStarts(text);
+  const out: GuardedDraft[] = [];
+  for (const b of findBlocks(text)) {
+    if (!b.firstDraft) continue;
+    const open = lineInfo(text, starts, b.firstDraft.start);
+    const close = lineInfo(text, starts, b.firstDraft.end);
+    out.push({
+      blockFrom: lineInfo(text, starts, b.start).from,
+      from: lineInfo(text, starts, b.end).to + 1,
+      to: Math.min(close.to + 1, text.length),
+      commentFrom: open.from,
+      commentTo: close.to,
+    });
+  }
+  return out;
+}
+
+/**
+ * Whether an edit (`from`–`to` replaced) would damage a kept first draft by accident: it touches the comment or the
+ * blank line above it, while the cursor wasn't in the comment and the edit isn't deleting the whole block.
+ */
+export function damagesFirstDraft(drafts: GuardedDraft[], from: number, to: number, cursorFrom: number, cursorTo: number): boolean {
+  return drafts.some((d) => {
+    if (cursorTo >= d.commentFrom && cursorFrom <= d.commentTo) return false;
+    if (from <= d.blockFrom && to >= d.commentTo) return false;
+    if (to > from) return from < d.to && to > d.from;
+    return from >= d.from && from < d.to;
+  });
 }

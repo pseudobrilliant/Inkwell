@@ -35,7 +35,7 @@ I have been here before.
 %%
 ```
 - One blank line separates them. Without it, Markdown's lazy continuation would pull the comment into the callout.
-- The opening line carries the mode (`writing`, `review`, `edited`), so a mode switch only edits a word inside a comment. KTR counts nothing for it, and the note stays the source of truth across devices.
+- The opening line carries the mode (`writing`, `review`, `edited`; shown as Draft, Review and Edited, and the stored word `writing` is kept so the format never changes for a label), so a mode switch only edits a word inside a comment. KTR counts nothing for it, and the note stays the source of truth across devices.
 - The first draft is stored as plain lines, one paragraph per line, as in the block.
 - Later block types can go in the callout's metadata (`[!writing|freewrite]`) without changing this format.
 - Alternatives (see the ADR): separate history notes, which the writer rejected; inline CriticMarkup, which KTR counts and which means intercepting keystrokes; depending on Simple Track Changes, which is too new.
@@ -63,7 +63,7 @@ I have been here before.
 - Splits paragraphs at `<br>` so each line gets the first-line indent. With "Strict line breaks" on, Obsidian joins lines, so the block uses one paragraph per line regardless.
 - Toolbar mode picks in reading view use `vault.process`. It re-finds the block by line number and checks the text matches before writing, and otherwise shows a notice and changes nothing. DOM via `createEl` only.
 
-**6. Commands** (`src/main.ts`, also on `editor-menu`): "New writing block", "Writing mode", "Review mode", "Edited mode". Mode commands use `editorCheckCallback` and show only with the cursor in a block. No default hotkeys.
+**6. Commands** (`src/main.ts`, also on `editor-menu`): "New writing block", "Draft mode", "Review mode", "Edited mode". Mode commands use `editorCheckCallback` and show only with the cursor in a block. No default hotkeys.
 
 **7. KTR: `ignoresComments(): boolean | null`** in `src/integrations/keep-the-rhythm.ts`. It reads `settings.ignoreComments` from the same version-gated `data.json` read, and returns null when KTR is missing or untested (no notice). Read-only, as ADR 0002 requires.
 
@@ -72,7 +72,7 @@ I have been here before.
 - `workSection` passes its result through `unwrapBlocks` and is exported for tests.
 - `promoteToLongForm` calls `unwrapBlocks` on the draft body before `splitScenes`. The original draft is still moved, untouched, into `Archive/` first.
 
-**9. The block toolbar, built for more than one kind of block.** One toolbar component draws into both places a block appears: the callout title (rendered, decision 5) and the header-line widget (editing, decision 4). So it looks the same in each, and is always visible, as the spec requires. What it shows comes from a block type definition: the modes and the tools for each mode. Only the writing block type exists in this change. Its modes are Writing, Review and Edited, and it has no tools yet. The timer (idea `writing-block-timer`) will be the first tool, and other types (idea `writing-block-types`) add definitions rather than new toolbars. The type is read from the callout's metadata (`[!writing|<type>]`), defaulting to the writing type, so notes written now never need rewriting. The toolbar holds only controls, never writing, and KTR counts nothing in it.
+**9. The block toolbar, built for more than one kind of block.** One toolbar component draws into both places a block appears: the callout title (rendered, decision 5) and the header-line widget (editing, decision 4). So it looks the same in each, and is always visible, as the spec requires. What it shows comes from a block type definition: the modes and the tools for each mode. Only the writing block type exists in this change. Its modes are Draft, Review and Edited, and it has no tools yet. The timer (idea `writing-block-timer`) will be the first tool, and other types (idea `writing-block-types`) add definitions rather than new toolbars. The type is read from the callout's metadata (`[!writing|<type>]`), defaulting to the writing type, so notes written now never need rewriting. The toolbar holds only controls, never writing, and KTR counts nothing in it.
 
 **10. Writing blocks are a component, used by the rest of Inkwell.** Capture, Practice and the writing modes are Inkwell's platform. Writing blocks are a core component that supports features in them: exercises start with one, This Became a Story and Promote read them, and the timer will appear in their toolbar.
 - **Dependencies run one way.** `src/writingblock*.ts` import only Obsidian, CodeMirror and each other, never Practice, stories, projects, the timer or settings.
@@ -88,7 +88,7 @@ The blocks could then become their own plugin without untangling them. A split i
 **Tests:**
 - Unit (`tests/writingblocks.test.ts`): parse, modes, comment format, wrap and convert, unwrap, countable, diff segments. Invariant: rebuilding the first draft from the segments gives it back exactly.
 - Fake vault: "This became a story" (`tests/became.test.ts`) and promote (`tests/promote.test.ts`), including the original being kept first.
-- By hand in `test-vault` on desktop and a phone: Live Preview decorations, read-only Writing mode, the toolbar in reading view and Live Preview.
+- By hand in `test-vault` on desktop and a phone: Live Preview decorations, read-only Draft mode, the toolbar in reading view and Live Preview.
 
 ## Risks / Trade-offs
 

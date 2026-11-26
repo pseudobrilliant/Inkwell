@@ -6,7 +6,7 @@
 
 ## Why
 
-Writing blocks are a core component that supports features across Inkwell, and different kinds of practice need different tools. The first type (Writing, Review, Edited, then the timer) is one way to work. A freewrite or a dialogue drill might want others.
+Writing blocks are a core component that supports features across Inkwell, and different kinds of practice need different tools. The first type (Draft, Review, Edited, then the timer) is one way to work. A freewrite or a dialogue drill might want others.
 
 ## What could change
 

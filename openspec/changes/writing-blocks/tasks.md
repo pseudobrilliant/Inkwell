@@ -41,10 +41,10 @@ These tests describe current code and pass before anything else changes.
   - "finds two blocks, each with its own mode"
   - "wraps a selection, keeping words and paragraphs"
   - "converts tab-indented lines into a block"
-  - "a block with no comment is in Writing mode"
+  - "a block with no comment is in Draft mode"
   - "a missing or unreadable comment means never reviewed"
 
-  Set the Test lines for "A writing callout is a writing block", "Two blocks in one note", "Wrapping a selection", "Old tabbed writing becomes a block", "A new block is in Writing mode" and "Comment deleted by hand". Verify `npm test` passes.
+  Set the Test lines for "A writing callout is a writing block", "Two blocks in one note", "Wrapping a selection", "Old tabbed writing becomes a block", "A new block is in Draft mode" and "Comment deleted by hand". Verify `npm test` passes.
 - [x] 2.3 Make `countWords` ignore writing header lines. Update the 1.1 test that pinned the header being counted, and add "counts only a block's current text" to `tests/wordcount.test.ts`; set the "Counting a reviewed block" Test line. Verify `npm test` passes.
 - [ ] 2.4 Add the "New writing block" command (`editorCallback`, plus `editor-menu` entry) in `src/main.ts`: an empty block with the cursor inside, a wrapped selection, or a converted tabbed run. Add "inserts an empty block with the cursor on its line" to `tests/writingblocks.test.ts` and set the "Empty block at the cursor" Test line. Verify `npm test`, then by hand in `test-vault`.
 - [ ] 2.5 Add writing block CSS to `styles.css`: hidden icon, box, `var(--font-monospace)`, first-line indent per paragraph. Use classes and Obsidian variables only. Add the `<br>`-splitting post processor in `src/writingblockview.ts`. Verify in `test-vault` against the screenshot's look, in Live Preview and reading view, light and dark, with Strict line breaks on and off.
@@ -85,9 +85,9 @@ These tests describe current code and pass before anything else changes.
 
   Set the Test lines for "First review saves the first draft", "The first draft never moves", "Switching changes only the mode word", "Each block keeps its own mode" and "Writing that would end the comment early". Verify `npm test` passes.
 - [x] 3.2 Add `ignoresComments()` to `src/integrations/keep-the-rhythm.ts`, reading `settings.ignoreComments` behind the version gate. Add "reads whether comments are ignored, or null when unavailable" to `tests/keep-the-rhythm.test.ts`. Set both Keep the Rhythm scenario Test lines, with a note that the notice itself is checked by hand. Verify `npm test` passes.
-- [ ] 3.3 Add the "Writing mode", "Review mode" and "Edited mode" commands (`editorCheckCallback`, only with the cursor in a block, plus `editor-menu`). Each is a single editor transaction with its own `userEvent`. Show the KTR notice on first review when `ignoresComments()` is false. Verify by hand in `test-vault`: modes switch, undo reverses each, the mode survives reload, and the notice appears only with the setting off.
+- [ ] 3.3 Add the "Draft mode", "Review mode" and "Edited mode" commands (`editorCheckCallback`, only with the cursor in a block, plus `editor-menu`). Each is a single editor transaction with its own `userEvent`. Show the KTR notice on first review when `ignoresComments()` is false. Verify by hand in `test-vault`: modes switch, undo reverses each, the mode survives reload, and the notice appears only with the setting off.
 - [ ] 3.4 Add the block toolbar (design decision 9):
-  - a block type definition for the writing block (modes Writing, Review, Edited; no tools yet), read from the callout's metadata
+  - a block type definition for the writing block (modes Draft, Review, Edited; no tools yet), read from the callout's metadata
   - one toolbar component, drawn in the callout title when rendered and as the header-line widget while editing, with the current mode marked
   - picking a mode: an editor transaction while editing, and `vault.process` in reading view, re-finding the block by line and checking its text first
 
@@ -113,11 +113,11 @@ These tests describe current code and pass before anything else changes.
   - Edited shows clean text
 
   Verify by hand in `test-vault` while typing, pasting, splitting paragraphs, undoing and redoing, in split panes and on a phone with autocorrect, swipe and dictation.
-- [ ] 4.3 Writing mode after review:
+- [ ] 4.3 Draft mode after review:
   - Live Preview: a block widget showing the first draft, and a `transactionFilter` that drops typing into it with the notice
   - reading view: the first draft rendered
 
-  Add "typing into a reviewed block in Writing mode is refused" to `tests/writingblocks.test.ts`, testing the pure range check the filter uses, and set the "Looking back at the first draft" Test line with a note that the notice is checked by hand. Verify `npm test`, then by hand on desktop and phone.
+  Add "typing into a reviewed block in Draft mode is refused" to `tests/writingblocks.test.ts`, testing the pure range check the filter uses, and set the "Looking back at the first draft" Test line with a note that the notice is checked by hand. Verify `npm test`, then by hand on desktop and phone.
 - [ ] 4.4 Draw Review and Edited in reading view and rendered callouts in `src/writingblockview.ts`. Set the "Reading the revision" Test line to "edited shows current text with no marks" in `tests/writingblocks.test.ts` (the pure render input), added here. Verify `npm test`, then by hand.
 
 ## 5. Moving work up and the template
