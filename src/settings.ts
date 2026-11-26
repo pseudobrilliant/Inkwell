@@ -1,6 +1,7 @@
 import { App, PluginSettingTab, type SettingDefinition, type SettingDefinitionItem } from "obsidian";
 import type InkwellPlugin from "./main";
 import type { TimerState } from "./timer";
+import type { AnyCaptureKind } from "./capture";
 
 export interface InkwellSettings {
   folders: {
@@ -24,12 +25,14 @@ export interface InkwellSettings {
     projectHub: string;
     character: string;
     location: string;
+    resource: string;
   };
   homeNote: string;
   journalDateFormat: string;
   shortStatuses: string[];
   longStatuses: string[];
-  lastCaptureKind: "idea" | "line" | "link" | "prompt" | "research";
+  /** The last kind picked in the capture popup: an idea kind or a resource kind. */
+  lastCaptureKind: AnyCaptureKind;
   exerciseMinutes: number;
   journalMinutes: number;
   timerAutoStart: boolean;
@@ -64,6 +67,7 @@ export const DEFAULT_SETTINGS: InkwellSettings = {
     projectHub: "99 - System/Templates/Inkwell/Project.md",
     character: "99 - System/Templates/Inkwell/Character.md",
     location: "99 - System/Templates/Inkwell/Location.md",
+    resource: "99 - System/Templates/Inkwell/Resource.md",
   },
   homeNote: "00 - Home/00 - Home.md",
   journalDateFormat: "YYYY-MM-DD",
@@ -105,6 +109,7 @@ const TEMPLATE_LABELS: Record<TemplateKey, string> = {
   projectHub: "Project",
   character: "Character",
   location: "Location",
+  resource: "Resource",
 };
 
 /** Keys of the settings tab's controls. Nested settings use dotted paths (`folders.inbox`). */

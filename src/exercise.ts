@@ -24,14 +24,14 @@ export async function newExercise(plugin: InkwellPlugin): Promise<void> {
 export async function createExercise(
   plugin: InkwellPlugin,
   prompt: Prompt | null,
-  opts: { text?: string; drill?: Drill } = {}
+  opts: { text?: string; drill?: Drill; resource?: TFile } = {}
 ): Promise<TFile | null> {
   const { app, settings } = plugin;
-  const drill = opts.drill;
+  const { drill, resource } = opts;
   const drillText = drill ? `Drill: [[${drill.file.basename}]]${drill.skill ? ` (${drill.skill})` : ""}` : "";
   const text = opts.text ?? (prompt ? await promptText(app, prompt.file) : drillText);
   const v = await askForm(app, "New exercise", [
-    { key: "title", label: "Title", value: drill ? drill.file.basename : text ? slugWords(text, 8, 60) : "", required: true },
+    { key: "title", label: "Title", value: drill ? drill.file.basename : resource ? `After ${resource.basename}` : text ? slugWords(text, 8, 60) : "", required: true },
     { key: "minutes", label: "Timer goal (minutes)", type: "number", value: String(drill?.minutes || settings.exerciseMinutes) },
   ]);
   if (!v) return null;
@@ -45,6 +45,7 @@ export async function createExercise(
     created: date,
     prompt: prompt ? `[[${prompt.file.basename}]]` : "",
     ...(drill ? { drill: `[[${drill.file.basename}]]` } : {}),
+    ...(resource ? { resource: `[[${resource.basename}]]` } : {}),
     minutes: minutes || null,
     became: "",
   });

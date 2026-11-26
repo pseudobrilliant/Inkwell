@@ -10,17 +10,18 @@ Inkwell is a **writing-practice toolkit** for Obsidian. It helps a writer show u
 
 Most writing software is built around the *end* of writing: compiling, formatting, exporting, submitting. Very little of it helps with the part that actually makes a writer: **writing regularly, catching ideas before they're lost, and letting small pieces grow into bigger ones.**
 
-Inkwell is built on three beliefs:
+Inkwell is built on four beliefs:
 
 1. **Practice is the work.** Daily writing, prompts, and exercises are the foundation. A finished manuscript is only one possible result.
 2. **Ideas are cheap to lose and expensive to recover.** Capturing has to be instant and must never get in the way of writing.
-3. **Seeing your contribution keeps you going.** A writer who can see that they showed up today, that a story moved forward this week, and that a year of practice has added up will keep writing. Progress should be visible at every level, from a single day to a whole writing life.
+3. **Feed the well.** Writers are made by what they take in as much as what they put out. The poem a teacher mentions or the craft book a friend recommends is raw material too, and it's as easy to lose as an idea.
+4. **Seeing your contribution keeps you going.** A writer who can see that they showed up today, that a story moved forward this week, and that a year of practice has added up will keep writing. Progress should be visible at every level, from a single day to a whole writing life.
 
 <!-- Author's voice: add personal motivation, inspirations, influences here as they come into focus. -->
 
 ## The shape of Inkwell: Capture + three modes
 
-Inkwell is organized around **Capture**, which feeds everything, and **three modes of operation**. Each mode has its own structure, its own tools, and its own idea of what progress means. Every section below uses the same fields so new modes or tools fit the same way.
+Inkwell is organized around **Capture** (feeding the well), which feeds everything, and **three modes of operation**. Each mode has its own structure, its own tools, and its own idea of what progress means. Every section below uses the same fields so new modes or tools fit the same way.
 
 ```
             ┌──────────── Capture (Inbox) ────────────┐
@@ -29,16 +30,24 @@ Inkwell is organized around **Capture**, which feeds everything, and **three mod
             └──────────── Home (shared view) ─────────┘
 ```
 
-### Capture: never lose an idea
-- **Purpose:** catch ideas, lines, prompts, links, and research the moment they appear, on desktop or phone, without opening a note. Sort them later.
-- **Structure:** `type: capture` notes with `kind:` (`idea`, `line`, `link`, `prompt`, `research`) in the Inbox folder (`00 - Inbox`). Archived captures go to `00 - Inbox/Archive`. A capture is "unsorted" as long as it sits in the Inbox, so it needs no status field.
-- **Tools:** quick capture popup (command + ribbon), Inbox panel, triage, and append-to-today. See `src/capture.ts`, `src/inbox.ts`, `src/modals.ts`.
+### Capture: feed the well
+Feeding the well is the ethos behind Capture. It has two sides, and both go through the same quick capture popup:
+- **Your ideas** (Inbox): ideas, lines, prompts, links, and research, sorted later.
+- **Others' work** (Resources): poems, stories, essays, articles, books, craft books, authors, classes, videos, podcasts, sites. These go straight to the resources folder (`05 - Resources`) as a reading list. Picking the kind is the only sorting at capture time. Reading and notes come later.
+
+- **Purpose:** catch ideas and the work you want to learn from the moment they appear, on desktop or phone, without opening a note. Sort them later.
+- **Structure:**
+  - `type: capture` notes with `kind:` (`idea`, `line`, `link`, `prompt`, `research`) in the Inbox folder (`00 - Inbox`). Archived captures go to `00 - Inbox/Archive`. A capture is "unsorted" as long as it sits in the Inbox, so it needs no status field.
+  - `type: resource` notes with `kind:` (`poem`, `story`, `essay`, `article`, `book`, `craft-book`, `author`, `class`, `video`, `podcast`, `website`) and `status` (`to-do`, `in-progress`, `done`) in the resources folder, from the resource template. In the popup, line 1 is the title (`Title by Author` splits off the author), the first URL is the link, and the other lines are why you saved it. `from:` links the note you were in when you captured it.
+  - **Research vs resource:** `research` belongs to a project and lands in its `Research/`. A `resource` is general learning and lands in Resources.
+- **Tools:** quick capture popup (command + ribbon, with a "Feed the well" row of resource kinds), capture a resource, Inbox panel, triage, append-to-today, resources table (Bases), exercise from a resource. See `src/capture.ts`, `src/resources.ts`, `src/inbox.ts`, `src/modals.ts`.
 - **Feeds every mode:** triage sends a capture to
   - Practice: turn it into an exercise or a prompt note
   - Short form: send it to a story, or start a new story
   - Long form: send it to a project (research captures go to the project's `Research/`), or start a new project
   - Resources: file it, archive it, or delete it (Obsidian trash)
-- **Progress signal:** ideas captured and sorted (`inkwell-contribution`), plus the inbox count.
+- **Resources feed Practice:** "Exercise from a resource" starts a timed exercise that responds to or imitates the resource (its `Try This` section, if filled in, becomes the prompt). The exercise gets `resource:`.
+- **Progress signal:** ideas captured and sorted, and resources added, being read, and done (`inkwell-contribution`), plus the inbox count.
 - **Non-negotiable:** one keystroke, works on mobile.
 
 ### Mode 1: Practice. Show up.
@@ -79,7 +88,7 @@ Contribution is tracked at four levels. Each answers a different question.
 |---|---|---|---|
 | **Session / day** | Did I show up today? | `inkwell-practice` (`src/contribution.ts`): days showed up this week, streak, exercises, prompts used, journal entries, minutes written (`writing_min`, from the writing timer), practice words. Also KTR's `ktr-entries` in the journal | built |
 | **Piece** | Is this story or project moving? | Words against `target_wordcount`, words this week, status, last worked on, status bar, Home in-progress list | built |
-| **Mode** | Where is my writing going: capture, practice, stories, or projects? | `inkwell-contribution` (`src/contribution.ts`): counts per objective for a week, month, year, or all time (captures, exercises, journals, prompts, stories started or grown from practice, revisions, projects, scenes) plus KTR words per mode | built |
+| **Mode** | Where is my writing going: capture, practice, stories, or projects? | `inkwell-contribution` (`src/contribution.ts`): counts per objective for a week, month, year, or all time (captures, resources added/reading/done, exercises, journals, prompts, stories started or grown from practice, revisions, projects, scenes) plus KTR words per mode | built |
 | **Lifetime / streak** | What has all this added up to? | KTR heatmap (`inkwell-heatmap`), KTR streak in `inkwell-practice`, all-time view of `inkwell-contribution`. Not yet: a dedicated writing-life view (milestones, pieces finished) | partial |
 
 **Counting rule:** practice writing (journal, exercises) **never** counts toward a piece's progress. It **does** count toward the day and lifetime levels. Piece-level numbers come only from drafts and scenes.
@@ -102,7 +111,7 @@ Contribution is tracked at four levels. Each answers a different question.
 |---|---|---|
 | `capture` | Inbox | `kind`, `created`, `captured` (date; kept through triage so it still counts as contribution), `source` |
 | `journal` | Practice/Journal | `created`, `writing_min` (minutes logged by the timer) |
-| `exercise` | Practice/Exercises/Writing | `prompt` (link), `drill` (link), `minutes` (goal), `writing_min` (minutes logged by the timer), `became` (link) |
+| `exercise` | Practice/Exercises/Writing | `prompt` (link), `drill` (link), `resource` (link), `minutes` (goal), `writing_min` (minutes logged by the timer), `became` (link) |
 | `prompt` | Practice/Exercises/Prompts | `tags`, `used` (count), `last_used` (date) |
 | `drill` | Practice/Exercises/Drills | `tags`, `skill`, `minutes` (suggested time) |
 | `story` | Stories/<Title> | `status`, `logline`, `genre`, `target_wordcount`, `next`, `from` |
@@ -110,7 +119,7 @@ Contribution is tracked at four levels. Each answers a different question.
 | `storyline` | Projects/<Title> | StoryLine fields (`title`, `bookId`, `language`) + `status`, `logline`, `target_wordcount`, `promoted` |
 | `scene` | …/Scenes | `id`, `title`, `sequence`, `act`, `chapter`, `status`, `pov`, `characters`, `location`, `target_wordcount` |
 | `character` / `location` | story folder or `Codex/` | `project`, `tagline`, … |
-| `resource` | Resources | `kind`, `status`, `author`, `url` |
+| `resource` | Resources | `kind`, `status` (`to-do`, `in-progress`, `done`), `author`, `url`, `created`, `captured`, `from` (link to the note it was captured from). Older kinds `course` and `tool` read as `class` and `website` |
 
 - Use `target_wordcount` everywhere (StoryLine's name), so promotion needs no renaming.
 - Use `type: location`, not `place`. Still read `place` as an alias for older notes.
@@ -149,6 +158,10 @@ npm run deploy:test  # build and copy into ./test-vault
 
 New key concepts land here first. Move them up once they're settled.
 
+- **Finishing a resource:** setting `status: done` records no date, so "read this month" can't be counted (same gap as Writing life).
+- **Titles from links:** fetching a page title when a URL is captured (would need `requestUrl`, a network call; capture works offline today).
+- **Reading as a habit:** a feed-the-well signal over time (resources read per month, kinds you lean on).
+- **Templates per resource kind:** today one resource template, with an optional `Resource - <Kind>.md` override next to it. Built-in per-kind templates only if the shared one proves too generic.
 - **Capture as a habit:** should capture have its own progress signal (ideas per week, time to inbox zero)?
 - **Weekly review:** a checklist covering inbox zero, picking an exercise, and checking stalled stories. It ties Capture and the modes together.
 - **Mode trends:** `inkwell-contribution` shows totals per period. A trend over time (this month vs. last) is still open.

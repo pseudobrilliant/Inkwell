@@ -78,3 +78,19 @@ export function fmStr(v: unknown): string {
   if (v instanceof Date && !isNaN(v.getTime())) return v.toISOString();
   return "";
 }
+
+/** Text under a "## heading" (up to the next # or ## heading), or null if the note has no such section. */
+export function sectionText(text: string, heading: string): string | null {
+  const lines = stripFrontmatter(text).split("\n");
+  const want = heading.toLowerCase();
+  const start = lines.findIndex((l) => /^##\s/.test(l.trim()) && l.trim().replace(/^##\s+/, "").toLowerCase() === want);
+  if (start === -1) return null;
+  let end = lines.length;
+  for (let i = start + 1; i < lines.length; i++) {
+    if (/^#{1,2}\s/.test(lines[i] ?? "")) {
+      end = i;
+      break;
+    }
+  }
+  return lines.slice(start + 1, end).join("\n").trim();
+}

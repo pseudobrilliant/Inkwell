@@ -153,6 +153,8 @@ export interface Contribution {
   period: Period;
   from: string;
   capture: { captured: number; sorted: number };
+  /** Others' work taken in: resources added in the period, and how many of those are being read or done. */
+  well: { added: number; reading: number; done: number };
   practice: { exercises: number; journals: number; prompts: number; words: number | null };
   stories: { started: number; fromPractice: number; revisions: number; words: number | null };
   projects: { started: number; promoted: number; scenes: number; words: number | null };
@@ -176,9 +178,12 @@ export async function contribution(plugin: InkwellPlugin, period: Period): Promi
 
   // Captures keep `captured` through triage; older captures only have type + created.
   const inbox = normalizePath(settings.folders.inbox);
+  // Resources have their own card (feed the well), so they aren't counted as ideas too.
   const captures = notes.filter((x) =>
-    x.fm.captured ? inRange(fmDay(x.fm.captured)) : x.type === "capture" && inRange(x.created)
+    x.type === "resource" ? false : x.fm.captured ? inRange(fmDay(x.fm.captured)) : x.type === "capture" && inRange(x.created)
   );
+  const resources = notes.filter((x) => x.type === "resource" && inRange(fmDay(x.fm.captured) || x.created));
+  const resourceStatus = (s: string) => resources.filter((x) => fmStr(x.fm.status) === s).length;
   const exercises = of("exercise");
   const stories = of("story");
   const hubs = notes.filter((x) => x.type === "storyline");
@@ -188,6 +193,7 @@ export async function contribution(plugin: InkwellPlugin, period: Period): Promi
     period,
     from,
     capture: { captured: captures.length, sorted: captures.filter((x) => x.file.parent?.path !== inbox).length },
+    well: { added: resources.length, reading: resourceStatus("in-progress"), done: resourceStatus("done") },
     practice: {
       exercises: exercises.length,
       journals: of("journal").length,
@@ -236,6 +242,11 @@ function renderContribution(box: HTMLElement, c: Contribution, title: string | u
   card("Capture", [
     [c.capture.captured, c.capture.captured === 1 ? "idea captured" : "ideas captured"],
     [c.capture.sorted, "sorted"],
+  ]);
+  card("Feed the well", [
+    [c.well.added, c.well.added === 1 ? "resource added" : "resources added"],
+    [c.well.reading, "reading"],
+    [c.well.done, "done"],
   ]);
   card("Practice", [
     [c.practice.exercises, c.practice.exercises === 1 ? "exercise" : "exercises"],

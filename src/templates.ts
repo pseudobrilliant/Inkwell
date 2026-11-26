@@ -263,6 +263,30 @@ tags:
 ---
 ## Notes
 `,
+  resource: `---
+type: resource
+tags:
+---
+## Why I Saved It
+{{why}}
+
+## Source
+- **{{kind}}:** {{title}}
+- **By:** {{author}}
+- **Link:** {{url}}
+
+## Notes
+
+
+## Lines Worth Keeping
+> 
+
+## What It Does
+
+
+## Try This
+
+`,
 };
 
 export const TEMPLATE_FILE_NAMES: Record<TemplateKey, string> = {
@@ -275,6 +299,7 @@ export const TEMPLATE_FILE_NAMES: Record<TemplateKey, string> = {
   projectHub: "Project",
   character: "Character",
   location: "Location",
+  resource: "Resource",
 };
 
 export function render(template: string, vars: Record<string, string>): string {

@@ -9,6 +9,16 @@
   background-color: var(--interactive-accent);
   color: var(--text-on-accent);
 }
+.inkwell-capture-group {
+  font-size: var(--font-ui-smaller);
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin-bottom: var(--size-4-1);
+}
+.inkwell-capture-more {
+  color: var(--text-muted);
+}
 .inkwell-capture-input {
   width: 100%;
   min-height: 6em;

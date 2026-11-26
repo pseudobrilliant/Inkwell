@@ -53,3 +53,14 @@ export async function appendToJournal(plugin: InkwellPlugin, heading: string, li
     return lines.join("\n");
   });
 }
+
+/** Log a new capture or resource under "## Captures" in today's journal, if that setting is on. Never throws. */
+export async function logCaptureInJournal(plugin: InkwellPlugin, file: TFile, label: string): Promise<void> {
+  if (!plugin.settings.captureToJournal) return;
+  try {
+    const link = plugin.app.fileManager.generateMarkdownLink(file, plugin.settings.folders.journal);
+    await appendToJournal(plugin, "Captures", `- ${moment().format("HH:mm")} ${link} (${label})`);
+  } catch (e) {
+    console.error("Inkwell: could not log capture in journal", e);
+  }
+}

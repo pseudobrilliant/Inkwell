@@ -19,6 +19,7 @@ import { createPromptsBase, newPrompt, RandomPromptModal, registerPromptBlock } 
 import { createExercise, exerciseFromDrill, newExercise } from "./exercise";
 import { newProject, newScene, projectForFile, projectProgress } from "./projects";
 import { WritingTimer } from "./timer";
+import { createResourcesBase, exerciseFromResource } from "./resources";
 
 export default class InkwellPlugin extends Plugin {
   settings!: InkwellSettings;
@@ -40,6 +41,9 @@ export default class InkwellPlugin extends Plugin {
     const capture = () => new CaptureModal(this.app, this).open();
     this.addCommand({ id: "quick-capture", name: "Quick capture", callback: capture });
     this.addRibbonIcon("feather", "Inkwell: quick capture", capture);
+    const captureResource = () => new CaptureModal(this.app, this, { resource: true }).open();
+    this.addCommand({ id: "capture-resource", name: "Capture a resource", callback: captureResource });
+    this.addCommand({ id: "resources-table", name: "Open resources table", callback: () => createResourcesBase(this) });
 
     // Inbox
     this.registerView(INBOX_VIEW, (leaf) => new InboxView(leaf, this));
@@ -80,6 +84,7 @@ export default class InkwellPlugin extends Plugin {
     this.addCommand({ id: "new-prompt", name: "New prompt", callback: () => newPrompt(this) });
     this.addCommand({ id: "new-drill", name: "New drill", callback: () => newDrill(this) });
     this.addCommand({ id: "exercise-from-drill", name: "Exercise from a drill", callback: () => exerciseFromDrill(this) });
+    this.addCommand({ id: "exercise-from-resource", name: "Exercise from a resource", callback: () => exerciseFromResource(this) });
     this.addCommand({ id: "add-starter-drills", name: "Add starter drills", callback: () => addStarterDrills(this) });
     this.addCommand({
       id: "became-story",
@@ -133,12 +138,14 @@ export default class InkwellPlugin extends Plugin {
           ["Exercise", () => newExercise(this)],
           ["Exercise from a random prompt", () => new RandomPromptModal(this, (p) => void createExercise(this, p)).open()],
           ["Exercise from a drill", () => exerciseFromDrill(this)],
+          ["Exercise from a resource", () => exerciseFromResource(this)],
           ["Prompt", () => newPrompt(this)],
           ["Drill", () => newDrill(this)],
           ["Character", () => newCodexNote(this, "character")],
           ["Location", () => newCodexNote(this, "location")],
           ["Today's journal", () => openTodaysJournal(this)],
           ["Capture", () => new CaptureModal(this.app, this).open()],
+          ["Resource", captureResource],
         ];
         const c = await pick(this.app, choices, (x) => x[0], "New…");
         if (c) await c[1]();

@@ -14,6 +14,7 @@ Many writing tools are built around publishing a finished manuscript: compiling,
 
 - **Showing up.** A daily journal, prompts, and exercises give you something to write today, even when you have no project.
 - **Catching ideas.** Quick capture sends a thought to your Inbox with one keystroke, from desktop or phone. You sort it later.
+- **Feeding the well.** The same popup saves the work you want to learn from (a poem, a novel, a craft book, a blog post, an author, a class) to your Resources, with a note to fill in when you read it.
 - **Turning practice into stories.** When an exercise turns into something more, you can promote it to a short story, and Inkwell keeps a link back to where it started.
 - **Keeping stories and projects organized.** Each short story gets a simple folder with a hub note, a draft, its characters and places, and a record of past revisions. A project gets scenes, a codex for characters and locations, and room for notes and research.
 - **Seeing your progress.** A Home dashboard shows your inbox, what's in progress, the prompt of the day, and your writing activity.
@@ -39,6 +40,12 @@ Inkwell helps you organize and write projects, but it stops short of publishing 
 - **Inbox panel:** your unsorted captures, newest first.
 - **Triage:** send a capture to a story or project (research captures land in a project's `Research/` folder), turn it into an exercise or prompt, start a new story or project from it, file it as a resource, archive it, or delete it.
 - **Append to today:** optionally log each capture in today's journal too.
+
+### Feeding the well (resources)
+- **Capture a resource:** in quick capture, pick a kind under **Feed the well** (poem, story, essay, article, book, craft book, author, class, and more), then type `Title by Author`. Add a link and a line about why you saved it if you like. It goes straight to `05 - Resources` as `to-do`, with a link back to the note you were in, so you can capture one or two things from an email and keep reading. **Capture a resource** opens the popup on a resource kind.
+- **Resource template:** sections for why you saved it, notes, lines worth keeping, what it does (craft), and something to try. Put a `Resource - Poem.md` (or `Book`, `Article`…) note next to the resource template to use a different one for that kind.
+- **Resources table:** a Bases table of what to read, grouped by status, plus everything you've saved.
+- **Exercise from a resource:** start a timed exercise that responds to or imitates a resource (the open one, or one you pick). Its **Try This** section becomes the prompt.
 
 ### Practice
 - **Today's journal:** opens or creates today's journal entry.
@@ -68,7 +75,7 @@ Inkwell helps you organize and write projects, but it stops short of publishing 
 - A built-in **Home** dashboard (command + ribbon).
 - Code blocks you can use in any note: `inkwell-inbox`, `inkwell-in-progress`, `inkwell-prompt`, `inkwell-practice`, `inkwell-contribution`, `inkwell-heatmap`.
 - **Practice this week** (`inkwell-practice`): which days you showed up, your streak, and the exercises, prompts, journal entries, minutes written, and practice words for the week.
-- **Your contribution** (`inkwell-contribution`): what you added to each part of your writing this week, month, year, or all time: ideas captured and sorted; exercises, journal entries, and prompts used; stories started, grown from practice, and revised; projects started or promoted and scenes added. Word counts per mode appear when Keep the Rhythm is installed.
+- **Your contribution** (`inkwell-contribution`): what you added to each part of your writing this week, month, year, or all time: ideas captured and sorted; resources added, being read, and done; exercises, journal entries, and prompts used; stories started, grown from practice, and revised; projects started or promoted and scenes added. Word counts per mode appear when Keep the Rhythm is installed.
 - A **New…** picker that creates any Inkwell note from one command.
 
 ## Installation
@@ -92,7 +99,7 @@ All of these can be changed in settings.
 | `01 - Practice` | `Journal/`, and `Exercises/` with `Prompts/`, `Drills/`, and `Writing/` (your exercises) |
 | `02 - Stories` | Short stories |
 | `03 - Projects` | Long-form projects |
-| `05 - Resources` | Filed resources |
+| `05 - Resources` | Resources: what you're reading and learning from |
 
 ## Development
 

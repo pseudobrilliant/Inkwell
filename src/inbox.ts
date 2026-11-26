@@ -4,12 +4,12 @@ import { CaptureModal } from "./capture";
 import { createExercise } from "./exercise";
 import { askForm, pick } from "./modals";
 import { askProjectDetails, createProject } from "./projects";
+import { RESOURCE_KINDS, RESOURCE_LABELS } from "./resources";
 import { askStoryDetails, createShortStory } from "./stories";
 import { moveFile, slugWords, stripFrontmatter, fmOf, type Frontmatter, fmStr } from "./util";
 
 export const INBOX_VIEW = "inkwell-inbox";
 
-const RESOURCE_KINDS = ["book", "course", "video", "article", "website", "author", "tool"];
 
 /** Captures still in the Inbox (top level only — Archive/ doesn't count), newest first. */
 export function listInbox(plugin: InkwellPlugin): TFile[] {
@@ -129,7 +129,7 @@ async function toProject(plugin: InkwellPlugin, file: TFile): Promise<boolean> {
 }
 
 async function toResource(plugin: InkwellPlugin, file: TFile): Promise<boolean> {
-  const kind = await pick(plugin.app, RESOURCE_KINDS, (k) => k, "What kind of resource?");
+  const kind = await pick(plugin.app, [...RESOURCE_KINDS], (k) => RESOURCE_LABELS[k], "What kind of resource?");
   if (!kind) return false;
   const text = await bodyOf(plugin, file);
   const url = text.match(/https?:\/\/\S+/)?.[0]?.replace(/[)>\].,]+$/, "") ?? "";
