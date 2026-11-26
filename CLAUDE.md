@@ -1,6 +1,6 @@
 # Inkwell — CLAUDE.md
 
-> **This document is meant to grow.** Inkwell's identity is still taking shape. When a new key concept comes up, add it to **Open questions & growing edges** first. Move it into the Modes, Progress, or Tenets sections once it's settled. Keep the README (user-facing) and this file (intent and rules) in sync when features change.
+> **This document is meant to grow.** Inkwell's identity is still taking shape. A new key concept starts as an idea in `openspec/ideas/` and becomes an OpenSpec proposal in `openspec/changes/` when work on it starts. Once it's built, its behaviour moves into a spec in `openspec/specs/`, and the reasons behind hard-to-reverse choices go into an ADR in `openspec/decisions/` (see **Design records**). This file keeps the vision, tenets and engineering rules, plus a short summary of each mode. Keep the README (user-facing), the specs (behaviour) and this file (intent and rules) in sync when features change.
 
 ## What Inkwell is
 
@@ -55,7 +55,7 @@ Feeding the well is the ethos behind Capture. It has two sides, and both go thro
 - **Purpose:** low-stakes, daily writing. Quantity over polish. Always gives you something to write today, even with no project.
 - **Structure:** `01 - Practice/` → `Journal/` (`type: journal`) and `Exercises/`, which holds `Prompts/` (`type: prompt`, one note per prompt), `Drills/` (`type: drill`, one note per drill, from the drill template), and `Writing/` (`type: exercise`: the writing you did; setting `folders.writings`).
 - **Tools:** today's journal, new exercise (with a time goal), new prompt, random prompt (least used and oldest first), new drill, exercise from a drill (the open drill note, or a pick; the drill's `minutes` sets the timer goal), add starter drills (five common drills, skips existing), prompt of the day (`inkwell-prompt` block), prompts table (Bases), writing timer. See `src/journal.ts`, `src/exercise.ts`, `src/prompts.ts`, `src/drills.ts`, `src/timer.ts`, `src/timerstate.ts`.
-- **Writing timer:** one timer at a time. Creating an exercise (any route, including random prompt or a drill), opening an exercise, or opening today's journal arms it; it starts on the first keystroke in that note, pauses by itself after idle minutes (counting only up to the last keystroke) and resumes on typing. Stop adds whole minutes to the note's `writing_min`. A new exercise logs and replaces a timer in use; opening an existing exercise or the journal never replaces one. Status bar on desktop, a header button on the timed note (the only UI on mobile). State is timestamps in device-local storage (`inkwell-timer`), so it survives backgrounding and reloads, and each device times its own writing. The state machine is pure (`src/timerstate.ts`); `src/timer.ts` is the UI around it.
+- **Writing timer:** one timer at a time on an exercise or journal. It starts on the first keystroke, pauses by itself when you stop typing, and stop adds whole minutes to `writing_min`. Works on mobile, and each device times its own writing. Behaviour: [`openspec/specs/writing-timer/spec.md`](openspec/specs/writing-timer/spec.md). Why device-local storage: [ADR 0003](openspec/decisions/0003-timer-state-in-device-local-storage.md). The state machine is pure (`src/timerstate.ts`); `src/timer.ts` is the UI around it.
 - **Progress signal:** did I write today? Journal entries, exercises done, minutes written, prompts used.
 
 ### Mode 2: Short form. Finish small things.
@@ -105,6 +105,15 @@ Contribution is tracked at four levels. Each answers a different question.
 - **Prose only.** TTRPG and worldbuilding projects are out of scope.
 - **Safe by default.** Anything that moves, splits, or rewrites notes saves the original to `Archive/` or uses Obsidian's trash first.
 
+## Design records
+
+- **Behaviour** lives in `openspec/specs/<capability>/spec.md`: one living spec per capability, with requirements in EARS sentences and scenarios that name their tests. Conventions are in `openspec/config.yaml`. So far: `writing-timer`. The other capabilities are still described in the sections above.
+- **Ideas and open questions** live in `openspec/ideas/<id>.md`, one short file each, indexed in `openspec/ideas/README.md`. They are not OpenSpec changes, so `changes/` only holds work in progress.
+- **Changes in progress** live in `openspec/changes/<id>/`. Picking up an idea makes it a proposal (the `openspec-propose` skill, or `npx openspec new change <id>`) and deletes the idea file. Once it's built, archive it (`npx openspec archive <id>`), which merges its spec changes into the specs.
+- **Decisions** live in `openspec/decisions/` as ADRs. Write one for a decision that's hard to reverse or that picks between real options. Never rewrite an accepted ADR: supersede it with a new one. See `openspec/decisions/README.md`.
+- **Keep them true:** a change to behaviour updates its spec in the same commit. `npm run spec` validates the specs and changes, and checks that every scenario's `Test:` line names a test that exists (`scripts/check-spec-tests.mjs`). It runs in `npm run check` and CI.
+- **When a capability gets a spec,** replace its detail in this file with a short summary and a link.
+
 ## Working rules (engineering)
 
 ### Data model (`type:` values)
@@ -150,27 +159,15 @@ npm run dev          # watch build
 npm run build        # type-check + production build
 npm run lint         # Obsidian's official ESLint rules (eslint-plugin-obsidianmd)
 npm test             # unit tests (Vitest); npm run test:watch while working
-npm run check        # lint + test + build; run before every commit
+npm run spec         # validate OpenSpec specs and changes, and their Test: references
+npm run check        # lint + spec + test + build; run before every commit
 npm run deploy:test  # build and copy into ./test-vault
 ```
 - Develop against `test-vault/`, not a real vault.
 - **Tests** live in `tests/` and run in Node. `obsidian` is aliased to a small stand-in (`tests/helpers/obsidian.ts`), and `tests/helpers/fake-app.ts` is an in-memory vault (frontmatter parsed from file text, strict like Obsidian about existing files and missing folders) with `fakePlugin()` for code that takes the plugin. Keep logic that can be pure in pure functions and test it there; test flows that move or rewrite notes (promote, snapshots, triage) against the fake vault, including the "original is kept first" rule. The `obsidian` types are pinned to `minAppVersion`, so the type-check catches APIs newer than the oldest supported app.
-- **Lint must pass with zero errors.** `eslint-plugin-obsidianmd` is the same rule set Obsidian's automated review runs on every release (since May 2026). A release that fails it is removed from the community directory search. CI runs lint, tests, and build on every push (`.github/workflows/lint.yml`).
+- **Lint must pass with zero errors.** `eslint-plugin-obsidianmd` is the same rule set Obsidian's automated review runs on every release (since May 2026). A release that fails it is removed from the community directory search. CI runs lint, spec validation, tests, and build on every push (`.github/workflows/lint.yml`).
 - Release: `npm version x.y.z` bumps `package.json`, `manifest.json`, and `versions.json`. The tag equals the version with **no `v` prefix**. Pushing the tag lints, tests, builds, attests build provenance for `main.js` and `styles.css`, and creates a draft GitHub release. Users install via BRAT.
 
 ## Open questions & growing edges
 
-New key concepts land here first. Move them up once they're settled.
-
-- **Finishing a resource:** setting `status: done` records no date, so "read this month" can't be counted (same gap as Writing life).
-- **Titles from links:** fetching a page title when a URL is captured (would need `requestUrl`, a network call; capture works offline today).
-- **Reading as a habit:** a feed-the-well signal over time (resources read per month, kinds you lean on).
-- **Capture as a habit:** should capture have its own progress signal (ideas per week, time to inbox zero)?
-- **Weekly review:** a checklist covering inbox zero, picking an exercise, and checking stalled stories. It ties Capture and the modes together.
-- **Mode trends:** `inkwell-contribution` shows totals per period. A trend over time (this month vs. last) is still open.
-- **Writing life:** milestones and pieces finished. Finishing needs a date: status changes don't record when a piece reached `done`.
-- **Timer beyond practice:** the writing timer covers exercises and journals only. Timing drafts and scenes would need its own rule, since piece progress is words, not minutes.
-- **Shared cast:** one set of characters and locations used across related stories.
-- **Manuscript view:** read all of a project's scenes as one continuous document (reading, not export).
-- **Long-form views (gated):** corkboard, kanban, beat-sheet scaffolds, scene inspector. Build these only if StoryLine falls short in real use, and write down the gap first.
-- **Inkwell's own word log:** only if KTR's per-device history proves unreliable. It would go behind the same one-file interface.
+Open questions are ideas in `openspec/ideas/` (see its README for the index). Gated ones (`long-form-views`, `own-word-log`) wait on evidence named in their ADRs. Work in progress is listed by `npx openspec list`. New key concepts start as an idea, not here.

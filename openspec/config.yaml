@@ -1,0 +1,51 @@
+schema: spec-driven
+
+# Project context for OpenSpec artifacts. Inkwell's tenets and engineering
+# rules live in CLAUDE.md: read them, don't copy them here.
+context: |
+  Inkwell is a writing-practice toolkit plugin for Obsidian (TypeScript, Obsidian 1.13+,
+  esbuild, Vitest). Capture feeds three modes: Practice, Short form, Long form; Home shows them together.
+  CLAUDE.md holds the tenets and engineering rules. Follow them, in particular:
+  plain Markdown notes only, works on mobile, nothing that moves or rewrites notes without saving the original
+  first, and no publishing or export features.
+  The reasons behind past decisions are ADRs in openspec/decisions/. Read the ones a change touches.
+  A change that reverses or replaces an accepted ADR needs a new ADR that supersedes it.
+  Capability names (flat, kebab-case): capture, resources, practice, writing-timer, short-form,
+  long-form, movement, practice-stats (day level), piece-progress (piece level),
+  contribution (mode and lifetime levels), ktr-integration. A capability is behaviour the writer can see.
+  Cross-cutting rules (data model, settings sync) stay in CLAUDE.md and ADRs, not in a spec of their own.
+  Ideas nobody is working on yet live in openspec/ideas/, not in openspec/changes/. A change picked up
+  from an idea starts from that idea's Why and constraints, and deletes the idea file.
+
+rules:
+  specs:
+    - >-
+      Write each requirement as an EARS sentence with an uppercase SHALL, and name the system "Inkwell".
+      Patterns: always true "Inkwell SHALL …"; event "WHEN <trigger>, Inkwell SHALL …";
+      state "WHILE <state>, Inkwell SHALL …"; unwanted case "IF <condition>, THEN Inkwell SHALL …";
+      optional feature "WHERE <feature or setting>, Inkwell SHALL …". Patterns may be combined.
+    - Every requirement has at least one scenario, written with GIVEN (optional), WHEN, THEN, AND bullets.
+    - >-
+      End every scenario with a line naming the test that covers it,
+      `Test: tests/<file>.test.ts › "<test name>"`, or `Test: none yet`. Add a short note in brackets when
+      a test covers only part of it.
+    - Describe what the writer sees and what is written to notes. Use UI names and frontmatter fields, not function names.
+    - Link the ADRs behind a capability from its Purpose section.
+    - Name the frontmatter fields a requirement writes or reads, with their values, in the requirement itself.
+    - >-
+      `npm run spec` checks every `Test:` line: each scenario must have one, and every test it names must
+      exist. Rename a test and its spec line in the same commit.
+  proposal:
+    - Say which ADRs the change touches, and whether it needs a new one.
+    - State what is out of scope, especially weight the change would add to a lighter mode.
+  design:
+    - >-
+      For each choice between real options, link the ADR behind it, or write a new ADR in
+      openspec/decisions/ as part of the change when the choice is hard to reverse.
+    - Say how the change works on mobile and with sync across devices.
+    - Keep logic that can be pure in pure functions, and say which flows are tested against the fake vault.
+  tasks:
+    - Each task that changes behaviour has a task for its test, and updates the scenario's `Test:` line.
+    - >-
+      End with these tasks: update the README (user-facing) and the CLAUDE.md summary for the mode;
+      mark any new ADR accepted and add it to openspec/decisions/README.md; run `npm run check`.

@@ -10,6 +10,7 @@ export default defineConfig(
     "esbuild.config.mjs",
     "vitest.config.mts",
     "version-bump.mjs",
+    "scripts/check-spec-tests.mjs",
     "versions.json",
     "main.js",
     "package.json",
