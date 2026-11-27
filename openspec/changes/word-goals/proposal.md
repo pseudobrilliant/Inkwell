@@ -32,7 +32,7 @@ None. The `word-log` capability's requirements stay as the block-word-log change
 
 - **Constitution:** serves design principles 5 (goals for the day and week) and 6 (Home is where progress is seen). Theme 5: seeing your contribution keeps you going. Tenets: plain notes (goals live in settings, nothing is added to notes), mobile from day one (the blocks and the notice work on a phone), safe by default (nothing is written to notes at all).
 - **ADRs:** builds on ADR 0007 and ADR 0008 (the count). ADR 0003 (device-local state) applies to remembering which goal notices this device has shown. No new ADR: no choice here is hard to reverse.
-- **Depends on:** the block-word-log change (PR #6). This change is branched from it.
+- **Depends on:** the block-word-log change (merged in PR #6, archived).
 - **Code:** a pure goal-progress function beside `wordsSummary` in `src/wordlog.ts`; goals in `src/settings.ts`; the words block in `src/wordblocks.ts`; the practice block in `src/contribution.ts`; the goal notice after `plugin.words.add` in `src/wordlogstore.ts`; styles in `styles.css`.
 - **Tests:** `tests/wordlog.test.ts`, `tests/wordblocks.test.ts`, `tests/contribution.test.ts`, `tests/wordlogstore.test.ts`, `tests/settings.test.ts`.
 - **Docs:** README (Words section, settings), CLAUDE.md (the progress table and Home summary), `openspec/config.yaml` (capability list), the ideas README.

@@ -28,7 +28,7 @@ The [constitution](../constitution.md) makes word-count goals for each day and w
 
 ## Decision
 
-We chose **option 3**, as settled with the writer in the block-word-log idea (now the [block-word-log change](../changes/block-word-log/proposal.md)). Only typing in writing blocks counts; the first draft, programmatic rewrites and changes arriving by sync never do. Each device writes only its own log files and readers add them up, so sync can't overwrite a day. Inkwell takes inspiration from KTR but copies none of its data format, block syntax, settings or UI, and removes the KTR integration (`src/integrations/keep-the-rhythm.ts` and the KTR blocks on Home). Goals, streaks, the heatmap and per-piece words this week are built on the log.
+We chose **option 3**, as settled with the writer in the block-word-log idea (built by the [block-word-log change](../changes/archive/2026-11-27-block-word-log/proposal.md)). Only typing in writing blocks counts; the first draft, programmatic rewrites and changes arriving by sync never do. Each device writes only its own log files and readers add them up, so sync can't overwrite a day. Inkwell takes inspiration from KTR but copies none of its data format, block syntax, settings or UI, and removes the KTR integration (`src/integrations/keep-the-rhythm.ts` and the KTR blocks on Home). Goals, streaks, the heatmap and per-piece words this week are built on the log.
 
 ## Consequences
 
