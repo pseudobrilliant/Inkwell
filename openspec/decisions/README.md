@@ -22,4 +22,4 @@ Architecture Decision Records (ADRs) for Inkwell, in the [MADR](https://adr.gith
 | [0004](0004-storyline-compatible-long-form.md) | Make long form compatible with StoryLine | accepted | 2026-11-20 |
 | [0006](0006-writing-block-first-draft-in-a-comment.md) | Writing blocks are callouts, with the first draft in a comment | accepted | 2026-11-25 |
 | [0007](0007-inkwell-keeps-its-own-word-log.md) | Inkwell keeps its own word log | accepted | 2026-11-26 |
-| [0008](0008-word-log-is-per-device-monthly-notes.md) | The word log is per-device monthly notes | proposed | 2026-11-26 |
+| [0008](0008-word-log-is-per-device-monthly-notes.md) | The word log is per-device monthly notes | accepted | 2026-11-26 |

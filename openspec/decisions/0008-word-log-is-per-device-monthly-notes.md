@@ -1,6 +1,6 @@
 # 0008. The word log is per-device monthly notes
 
-- **Status:** proposed
+- **Status:** accepted
 - **Date:** 2026-11-26
 - **Specs:** word-log
 
