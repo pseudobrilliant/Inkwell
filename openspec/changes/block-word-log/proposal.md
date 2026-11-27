@@ -17,7 +17,7 @@ The [constitution](../../constitution.md) says Inkwell counts the writing itself
 - **Keep the Rhythm is removed.** `src/integrations/keep-the-rhythm.ts`, `KTR_TESTED_VERSIONS`, the settings section, the "Don't count comments" notice, the `ktr-check` skill, and the KTR blocks in the built-in Home and journal templates. The log starts fresh: KTR's history isn't imported. Nothing has been released, so there's no upgrade path to keep, but notes that already exist are never rewritten (safe by default).
 
 Out of scope:
-- **Daily and weekly word goals.** They're the next change ([word-goals](../../ideas/word-goals.md)), built on this log.
+- **Daily and weekly word goals.** They're the next change ([word-goals](../word-goals/proposal.md)), built on this log.
 - **Minutes in the log.** The format leaves room for them, but the timer stays as it is ([writing-block-timer](../../ideas/writing-block-timer.md)).
 - **Counting writing outside blocks.** Plain-text drafts stop adding words until they're put in a block.
 - **No new weight on a lighter mode.** Practice still gets one block per note. Short form still gets one draft, now with a block in it.
