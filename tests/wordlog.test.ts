@@ -3,6 +3,9 @@ import { moment } from "obsidian";
 import {
   addToLog,
   dailyWordsIn,
+  goalNoticesDue,
+  goalProgress,
+  goalReached,
   heatLevel,
   heatmapGrid,
   newLogFile,
@@ -170,5 +173,61 @@ describe("the words block", () => {
     d.set("2026-11-15", 300);
     const s = wordsSummary(d, moment("2026-11-15"), "monday");
     expect(s).toEqual({ today: 300, week: 1200, month: 4500, monthAverage: 300, streak: { current: 6, longest: 6 } });
+  });
+});
+
+describe("goals", () => {
+  // Thursday 26 November 2026, in a week starting Monday the 23rd.
+  const today = moment("2026-11-26");
+  const goals = { daily: 300, weekly: 1500 };
+
+  it("missing a day can still make the week", () => {
+    const d = days({ "2026-11-22": 900, "2026-11-23": 600, "2026-11-24": 0, "2026-11-25": 500, "2026-11-26": 450 });
+    const g = goalProgress(d, today, "monday", goals);
+    expect(g.goalDays).toBe(3);
+    expect(g.week).toEqual({ words: 1550, goal: 1500, share: 1, met: true });
+    expect(g.today).toEqual({ words: 450, goal: 300, share: 1, met: true });
+  });
+
+  it("a day under the goal isn't a goal day but keeps the streak", () => {
+    const d = days({ "2026-11-23": 100, "2026-11-24": 100, "2026-11-25": 100, "2026-11-26": 100 });
+    expect(goalProgress(d, today, "monday", goals).goalDays).toBe(0);
+    expect(streakIn(d, "2026-11-26").current).toBe(4);
+  });
+
+  it("shows partway to the goals as a share of each", () => {
+    const d = days({ "2026-11-23": 400, "2026-11-24": 380, "2026-11-26": 120 });
+    const g = goalProgress(d, today, "monday", goals);
+    expect(g.today).toEqual({ words: 120, goal: 300, share: 0.4, met: false });
+    expect(g.week).toEqual({ words: 900, goal: 1500, share: 0.6, met: false });
+    expect(g.goalDays).toBe(2);
+  });
+
+  it("a goal of 0 is off", () => {
+    const d = days({ "2026-11-26": 500 });
+    const g = goalProgress(d, today, "monday", { daily: 0, weekly: 2000 });
+    expect(g.today).toBeNull();
+    expect(g.goalDays).toBeNull();
+    expect(g.week?.goal).toBe(2000);
+    expect(goalProgress(d, today, "monday", { daily: 300, weekly: 0 }).week).toBeNull();
+  });
+
+  it("a goal is reached only when the words cross it", () => {
+    expect(goalReached(280, 310, 300)).toBe(true);
+    expect(goalReached(280, 300, 300)).toBe(true);
+    expect(goalReached(310, 340, 300)).toBe(false);
+    expect(goalReached(200, 250, 300)).toBe(false);
+    expect(goalReached(0, 500, 0)).toBe(false);
+  });
+
+  it("a goal notice shows once a day and once a week", () => {
+    const first = goalNoticesDue({ today: 280, week: 1480 }, { today: 310, week: 1510 }, goals, {}, "2026-11-26", "2026-11-23");
+    expect(first).toEqual({ daily: true, weekly: true, shown: { day: "2026-11-26", week: "2026-11-23" } });
+    // Cut under both goals and write past them again: no second notice.
+    const again = goalNoticesDue({ today: 260, week: 1460 }, { today: 320, week: 1520 }, goals, first.shown, "2026-11-26", "2026-11-23");
+    expect(again).toEqual({ daily: false, weekly: false, shown: first.shown });
+    // The next day, the daily notice can show again; the week's has been shown.
+    const next = goalNoticesDue({ today: 0, week: 1520 }, { today: 300, week: 1820 }, goals, first.shown, "2026-11-27", "2026-11-23");
+    expect(next).toMatchObject({ daily: true, weekly: false });
   });
 });

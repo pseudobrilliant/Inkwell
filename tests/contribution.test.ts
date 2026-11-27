@@ -43,6 +43,38 @@ describe("practice this week", () => {
   });
 });
 
+describe("goal days in practice this week", () => {
+  const DAY_OF = (i: number) => moment(practiceStart()).add(i, "days").format(DAY);
+  const practiceStart = () => fakePlugin().words.weekStart();
+
+  it("the practice strip marks goal days apart from days that showed up", async () => {
+    const plugin = vaultWithLog([
+      { date: DAY_OF(0), path: EXERCISE, words: 350 },
+      { date: DAY_OF(1), path: DRAFT, words: 50 },
+    ]);
+    plugin.settings.dailyWordGoal = 300;
+    const [mon, tue, wed] = (await practiceWeek(plugin)).days;
+    expect(mon).toMatchObject({ showed: true, goal: true });
+    expect(tue).toMatchObject({ showed: true, goal: false });
+    expect(wed).toMatchObject({ showed: false, goal: false });
+  });
+
+  it("a day under the goal has no missed mark", async () => {
+    const plugin = vaultWithLog([{ date: DAY_OF(0), path: JOURNAL, words: 40 }]);
+    plugin.settings.dailyWordGoal = 300;
+    const [day] = (await practiceWeek(plugin)).days;
+    // Showed up, and nothing else to say about it.
+    expect(day && Object.keys(day).sort()).toEqual(["date", "future", "goal", "showed"]);
+    expect(day).toMatchObject({ showed: true, goal: false });
+  });
+
+  it("with the daily goal off, no day is a goal day", async () => {
+    const plugin = vaultWithLog([{ date: DAY_OF(0), path: EXERCISE, words: 5000 }]);
+    plugin.settings.dailyWordGoal = 0;
+    expect((await practiceWeek(plugin)).days[0]).toMatchObject({ showed: true, goal: false });
+  });
+});
+
 describe("your contribution", () => {
   it("adds up this month's words by mode", async () => {
     const plugin = vaultWithLog([
@@ -58,6 +90,16 @@ describe("your contribution", () => {
     expect(c.projects.words).toBe(500);
     // All writing: everything but notes on what you read.
     expect(c.words).toBe(3500);
+  });
+
+  it("practice and pieces both count toward the day's goal", async () => {
+    const plugin = vaultWithLog([
+      { date: TODAY, path: EXERCISE, words: 200 },
+      { date: TODAY, path: DRAFT, words: 150 },
+      { date: TODAY, path: "05 - Resources/A poem.md", words: 90 },
+    ]);
+    plugin.settings.dailyWordGoal = 300;
+    expect((await plugin.words.goals()).today).toEqual({ words: 350, goal: 300, share: 1, met: true });
   });
 
   it("a story's words this week count only its draft", async () => {

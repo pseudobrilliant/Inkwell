@@ -15,14 +15,14 @@ Inkwell SHALL offer two settings in the Words group: "Daily word goal" (`dailyWo
 - **THEN** it shows this week's words against 2,000
 - **AND** today's words show without a goal
 
-Test: none yet
+Test: tests/wordblocks.test.ts › "only a weekly goal shows only the week's bar"
 
 #### Scenario: A goal that isn't a number
 - **GIVEN** "Daily word goal" set to "lots"
 - **WHEN** Inkwell loads its settings
 - **THEN** the daily goal is 300
 
-Test: none yet
+Test: tests/settings.test.ts › "a goal that isn't a number falls back to the default"
 
 ### Requirement: What counts toward a goal
 Inkwell SHALL count toward both goals the net words logged across all writing: journals, exercises, story drafts and scenes, on every device. Notes in Resources and in the word log folder SHALL NOT count. The daily goal SHALL count today's words. The weekly goal SHALL count the words from the first day of the week (setting "Week starts on") to today.
@@ -32,14 +32,14 @@ Inkwell SHALL count toward both goals the net words logged across all writing: j
 - **WHEN** Inkwell shows today's goal
 - **THEN** it shows 350 of 300 and the goal as met
 
-Test: none yet
+Test: tests/contribution.test.ts › "practice and pieces both count toward the day's goal"
 
 #### Scenario: Two devices toward one goal
 - **GIVEN** a daily goal of 300, 200 words typed on the desktop today and 150 on the phone, both synced
 - **WHEN** either device shows today's goal
 - **THEN** it shows 350 of 300
 
-Test: none yet
+Test: tests/wordlogstore.test.ts › "two devices add up toward one goal"
 
 ### Requirement: Goals in the words block
 WHERE a goal is on, the `inkwell-words` block SHALL show, under Today, today's words against the daily goal, and under This week, the week's words against the weekly goal, each as "N of G" with a progress bar that fills up to the goal. WHEN a goal is met, its bar SHALL show as full and marked met. The block SHALL also show the goal days so far this week WHERE the daily goal is on.
@@ -51,14 +51,14 @@ WHERE a goal is on, the `inkwell-words` block SHALL show, under Today, today's w
 - **AND** This week shows "900 of 1,500" with its bar 60% full
 - **AND** it shows 2 goal days this week
 
-Test: none yet
+Test: tests/wordblocks.test.ts › "the words block shows today and this week against the goals"
 
 #### Scenario: Past the goal
 - **GIVEN** a daily goal of 300 and 450 words today
 - **WHEN** the `inkwell-words` block renders
 - **THEN** Today shows "450 of 300" with a full bar marked met
 
-Test: none yet
+Test: tests/wordblocks.test.ts › "a met goal shows a full bar marked met"
 
 ### Requirement: Goal days
 A day SHALL be a goal day WHEN its net words across all writing reach the daily goal. Goal days SHALL NOT change the streak or showing up: a day with words below the goal SHALL still count as showed up. WHERE the daily goal is on, the `inkwell-practice` week strip SHALL mark each goal day apart from days that only showed up. The weekly goal SHALL be met WHEN the week's words reach it, whatever the number of goal days.
@@ -69,21 +69,21 @@ A day SHALL be a goal day WHEN its net words across all writing reach the daily 
 - **WHEN** Inkwell shows this week
 - **THEN** it shows 3 goal days and the weekly goal as met at 1,550 of 1,500
 
-Test: none yet
+Test: tests/wordlog.test.ts › "missing a day can still make the week"
 
 #### Scenario: Under the goal keeps the streak
 - **GIVEN** a daily goal of 300, and 100 words on each of the last 4 days
 - **WHEN** Inkwell shows the streak and the goal days
 - **THEN** the streak is 4 days, and none of the 4 days is a goal day
 
-Test: none yet
+Test: tests/wordlog.test.ts › "a day under the goal isn't a goal day but keeps the streak"
 
 #### Scenario: Goal days in the practice strip
 - **GIVEN** a daily goal of 300, 350 words on Monday and 50 on Tuesday
 - **WHEN** `inkwell-practice` shows this week
 - **THEN** Monday is marked as a goal day and Tuesday as showed up
 
-Test: none yet
+Test: tests/contribution.test.ts › "the practice strip marks goal days apart from days that showed up"
 
 ### Requirement: A notice when a goal is reached
 WHEN words the writer types in a writing block take today's words from below the daily goal to the goal or over it, Inkwell SHALL show the notice "Daily word goal reached: N words today." on that device. WHEN they take this week's words to the weekly goal or over it, Inkwell SHALL show "Weekly word goal reached: N words this week." Each notice SHALL show at most once a day (daily) or once a week (weekly) on each device. Words arriving by sync from another device SHALL NOT show a notice.
@@ -93,21 +93,21 @@ WHEN words the writer types in a writing block take today's words from below the
 - **WHEN** the writer types 30 more words in a block
 - **THEN** the notice "Daily word goal reached: 310 words today." shows
 
-Test: none yet
+Test: tests/wordlogstore.test.ts › "typing past the daily goal shows a notice"
 
 #### Scenario: Cutting and writing again
 - **GIVEN** the daily goal was reached today and its notice shown
 - **WHEN** the writer cuts 50 words, going under the goal, and types them again
 - **THEN** no second notice shows
 
-Test: none yet
+Test: tests/wordlogstore.test.ts › "cutting and typing again shows no second notice"
 
 #### Scenario: The goal was reached on another device
 - **GIVEN** a daily goal of 300, and 320 words typed on the phone today and synced to the desktop
 - **WHEN** the writer types 10 words on the desktop
 - **THEN** the desktop shows no notice
 
-Test: none yet
+Test: tests/wordlogstore.test.ts › "a goal reached on another device shows no notice here"
 
 ### Requirement: Goals don't scold
 IF a goal isn't met, THEN Inkwell SHALL show only the words so far against the goal: no warning colour, no message, and no count of missed days or weeks. Past days that weren't goal days SHALL look the same as they do with no goal set.
@@ -117,4 +117,4 @@ IF a goal isn't met, THEN Inkwell SHALL show only the words so far against the g
 - **WHEN** `inkwell-practice` shows this week
 - **THEN** yesterday is marked as showed up, with no mark for a missed goal
 
-Test: none yet
+Test: tests/contribution.test.ts › "a day under the goal has no missed mark"

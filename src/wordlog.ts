@@ -268,3 +268,94 @@ export function wordsSummary(days: ReadonlyMap<string, number>, today: moment.Mo
     streak: streakIn(days, t),
   };
 }
+
+// ---------- Goals (spec word-goals) ----------
+
+/** The daily and weekly word goals. 0 = off. */
+export interface Goals {
+  daily: number;
+  weekly: number;
+}
+
+/** Words against a goal, for a progress bar. */
+export interface GoalBar {
+  words: number;
+  goal: number;
+  /** How much of the goal is reached, from 0 to 1 (a bar never fills past full). */
+  share: number;
+  met: boolean;
+}
+
+export interface GoalProgress {
+  /** Today against the daily goal, or null when it's off. */
+  today: GoalBar | null;
+  /** This week against the weekly goal, or null when it's off. */
+  week: GoalBar | null;
+  /** Goal days so far this week, or null when the daily goal is off. */
+  goalDays: number | null;
+}
+
+/** Words against a goal, or null when the goal is off. */
+export function goalBar(words: number, goal: number): GoalBar | null {
+  if (goal <= 0) return null;
+  return { words, goal, share: Math.max(0, Math.min(1, words / goal)), met: words >= goal };
+}
+
+/** A goal day is a day whose words reach the daily goal. With the goal off, no day is one. */
+export function isGoalDay(words: number, dailyGoal: number): boolean {
+  return dailyGoal > 0 && words >= dailyGoal;
+}
+
+/**
+ * Today and this week against the goals, from all-writing words per day. The weekly goal counts the week's words
+ * however they're spread, so it doesn't depend on the goal days.
+ */
+export function goalProgress(days: ReadonlyMap<string, number>, today: moment.Moment, weekStart: Weekday, goals: Goals): GoalProgress {
+  const t = today.format(DAY);
+  const from = weekStartFor(today, weekStart);
+  let week = 0;
+  let goalDays = 0;
+  for (const [d, w] of days) {
+    if (d < from || d > t) continue;
+    week += w;
+    if (isGoalDay(w, goals.daily)) goalDays++;
+  }
+  return {
+    today: goalBar(days.get(t) ?? 0, goals.daily),
+    week: goalBar(week, goals.weekly),
+    goalDays: goals.daily > 0 ? goalDays : null,
+  };
+}
+
+/** Whether words going from `before` to `after` reach a goal that's on. */
+export function goalReached(before: number, after: number, goal: number): boolean {
+  return goal > 0 && before < goal && after >= goal;
+}
+
+/** The day, and the week by its first day, that this device last showed each goal notice (local storage). */
+export interface GoalNoticesShown {
+  day?: string;
+  week?: string;
+}
+
+export interface GoalTotals {
+  today: number;
+  week: number;
+}
+
+/**
+ * Which goal notices to show after the writer's words moved today's and this week's totals from `before` to
+ * `after`, at most once a day and once a week. `shown` is what to remember afterwards.
+ */
+export function goalNoticesDue(
+  before: GoalTotals,
+  after: GoalTotals,
+  goals: Goals,
+  last: GoalNoticesShown,
+  day: string,
+  week: string
+): { daily: boolean; weekly: boolean; shown: GoalNoticesShown } {
+  const daily = last.day !== day && goalReached(before.today, after.today, goals.daily);
+  const weekly = last.week !== week && goalReached(before.week, after.week, goals.weekly);
+  return { daily, weekly, shown: { day: daily ? day : last.day, week: weekly ? week : last.week } };
+}

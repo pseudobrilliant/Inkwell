@@ -92,9 +92,9 @@ A writing block is a box for the writing itself, apart from the prompt, goal and
 ### Home
 - A built-in **Home** dashboard (command + ribbon).
 - Code blocks you can use in any note: `inkwell-inbox`, `inkwell-in-progress`, `inkwell-prompt`, `inkwell-practice`, `inkwell-contribution`, `inkwell-words`, `inkwell-heatmap`.
-- **Words** (`inkwell-words`): words today, this week, and this month with your daily average, and your streak, current and best.
+- **Words** (`inkwell-words`): words today, this week, and this month with your daily average, and your streak, current and best. With goals on, today and this week show a bar against your daily and weekly goals, and how many goal days you've had this week.
 - **Heatmap** (`inkwell-heatmap`): one square per day, shaded by the words you wrote. Options: `weeks` (24 by default), `of` (`pieces`, the default, for story drafts and scenes; or `practice`, `stories`, `projects`, `all`), and `stops`, the word counts where the shade steps up (`1, 100, 500, 1000` by default). Home shows 48 weeks of all your writing.
-- **Practice this week** (`inkwell-practice`): which days you showed up (days you wrote words in a writing block), your streak, and the exercises, prompts, journal entries, minutes written, and practice words for the week.
+- **Practice this week** (`inkwell-practice`): which days you showed up (days you wrote words in a writing block), with a ring on the days you met your daily goal, your streak, and the exercises, prompts, journal entries, minutes written, and practice words for the week.
 - **Your contribution** (`inkwell-contribution`): what you added to each part of your writing this week, month, year, or all time: ideas captured and sorted; resources added, being read, and done; exercises, journal entries, and prompts used; stories started, grown from practice, and revised; projects started or promoted and scenes added, with the words you wrote in each.
 - A **New…** picker that creates any Inkwell note from one command.
 
@@ -104,6 +104,13 @@ Inkwell counts the words you type in writing blocks and keeps a log of them, so 
 - **Practice counts for your day, never for a piece.** A piece's words this week come only from its draft or scenes.
 - **The log is plain notes,** in `99 - System/Inkwell/Word log` (changeable in settings): one folder per device and one note per month, with a table of date, note, and words. Each device writes only its own notes and Inkwell adds them all up, so syncing a phone and a desktop never loses a day. If you rename a note, the device you renamed it on updates its own log.
 - **Week starts on** (settings): the first day of the week for every weekly number. Monday by default.
+
+#### Goals
+- **A daily and a weekly word goal** (settings, under Words): 300 a day and 1,500 a week to start. Each is set on its own, and 0 turns it off.
+- **All your writing counts toward them:** journals, exercises, drafts and scenes, on every device. Practice still never counts toward a piece.
+- **Goal days are their own number.** A day that reaches the daily goal is a goal day. Your streak still counts every day you wrote something, so a short day keeps it, and the weekly goal counts the week's words however they're spread: you can miss a day and still make the week.
+- **A notice when you reach a goal,** once a day and once a week, on the device you were typing on.
+- **No scolding:** a goal you haven't met shows only your words so far.
 
 ## Installation
 

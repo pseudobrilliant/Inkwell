@@ -3,15 +3,33 @@
  * `<folders.wordLog>/<device>/`, one note per month, and reads every device's. The format and the sums are pure, in
  * src/wordlog.ts. Every word number Inkwell shows comes through `WordLog`, reached as `plugin.words`.
  */
-import { moment, normalizePath, Platform, TFile, type App } from "obsidian";
+import { moment, normalizePath, Notice, Platform, TFile, type App } from "obsidian";
 import type InkwellPlugin from "./main";
 import { modeMatchers } from "./contribution";
 import { ensureFolder } from "./util";
-import { addToLog, dailyWordsIn, newLogFile, parseLog, renameInLog, streakIn, sumDays, weekStartFor, type LogRow, type Streak } from "./wordlog";
+import {
+  addToLog,
+  dailyWordsIn,
+  goalNoticesDue,
+  goalProgress,
+  newLogFile,
+  parseLog,
+  renameInLog,
+  streakIn,
+  sumDays,
+  weekStartFor,
+  type GoalNoticesShown,
+  type GoalProgress,
+  type Goals,
+  type LogRow,
+  type Streak,
+} from "./wordlog";
 
 const DAY = "YYYY-MM-DD";
 /** This device's id, kept in local storage (ADR 0003), never in the synced settings. */
 export const DEVICE_KEY = "inkwell-word-log-device";
+/** The day and week this device last showed each goal notice (ADR 0003: device-local, never synced). */
+export const GOAL_NOTICES_KEY = "inkwell-goal-notices";
 /** At most this long between a word being typed and it being written to the log. */
 export const FLUSH_MS = 10_000;
 
@@ -26,6 +44,15 @@ export function deviceId(app: Pick<App, "loadLocalStorage" | "saveLocalStorage">
 }
 
 const key = (date: string, path: string) => `${date}\u0000${path}`;
+
+/** What local storage holds for the goal notices, read defensively. */
+function savedNotices(v: unknown): GoalNoticesShown {
+  const o = v && typeof v === "object" ? (v as Record<string, unknown>) : {};
+  const out: GoalNoticesShown = {};
+  if (typeof o.day === "string") out.day = o.day;
+  if (typeof o.week === "string") out.week = o.week;
+  return out;
+}
 
 export interface StoreOptions {
   /** How a flush is put off; tests pass their own. */
@@ -199,9 +226,37 @@ export class WordLog {
     });
   }
 
-  /** Log words the writer typed in a note's writing blocks. */
+  /** The latest goal check, so tests can wait for it. */
+  goalCheck: Promise<void> = Promise.resolve();
+
+  /** Log words the writer typed in a note's writing blocks, then see whether they reached a goal. */
   add(path: string, words: number): void {
     this.store.add(path, words);
+    if (!words || this.store.inLog(path) || !modeMatchers(this.plugin).all(path)) return;
+    this.goalCheck = this.checkGoals(words).catch((e) => console.error("Inkwell: could not check the word goals", e));
+  }
+
+  /**
+   * Show a notice when the words just logged took today's or this week's words to a goal (spec word-goals). Words
+   * that arrived by sync are already in the totals before this change, so a goal reached on another device never
+   * crosses here.
+   */
+  private async checkGoals(added: number): Promise<void> {
+    const goals = this.goalSettings();
+    if (goals.daily <= 0 && goals.weekly <= 0) return;
+    const days = await this.allDays();
+    const day = moment().format(DAY);
+    const week = this.weekStart();
+    let weekWords = 0;
+    for (const [d, w] of days) if (d >= week && d <= day) weekWords += w;
+    const after = { today: days.get(day) ?? 0, week: weekWords };
+    const before = { today: after.today - added, week: after.week - added };
+    const { app } = this.plugin;
+    const due = goalNoticesDue(before, after, goals, savedNotices(app.loadLocalStorage(GOAL_NOTICES_KEY)), day, week);
+    if (!due.daily && !due.weekly) return;
+    app.saveLocalStorage(GOAL_NOTICES_KEY, due.shown);
+    if (due.daily) new Notice(`Daily word goal reached: ${after.today.toLocaleString()} words today.`);
+    if (due.weekly) new Notice(`Weekly word goal reached: ${after.week.toLocaleString()} words this week.`);
   }
 
   /** The first day (YYYY-MM-DD) of this week, from the "Week starts on" setting. */
@@ -231,5 +286,15 @@ export class WordLog {
   /** Days showed up in a row (current and longest), across all writing. */
   async streak(): Promise<Streak> {
     return streakIn(await this.allDays(), moment().format(DAY));
+  }
+
+  /** The daily and weekly word goals from the settings (0 = off). */
+  goalSettings(): Goals {
+    return { daily: this.plugin.settings.dailyWordGoal, weekly: this.plugin.settings.weeklyWordGoal };
+  }
+
+  /** Today and this week against the goals, across all writing (spec word-goals). */
+  async goals(days?: ReadonlyMap<string, number>): Promise<GoalProgress> {
+    return goalProgress(days ?? (await this.allDays()), moment(), this.plugin.settings.weekStart, this.goalSettings());
   }
 }

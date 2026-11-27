@@ -13,7 +13,7 @@ import { fmDay, fmOf, fmStr } from "./util";
 export { fmDay } from "./util";
 import type InkwellPlugin from "./main";
 import { LiveBlock, opts } from "./homeblocks";
-import type { Streak } from "./wordlog";
+import { isGoalDay, type Streak } from "./wordlog";
 
 const DAY = "YYYY-MM-DD";
 
@@ -55,7 +55,8 @@ const plural = (x: number, one: string, many = one + "s") => `${n(x)} ${x === 1 
 // ---------- Session / day: inkwell-practice ----------
 
 export interface PracticeWeek {
-  days: { date: string; showed: boolean; future: boolean }[];
+  /** `goal`: the day's words reached the daily goal (spec word-goals). Never set when the goal is off. */
+  days: { date: string; showed: boolean; goal: boolean; future: boolean }[];
   exercises: number;
   prompts: number;
   journals: number;
@@ -81,12 +82,12 @@ export async function practiceWeek(plugin: InkwellPlugin): Promise<PracticeWeek>
   const journals = notes.filter((x) => x.type === "journal" && under(x.file.path, settings.folders.journal) && inWeek(x.created));
 
   const m = modeMatchers(plugin);
-  const active = new Set<string>();
-  for (const [d, w] of await words.dailyWords(m.all, start, end)) if (w > 0) active.add(d);
+  const daily = await words.dailyWords(m.all, start, end);
 
   const days = Array.from({ length: 7 }, (_, i) => {
     const date = moment(start).add(i, "days").format(DAY);
-    return { date, showed: active.has(date), future: date > today };
+    const w = daily.get(date) ?? 0;
+    return { date, showed: w > 0, goal: isGoalDay(w, settings.dailyWordGoal), future: date > today };
   });
 
   return {
@@ -113,10 +114,12 @@ function renderPractice(box: HTMLElement, w: PracticeWeek, title: string | undef
   for (const d of w.days) {
     const cell = strip.createDiv({ cls: "inkwell-day" });
     if (d.showed) cell.addClass("is-done");
+    if (d.goal) cell.addClass("is-goal");
     if (d.future) cell.addClass("is-future");
     if (d.date === today) cell.addClass("is-today");
     cell.setText(moment(d.date).format("dd").charAt(0));
-    cell.setAttr("aria-label", moment(d.date).format("ddd D MMM") + (d.showed ? " · showed up" : ""));
+    // A day under the goal reads as showed up, never as a missed goal (spec word-goals, "Goals don't scold").
+    cell.setAttr("aria-label", moment(d.date).format("ddd D MMM") + (d.goal ? " · goal met" : d.showed ? " · showed up" : ""));
   }
   const shown = w.days.filter((d) => d.showed).length;
   const elapsed = w.days.filter((d) => !d.future).length;
