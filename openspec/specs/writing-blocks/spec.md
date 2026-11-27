@@ -368,23 +368,6 @@ Test: tests/writingblocks.test.ts › "a missing or unreadable comment means nev
 
 Test: tests/writingblocks.test.ts › "a damaged closing %% means never reviewed, and nothing past it is read"
 
-### Requirement: Keep the Rhythm comment setting
-WHERE Keep the Rhythm is installed and its "Don't count comments" setting is off, WHEN a block enters Review for the first time, Inkwell SHALL show a notice that the first draft will be counted as new words unless that setting is turned on. Inkwell SHALL NOT change Keep the Rhythm's settings.
-
-#### Scenario: Setting off
-- **GIVEN** Keep the Rhythm with "Don't count comments" off
-- **WHEN** a block enters Review for the first time
-- **THEN** the notice appears, and review continues
-
-Test: none yet [its code and test are gone; the block-word-log change removes this requirement]
-
-#### Scenario: Setting on, or Keep the Rhythm absent
-- **GIVEN** Keep the Rhythm with "Don't count comments" on, or not installed
-- **WHEN** a block enters Review for the first time
-- **THEN** no notice appears
-
-Test: none yet [its code and test are gone; the block-word-log change removes this requirement]
-
 ### Requirement: Typewriter Mode while writing
 WHERE the Typewriter Mode plugin is installed and enabled, WHEN the cursor moves into a block's writing in the focused editor in Live Preview, Inkwell SHALL turn Typewriter Mode on, and WHEN the writer stops writing in a block (the cursor leaves it, another editor takes focus, or the note closes), Inkwell SHALL turn it off. Inkwell SHALL use Typewriter Mode's own enable and disable commands, so its other settings still apply. A reviewed block locked in Draft mode is not written in.
 
@@ -420,12 +403,12 @@ Inkwell's word counts SHALL count a writing block's current text only: neither t
 Test: tests/wordcount.test.ts › "counts only a block's current text"
 
 ### Requirement: Moving work up
-WHEN the writer runs "This became a story" on an exercise, or "Promote story to long form" on a story, Inkwell SHALL carry each writing block forward as its current text, as plain paragraphs, without the callout or the first draft. Breaks and headings inside the first draft SHALL NOT split scenes.
+WHEN the writer runs "This became a story" on an exercise, or "Promote story to long form" on a story, Inkwell SHALL carry each writing block forward as a writing block holding its current text, without the first draft, so the writing keeps counting in its new note. Breaks and headings inside the first draft SHALL NOT split scenes.
 
 #### Scenario: A story starts from the revised text
 - **GIVEN** an exercise whose Work section has a reviewed block
 - **WHEN** the writer runs "This became a story"
-- **THEN** the new draft holds the block's current text as plain paragraphs
+- **THEN** the new draft holds one writing block with the block's current text, and no first-draft comment
 - **AND** the exercise is unchanged except for `became`
 
 Test: tests/became.test.ts › "a story starts from the block's current text"
@@ -433,7 +416,7 @@ Test: tests/became.test.ts › "a story starts from the block's current text"
 #### Scenario: Promoting keeps the first draft out of scenes
 - **GIVEN** a story draft with a reviewed block whose first draft contains `***`
 - **WHEN** the writer promotes the story
-- **THEN** the scenes hold only current text, split at breaks in the current text only
+- **THEN** each scene holds one writing block with only current text, split at breaks in the current text only
 - **AND** the original draft, with the block and its comment, is kept in the project's `Archive/`
 
 Test: tests/promote.test.ts › "scenes hold only current text, and the original draft is archived first"
@@ -447,3 +430,61 @@ Inkwell's built-in exercise template SHALL start its `## Work` section with an e
 - **THEN** its Work section holds an empty writing block
 
 Test: tests/blocks.test.ts › "the built-in exercise template starts Work with a writing block"
+
+### Requirement: Drafts, scenes and journals start with a block
+Inkwell's built-in story draft and journal templates SHALL hold an empty writing block, and a new scene SHALL start with one. In a journal it replaces the "Words written" section. Template files the writer already has, and notes that already exist, SHALL NOT be changed.
+
+#### Scenario: A new story draft
+- **GIVEN** no custom story draft template
+- **WHEN** the writer creates a short story
+- **THEN** its draft holds an empty writing block
+
+Test: tests/blocks.test.ts › "a new story draft holds an empty writing block"
+
+#### Scenario: A new scene
+- **WHEN** the writer adds a scene to a project
+- **THEN** the scene's body is an empty writing block
+
+Test: tests/blocks.test.ts › "a new scene's body is an empty writing block, unless it's given one"
+
+#### Scenario: Today's journal
+- **GIVEN** no custom journal template
+- **WHEN** the writer opens today's journal for the first time
+- **THEN** it holds an empty writing block and no `ktr-entries` block
+
+Test: tests/blocks.test.ts › "today's journal holds an empty writing block and no ktr-entries block"
+
+### Requirement: Word count on the block
+Every writing block's toolbar SHALL show a word count tool with the words in what the block shows, counted as in the "Word counts" requirement, kept up to date while the writer types. Once the block has been reviewed, in Review and Edited it SHALL also show the change since the first draft, and in Draft mode, which shows the first draft, it SHALL count the first draft.
+
+#### Scenario: Writing a block
+- **GIVEN** a block that was never reviewed, holding "I have come back before." and "Again."
+- **WHEN** the toolbar shows
+- **THEN** the word count shows 6 words, and it goes up as the writer types
+
+Test: tests/writingblocks.test.ts › "counts the words in a block that was never reviewed" [updating while typing is checked by hand]
+
+#### Scenario: Revising a reviewed block
+- **GIVEN** a reviewed block whose first draft has 4 words and whose writing now has 6
+- **WHEN** it's in Review
+- **THEN** the word count shows 6 words (+2)
+
+Test: tests/writingblocks.test.ts › "a reviewed block shows its words and the change since the first draft"
+
+### Requirement: Writing that won't count
+WHEN the story panel shows a story whose draft has no writing block, or the project panel shows scenes without one, Inkwell SHALL say their writing isn't counted and offer "Put in a writing block", which wraps the note's body, below its frontmatter, in one block.
+
+#### Scenario: An old draft without a block
+- **GIVEN** a story draft written as plain paragraphs
+- **WHEN** the story panel shows the story
+- **THEN** it says the draft's writing isn't counted and offers "Put in a writing block"
+
+Test: tests/blocks.test.ts › "a draft without a block is found, and one with a block isn't"
+
+#### Scenario: Putting a draft in a block
+- **GIVEN** a story draft of three plain paragraphs
+- **WHEN** the writer chooses "Put in a writing block"
+- **THEN** the draft holds one writing block with the same three paragraphs, and the frontmatter is unchanged
+- **AND** the log doesn't change
+
+Test: tests/blocks.test.ts › "putting a draft in a block keeps its paragraphs and frontmatter, and logs nothing"

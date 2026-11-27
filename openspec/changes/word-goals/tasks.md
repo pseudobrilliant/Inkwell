@@ -26,5 +26,4 @@
 
 ## Workflow follow-up
 
-- After the block-word-log change is merged, rebase this branch onto master.
-- Archive after block-word-log is archived, so `openspec/specs/` holds word-log before word-goals: `npx openspec archive word-goals`.
+- Archive once built: `npx openspec archive word-goals`.
