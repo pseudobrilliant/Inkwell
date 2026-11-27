@@ -94,7 +94,7 @@ Contribution is tracked at four levels. Each answers a different question.
 | **Mode** | Where is my writing going: capture, practice, stories, or projects? | `inkwell-contribution` (`src/contribution.ts`): counts per objective for a week, month, year, or all time (captures, resources added/reading/done, exercises, journals, prompts, stories started or grown from practice, revisions, projects, scenes) plus logged words per mode | built |
 | **Lifetime / streak** | What has all this added up to? | Inkwell's heatmap (`inkwell-heatmap`, also in the story and project panels), the current and longest streak, all-time view of `inkwell-contribution`. Not yet: a dedicated writing-life view (milestones, pieces finished) | partial |
 
-Every word number comes from the word log (see **Word log** under Rules). Daily and weekly word goals come next (idea `word-goals`).
+Every word number comes from the word log (see **Word log** under Rules). Daily and weekly word goals come next (change `word-goals`).
 
 **Counting rule:** practice writing (journal, exercises) **never** counts toward a piece's progress. It **does** count toward the day and lifetime levels. Piece-level numbers come only from drafts and scenes.
 
