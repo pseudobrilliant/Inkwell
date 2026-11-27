@@ -11,7 +11,7 @@ WHEN the writer runs "This became a story" on an exercise, or "Promote story to 
 - **THEN** the new draft holds one writing block with the block's current text, and no first-draft comment
 - **AND** the exercise is unchanged except for `became`
 
-Test: none yet [was tests/became.test.ts › "a story starts from the block's current text"]
+Test: tests/became.test.ts › "a story starts from the block's current text"
 
 #### Scenario: Promoting keeps the first draft out of scenes
 - **GIVEN** a story draft with a reviewed block whose first draft contains `***`
@@ -19,7 +19,7 @@ Test: none yet [was tests/became.test.ts › "a story starts from the block's cu
 - **THEN** each scene holds one writing block with only current text, split at breaks in the current text only
 - **AND** the original draft, with the block and its comment, is kept in the project's `Archive/`
 
-Test: none yet [was tests/promote.test.ts › "scenes hold only current text, and the original draft is archived first"]
+Test: tests/promote.test.ts › "scenes hold only current text, and the original draft is archived first"
 
 ## ADDED Requirements
 
@@ -31,20 +31,37 @@ Inkwell's built-in story draft and journal templates SHALL hold an empty writing
 - **WHEN** the writer creates a short story
 - **THEN** its draft holds an empty writing block
 
-Test: none yet
+Test: tests/blocks.test.ts › "a new story draft holds an empty writing block"
 
 #### Scenario: A new scene
 - **WHEN** the writer adds a scene to a project
 - **THEN** the scene's body is an empty writing block
 
-Test: none yet
+Test: tests/blocks.test.ts › "a new scene's body is an empty writing block, unless it's given one"
 
 #### Scenario: Today's journal
 - **GIVEN** no custom journal template
 - **WHEN** the writer opens today's journal for the first time
 - **THEN** it holds an empty writing block and no `ktr-entries` block
 
-Test: none yet
+Test: tests/blocks.test.ts › "today's journal holds an empty writing block and no ktr-entries block"
+
+### Requirement: Word count on the block
+Every writing block's toolbar SHALL show a word count tool with the words in what the block shows, counted as in the "Word counts" requirement, kept up to date while the writer types. Once the block has been reviewed, in Review and Edited it SHALL also show the change since the first draft, and in Draft mode, which shows the first draft, it SHALL count the first draft.
+
+#### Scenario: Writing a block
+- **GIVEN** a block that was never reviewed, holding "I have come back before." and "Again."
+- **WHEN** the toolbar shows
+- **THEN** the word count shows 6 words, and it goes up as the writer types
+
+Test: tests/writingblocks.test.ts › "counts the words in a block that was never reviewed" [updating while typing is checked by hand]
+
+#### Scenario: Revising a reviewed block
+- **GIVEN** a reviewed block whose first draft has 4 words and whose writing now has 6
+- **WHEN** it's in Review
+- **THEN** the word count shows 6 words (+2)
+
+Test: tests/writingblocks.test.ts › "a reviewed block shows its words and the change since the first draft"
 
 ### Requirement: Writing that won't count
 WHEN the story panel shows a story whose draft has no writing block, or the project panel shows scenes without one, Inkwell SHALL say their writing isn't counted and offer "Put in a writing block", which wraps the note's body, below its frontmatter, in one block.
@@ -54,7 +71,7 @@ WHEN the story panel shows a story whose draft has no writing block, or the proj
 - **WHEN** the story panel shows the story
 - **THEN** it says the draft's writing isn't counted and offers "Put in a writing block"
 
-Test: none yet
+Test: tests/blocks.test.ts › "a draft without a block is found, and one with a block isn't"
 
 #### Scenario: Putting a draft in a block
 - **GIVEN** a story draft of three plain paragraphs
@@ -62,7 +79,7 @@ Test: none yet
 - **THEN** the draft holds one writing block with the same three paragraphs, and the frontmatter is unchanged
 - **AND** the log doesn't change
 
-Test: none yet
+Test: tests/blocks.test.ts › "putting a draft in a block keeps its paragraphs and frontmatter, and logs nothing"
 
 ## REMOVED Requirements
 

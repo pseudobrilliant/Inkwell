@@ -6,12 +6,12 @@ import { openTodaysJournal } from "./journal";
 import { addStarterDrills, newDrill } from "./drills";
 import { InboxView, INBOX_VIEW, isInboxFile, triageMenu } from "./inbox";
 import { exerciseBecameStory, isExercise } from "./became";
-import { KeepTheRhythm } from "./integrations/keep-the-rhythm";
 import { StoryView, STORY_VIEW } from "./storyview";
 import { snapshotDraft } from "./revisions";
 import { promoteToLongForm } from "./promote";
 import { registerHomeBlocks } from "./homeblocks";
 import { registerContributionBlocks } from "./contribution";
+import { registerWordBlocks } from "./wordblocks";
 import { openHome } from "./home";
 import { pick } from "./modals";
 import { formatProgress, newCodexNote, newShortStory, showStoryProgress, Story, storyForFile, storyProgress } from "./stories";
@@ -21,16 +21,18 @@ import { newProject, newScene, projectForFile, projectProgress } from "./project
 import { WritingTimer } from "./timer";
 import { createResourcesBase, exerciseFromResource } from "./resources";
 import { registerWritingBlocks } from "./blockhost";
+import { WordLog } from "./wordlogstore";
 
 export default class InkwellPlugin extends Plugin {
   settings!: InkwellSettings;
-  ktr!: KeepTheRhythm;
+  words!: WordLog;
   timer!: WritingTimer;
   private statusEl: HTMLElement | null = null;
 
   async onload() {
     const legacy = await this.loadSettings();
-    this.ktr = new KeepTheRhythm(this.app);
+    this.words = new WordLog(this);
+    this.words.register();
     this.addSettingTab(new InkwellSettingTab(this.app, this));
     this.timer = new WritingTimer(this);
     await this.migrateLegacyState(legacy);
@@ -124,6 +126,7 @@ export default class InkwellPlugin extends Plugin {
     storyCommand("promote-long-form", "Promote story to long form", (s) => promoteToLongForm(this, s));
     registerHomeBlocks(this);
     registerContributionBlocks(this);
+    registerWordBlocks(this);
 
     // Writing blocks
     registerWritingBlocks(this);

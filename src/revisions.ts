@@ -12,7 +12,7 @@ export interface Revision {
 }
 
 /** Save the current draft as "<Draft> vN" in Archive/ and bump the working draft to vN+1.
- *  The working draft keeps its name, so links and Keep the Rhythm history stay attached. */
+ *  The working draft keeps its name, so links and its word log history stay attached. */
 export async function snapshotDraft(plugin: InkwellPlugin, story: Story): Promise<void> {
   const { app } = plugin;
   const draft = story.draft;

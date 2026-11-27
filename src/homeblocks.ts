@@ -1,4 +1,4 @@
-import { debounce, MarkdownRenderChild, MarkdownRenderer, moment, normalizePath, TFile } from "obsidian";
+import { debounce, MarkdownRenderChild, moment, normalizePath, TFile } from "obsidian";
 import type InkwellPlugin from "./main";
 import { listInbox } from "./inbox";
 import { listLongProjects, projectWords } from "./projects";
@@ -112,7 +112,7 @@ export function registerHomeBlocks(plugin: InkwellPlugin): void {
               status: p.status,
               words: p.words,
               target: p.target,
-              week: draft ? await plugin.ktr.wordsThisWeek((path) => path === draft.path) : null,
+              week: draft ? await plugin.words.wordsThisWeek((path) => path === draft.path) : null,
               last: p.lastWorked ?? 0,
             });
           }
@@ -129,7 +129,7 @@ export function registerHomeBlocks(plugin: InkwellPlugin): void {
               status,
               words: await projectWords(plugin, lp),
               target: Number(fm?.target_wordcount) || 0,
-              week: await plugin.ktr.wordsThisWeek((path) => path.startsWith(scenesPrefix)),
+              week: await plugin.words.wordsThisWeek((path) => path.startsWith(scenesPrefix)),
               last: Math.max(0, ...lp.scenes.map((f) => f.stat.mtime)),
             });
           }
@@ -160,21 +160,5 @@ export function registerHomeBlocks(plugin: InkwellPlugin): void {
         }
       })
     );
-  });
-
-  // ```inkwell-heatmap```  Keep the Rhythm heatmap of story drafts + scenes only (option: weeks: 24)
-  plugin.registerMarkdownCodeBlockProcessor("inkwell-heatmap", async (src, el, ctx) => {
-    const st = plugin.ktr.status();
-    if (!st.ok) {
-      el.createDiv({ cls: "inkwell-muted", text: st.message });
-      return;
-    }
-    const weeks = parseInt(opts(src).weeks ?? "", 10) || 24;
-    const w = JSON.stringify(plugin.settings.folders.writing + "/");
-    const l = JSON.stringify(plugin.settings.folders.longProjects + "/");
-    const filter = `(filePath starts_with ${w} && filePath contains " - Draft.md") || (filePath starts_with ${l} && filePath contains "/Scenes/")`;
-    const child = new MarkdownRenderChild(el);
-    ctx.addChild(child);
-    await MarkdownRenderer.render(plugin.app, plugin.ktr.heatmapBlock(filter, weeks), el, ctx.sourcePath, child);
   });
 }

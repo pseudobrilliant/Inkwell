@@ -2,7 +2,7 @@
 
 ## Purpose
 
-Inkwell keeps its own log of the words a writer types in writing blocks, on every device, and builds every word number it shows on that log: words per day, week and mode, a piece's words this week, the streak, the heatmap and the `inkwell-words` block. Decisions behind this spec: [ADR 0007](../../decisions/0007-inkwell-keeps-its-own-word-log.md), [ADR 0006](../../decisions/0006-writing-block-first-draft-in-a-comment.md), [ADR 0003](../../decisions/0003-timer-state-in-device-local-storage.md).
+Inkwell keeps its own log of the words a writer types in writing blocks, on every device, and builds every word number it shows on that log: words per day, week and mode, a piece's words this week, the streak, the heatmap and the `inkwell-words` block. Decisions behind this spec: [ADR 0007](../../decisions/0007-inkwell-keeps-its-own-word-log.md), [ADR 0008](../../decisions/0008-word-log-is-per-device-monthly-notes.md), [ADR 0006](../../decisions/0006-writing-block-first-draft-in-a-comment.md), [ADR 0003](../../decisions/0003-timer-state-in-device-local-storage.md).
 
 ## ADDED Requirements
 
@@ -14,28 +14,28 @@ WHEN the writer edits a note in the editor, Inkwell SHALL log the net change in 
 - **WHEN** the writer types 25 words in a block
 - **THEN** today's log for that note goes up by 25
 
-Test: none yet
+Test: tests/writingblocks.test.ts › "typing in a block reports the words added"
 
 #### Scenario: Deleting in a block
 - **GIVEN** a note whose writing blocks hold 100 words
 - **WHEN** the writer deletes 40 words from a block and types 10
 - **THEN** today's log for that note goes down by 30
 
-Test: none yet
+Test: tests/writingblocks.test.ts › "deleting in a block reports the net change"
 
 #### Scenario: Typing outside a block
 - **GIVEN** a note with a writing block
 - **WHEN** the writer types 50 words in the note's Reflection section, below the block
 - **THEN** the log doesn't change
 
-Test: none yet
+Test: tests/writingblocks.test.ts › "typing outside a block reports nothing"
 
 #### Scenario: Entering review
 - **GIVEN** a block with 200 words that has never been reviewed
 - **WHEN** the writer switches it to Review, which saves its first draft
 - **THEN** the log doesn't change
 
-Test: none yet
+Test: tests/writingblocks.test.ts › "switching a block to review isn't counted"
 
 ### Requirement: Changes Inkwell or sync makes don't count
 Inkwell SHALL log only edits the writer makes in the editor. Notes Inkwell creates or rewrites itself (a new exercise, "This became a story", "Promote story to long form", a revision snapshot) and changes that arrive by sync or from another app SHALL NOT be logged.
@@ -45,14 +45,14 @@ Inkwell SHALL log only edits the writer makes in the editor. Notes Inkwell creat
 - **WHEN** the writer promotes it to long form
 - **THEN** the log doesn't change, though the scenes now hold 3,000 words in blocks
 
-Test: none yet
+Test: tests/promote.test.ts › "promoting logs no words, though the scenes hold the draft's words in blocks"
 
 #### Scenario: A change arrives by sync
 - **GIVEN** a note open on the desktop
 - **WHEN** sync brings in 300 words typed in its block on the phone
 - **THEN** the desktop logs nothing for it, and the phone's own log has the 300 words
 
-Test: none yet
+Test: tests/writingblocks.test.ts › "a change from sync in the middle isn't counted"
 
 ### Requirement: Each device keeps its own log
 Inkwell SHALL keep each device's log in files that only that device writes, in the word log folder (setting `folders.wordLog`, default `99 - System/Inkwell/Word log`), one subfolder per device and one file per month. WHEN Inkwell adds up words, it SHALL read every device's files, so a day written on two devices counts both.
@@ -62,14 +62,14 @@ Inkwell SHALL keep each device's log in files that only that device writes, in t
 - **WHEN** either device shows today's words
 - **THEN** it shows 350
 
-Test: none yet
+Test: tests/wordlogstore.test.ts › "two devices' files add up"
 
 #### Scenario: A device writes only its own files
 - **GIVEN** log files from the desktop and the phone in the word log folder
 - **WHEN** the writer types on the phone
 - **THEN** only the phone's files change
 
-Test: none yet
+Test: tests/wordlogstore.test.ts › "a flush writes only this device's file"
 
 ### Requirement: The log is plain notes
 Each log file SHALL be a Markdown note with frontmatter `type: word-log`, `device` and `month` (`YYYY-MM`), and a table with one row per day and note: the date (`YYYY-MM-DD`), the note's path, and the net words. Rows Inkwell can't read SHALL be skipped and kept as they are, not removed.
@@ -79,7 +79,7 @@ Each log file SHALL be a Markdown note with frontmatter `type: word-log`, `devic
 - **WHEN** the writer opens that month's log file in any Markdown editor
 - **THEN** it shows a row with `2026-11-26`, that path, and `25`
 
-Test: none yet
+Test: tests/wordlog.test.ts › "a log file is a plain note with a row per day and note"
 
 #### Scenario: A damaged row
 - **GIVEN** a log file with a row whose words aren't a number
@@ -87,7 +87,7 @@ Test: none yet
 - **THEN** that row is skipped and the other rows count
 - **AND** the row is still in the file after the next write
 
-Test: none yet
+Test: tests/wordlog.test.ts › "a damaged row is skipped, and kept after a write"
 
 ### Requirement: Renamed and moved notes
 WHEN a note with logged words is renamed or moved, Inkwell SHALL update the note's path in this device's log files.
@@ -97,7 +97,7 @@ WHEN a note with logged words is renamed or moved, Inkwell SHALL update the note
 - **WHEN** the writer renames the story to "The Lock"
 - **THEN** the story's words this week are still 500
 
-Test: none yet
+Test: tests/wordlogstore.test.ts › "renaming a story keeps its words this week"
 
 ### Requirement: The week starts on the writer's day
 Inkwell SHALL start each week on the day set in the setting "Week starts on" (`weekStart`, Monday by default) for every weekly number it shows.
@@ -107,7 +107,7 @@ Inkwell SHALL start each week on the day set in the setting "Week starts on" (`w
 - **WHEN** Inkwell shows words this week
 - **THEN** it counts from Sunday 2026-11-22
 
-Test: none yet
+Test: tests/wordlog.test.ts › "starts the week on the writer's day"
 
 ### Requirement: Words per mode and per piece
 Inkwell SHALL add up logged words by where the note is: practice (journals and exercise writing), stories (story drafts, not archived snapshots), projects (scenes), and all writing (everything except Resources). A piece's words this week SHALL count only its draft or its scenes. Practice words SHALL NOT count toward a piece.
@@ -117,14 +117,14 @@ Inkwell SHALL add up logged words by where the note is: practice (journals and e
 - **WHEN** the story panel shows the story
 - **THEN** it shows 400 words this week
 
-Test: none yet
+Test: tests/contribution.test.ts › "a story's words this week count only its draft"
 
 #### Scenario: Your contribution by mode
 - **GIVEN** this month's log has 1,000 practice words, 2,000 draft words and 500 scene words
 - **WHEN** `inkwell-contribution` shows this month
 - **THEN** it shows 1,000 practice words, 2,000 draft words, 500 scene words and 3,500 words in all
 
-Test: none yet
+Test: tests/contribution.test.ts › "adds up this month's words by mode"
 
 ### Requirement: Showing up and the streak
 A day SHALL count as showed up WHEN the writer's logged words for that day, across all writing, add up to more than zero. The streak SHALL be the number of showed-up days in a row up to today, or up to yesterday while today has no words yet. Inkwell SHALL also keep the longest streak.
@@ -134,21 +134,21 @@ A day SHALL count as showed up WHEN the writer's logged words for that day, acro
 - **WHEN** "Practice this week" shows today
 - **THEN** today isn't marked as showed up
 
-Test: none yet
+Test: tests/contribution.test.ts › "an exercise without writing doesn't count as showing up"
 
 #### Scenario: The streak before writing today
 - **GIVEN** words logged on each of the last 5 days, and none yet today
 - **WHEN** Inkwell shows the streak
 - **THEN** it shows 5 days
 
-Test: none yet
+Test: tests/wordlog.test.ts › "counts up to yesterday while today has no words yet"
 
 #### Scenario: A day of cutting
 - **GIVEN** a day where the writer deleted more words than they typed
 - **WHEN** Inkwell works out the streak
 - **THEN** that day doesn't count as showed up
 
-Test: none yet
+Test: tests/wordlog.test.ts › "a day of cutting doesn't count as showed up"
 
 ### Requirement: Heatmap
 The `inkwell-heatmap` block SHALL show one square per day for the last N weeks (option `weeks`, default 24), shaded by that day's logged words, with the words and date on hover or tap. Option `of` SHALL choose what counts: `pieces` (drafts and scenes, the default), `practice`, `stories`, `projects`, or `all`. The story and project panels SHALL show the same heatmap for their draft or scenes.
@@ -158,14 +158,14 @@ The `inkwell-heatmap` block SHALL show one square per day for the last N weeks (
 - **WHEN** the note renders
 - **THEN** it shows 48 weeks of days, shaded by all the writer's words
 
-Test: none yet
+Test: tests/wordblocks.test.ts › "Home's heatmap shows 48 weeks of all the writer's words"
 
 #### Scenario: A day with no words
 - **GIVEN** a day with nothing logged
 - **WHEN** the heatmap shows it
 - **THEN** its square is empty, and hovering it shows the date and 0 words
 
-Test: none yet
+Test: tests/wordlog.test.ts › "lays out weeks of days ending with this week, with empty days and future days"
 
 ### Requirement: The words block
 The `inkwell-words` block SHALL show the writer's words today, this week, and this month with the month's daily average, and the current and longest streak, all from the log across all writing.
@@ -175,7 +175,7 @@ The `inkwell-words` block SHALL show the writer's words today, this week, and th
 - **WHEN** the `inkwell-words` block renders
 - **THEN** it shows 300 today, 1,200 this week, 4,500 this month at 300 a day, and a 6-day streak
 
-Test: none yet
+Test: tests/wordlog.test.ts › "shows today, this week, this month with its daily average, and the streak"
 
 ### Requirement: No Keep the Rhythm
 Inkwell SHALL NOT read Keep the Rhythm's data or settings, or embed its blocks. Its built-in Home and journal templates SHALL use Inkwell's own blocks instead. Notes the writer already has SHALL NOT be changed.
@@ -185,11 +185,11 @@ Inkwell SHALL NOT read Keep the Rhythm's data or settings, or embed its blocks. 
 - **WHEN** the writer opens Home
 - **THEN** it's created with `inkwell-heatmap` and `inkwell-words` blocks and no `ktr-` blocks
 
-Test: none yet
+Test: tests/home.test.ts › "a new Home uses Inkwell's word blocks and no Keep the Rhythm blocks"
 
 #### Scenario: An existing Home
 - **GIVEN** a Home note that holds `ktr-heatmap` and `ktr-slots` blocks
 - **WHEN** the writer opens Home
 - **THEN** the note is unchanged
 
-Test: none yet
+Test: tests/home.test.ts › "an existing Home is opened unchanged"

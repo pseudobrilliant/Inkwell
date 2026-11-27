@@ -6,6 +6,7 @@ vi.mock("../src/modals", () => ({
 }));
 
 import { exerciseBecameStory, workSection } from "../src/became";
+import { findBlocks } from "../src/writingblocks";
 import { fakePlugin, FakeApp } from "./helpers/fake-app";
 
 const note = (body: string) => `---\ntype: exercise\n---\n${body}`;
@@ -44,8 +45,8 @@ describe("exerciseBecameStory", () => {
     const plugin = fakePlugin(app);
     await exerciseBecameStory(plugin, app.file(EX));
 
-    const draft = app.textOf("02 - Stories/Low Tide/Low Tide - Draft.md");
-    expect(draft).toContain("The boat sat.\n\nThen the sea came back.");
+    const draft = app.textOf("02 - Stories/Low Tide/Low Tide - Draft.md") ?? "";
+    expect(findBlocks(draft).map((b) => b.text)).toEqual(["The boat sat.\n\nThen the sea came back."]);
     expect(draft).not.toContain("Good.");
     expect(app.fmOfPath("02 - Stories/Low Tide/Low Tide.md")).toMatchObject({ type: "story", from: "[[2026-11-25 Low Tide]]" });
     expect(app.fmOfPath(EX)).toMatchObject({ type: "exercise", became: "[[Low Tide]]" });
@@ -60,8 +61,10 @@ describe("exerciseBecameStory", () => {
     const app = new FakeApp().seed({ [EX]: withBlock });
     await exerciseBecameStory(fakePlugin(app), app.file(EX));
     const draft = app.textOf("02 - Stories/Low Tide/Low Tide - Draft.md") ?? "";
-    expect(draft).toContain("The boat came back.\nThen the sea.");
-    expect(draft).not.toMatch(/\[!writing\]|first-draft|The boat sat|Old ending/);
+    const blocks = findBlocks(draft);
+    expect(blocks).toHaveLength(1);
+    expect(blocks[0]).toMatchObject({ text: "The boat came back.\nThen the sea.", firstDraft: null });
+    expect(draft).not.toMatch(/first-draft|The boat sat|Old ending/);
     expect(app.textOf(EX)?.endsWith("## Reflection\nGood.")).toBe(true);
   });
 });

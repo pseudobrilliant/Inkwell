@@ -27,10 +27,19 @@ A CodeMirror view plugin in the block editor watches transactions. A transaction
 
 Counting every keystroke would be wasteful, so the plugin keeps a **baseline**: on the first counted transaction it records the block words of the state before it, and after 2 seconds idle, on blur, or when the editor closes or switches note, it reports `words now − baseline` and clears the baseline. If an uncounted transaction arrives while a baseline is open, the plugin first reports up to the state before it, then starts again after it, so a sync change never lands in a delta.
 
-The block code reports through a new host method, `onBlockWords(sourcePath, delta)`, finding the note with the existing `sourcePathOf(state)`; an editor with no file reports nothing. A word count shown in the toolbar would be a `BlockTool` later, and isn't part of this change. The count is a new pure `blockWords(text)` in `src/writingblocks.ts` (the sum of `countWords` over each block's current text), so the block code still doesn't depend on Inkwell.
+The block code reports through a new host method, `onBlockWords(sourcePath, delta)`, finding the note with the existing `sourcePathOf(state)`; an editor with no file reports nothing. The count is a new pure `blockWords(text)` (the sum of `countWords` over each block's current text). It lives in `src/writingblockwords.ts` with `countsAsWriting`, the baseline tally and `countWords` itself, which moved there from `src/wordcount.ts` (now a re-export), so the block code counts without importing the rest of Inkwell, as lint requires.
 
 - *Alternative: diff the file on `vault.on("modify")`.* It can't tell the writer's edit from sync or from Inkwell's own writes, which is the main way KTR goes wrong.
 - *Alternative: count only notes Inkwell created.* Too narrow: blocks work in any note.
+
+### 1a. A word count tool on the block
+
+The word count is a `BlockTool` the block code provides (`wordCountTool` in `src/writingblocktoolbar.ts`), and the host puts it first in `tools`, before the timer. What it shows is pure: `wordCountLabel(block)` in `src/writingblockwords.ts`, the words in what the block shows, plus the change since the first draft in Review and Edited.
+
+While the cursor is in a block, its toolbar is a CodeMirror widget that was only redrawn when the block's place or mode changed, so a count would go stale while the writer types on one line. The widget now compares the writing too, and its `updateDOM` refreshes in place: `BlockTool` gets an optional `update(el, ctx)`, called on tools that have one, so the toolbar isn't rebuilt on each keystroke and the timer keeps its own updates. The rendered callout and reading view already redraw the toolbar when the writing changes.
+
+- *Alternative: redraw the whole toolbar on each keystroke.* Simpler, but it rebuilds the timer's button and the mode buttons while the writer types.
+- *Alternative: show today's logged words for the note.* That's the log's job, and Home shows it. The block shows its own writing.
 
 ### 2. Per-device monthly notes in the vault (new ADR 0008)
 

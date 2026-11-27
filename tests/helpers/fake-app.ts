@@ -7,6 +7,7 @@ import { parse, stringify } from "yaml";
 import { normalizePath, TAbstractFile, TFile, TFolder } from "obsidian";
 import type InkwellPlugin from "../../src/main";
 import { mergeSettings, type InkwellSettings } from "../../src/settings";
+import { WordLog } from "../../src/wordlogstore";
 
 const FM = /^---\r?\n([\s\S]*?)\r?\n---(?:\r?\n|$)/;
 
@@ -218,12 +219,12 @@ function inertElement(): HTMLElement {
 }
 
 /**
- * A stand-in for the plugin: the fake app, default settings (with overrides), and Keep the Rhythm switched off.
+ * A stand-in for the plugin: the fake app, default settings (with overrides), and a real word log on the fake vault.
  * Registering events, intervals, commands and status bar items is accepted and does nothing.
  */
 export function fakePlugin(app = new FakeApp(), settings: Partial<InkwellSettings> = {}): InkwellPlugin & { app: FakeApp } {
   const s = mergeSettings(settings).settings;
-  return {
+  const plugin = {
     app,
     settings: s,
     saveSettings: async () => undefined,
@@ -232,14 +233,7 @@ export function fakePlugin(app = new FakeApp(), settings: Partial<InkwellSetting
     register: () => undefined,
     registerEvent: () => undefined,
     registerInterval: (id: number) => id,
-    ktr: {
-      status: () => ({ ok: false, message: "off" }),
-      wordsThisWeek: async () => null,
-      words: async () => null,
-      dailyWords: async () => null,
-      streak: async () => null,
-      ignoresComments: async () => null,
-      weekStart: async () => "2026-11-23",
-    },
   } as unknown as InkwellPlugin & { app: FakeApp };
+  plugin.words = new WordLog(plugin, { schedule: () => undefined });
+  return plugin;
 }

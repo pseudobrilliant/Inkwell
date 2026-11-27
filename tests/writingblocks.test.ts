@@ -38,6 +38,7 @@ import {
   type KeyEdit,
 } from "../src/writingblocks";
 import { blockTypeOf, WRITING_BLOCK } from "../src/writingblocktoolbar";
+import { BlockWordTally, blockWords, countsAsWriting, wordCountLabel } from "../src/writingblockwords";
 
 const reviewed = (mode = "review") =>
   ["> [!writing] Opening", "> I have come back before.", "", `%% writing-block first-draft ${mode}`, "I have been here before.", "%%"].join("\n");
@@ -644,5 +645,109 @@ describe("drafting in a block", () => {
       expect(draftingAt(text, text.indexOf("Revised."))).toBe(false);
       expect(draftingAt(text, text.indexOf("First."))).toBe(false);
     }
+  });
+});
+
+describe("words in blocks", () => {
+  it("adds up every block's current text", () => {
+    const text = ["> [!writing] One", "> Three words here.", "", "> [!writing]", "> Two more."].join("\n");
+    expect(blockWords(text)).toBe(5);
+  });
+
+  it("doesn't count a reviewed block's first draft or its title", () => {
+    // "I have come back before." is five words; the title and the kept first draft aren't counted.
+    expect(blockWords(reviewed())).toBe(5);
+  });
+
+  it("doesn't count words outside blocks", () => {
+    const text = ["---", "type: exercise", "---", "## Work", "> [!writing]", "> Inside.", "", "## Reflection", "Outside the block entirely."].join("\n");
+    expect(blockWords(text)).toBe(1);
+    expect(blockWords("Just prose, no block.")).toBe(0);
+  });
+});
+
+describe("counting the writer's words", () => {
+  const P = "Ex.md";
+  const note = (writing: string, outside = "") => `## Work\n> [!writing]\n> ${writing}\n\n## Reflection\n${outside}`;
+  const words = (n: number, w = "word") => Array.from({ length: n }, () => w).join(" ");
+
+  it("counts only the writer's own edits", () => {
+    for (const e of ["input.type", "input.paste", "input", "delete.backward", "delete.cut", "move.drop", "undo", "redo", "inkwell.block-key"]) {
+      expect(countsAsWriting(e)).toBe(true);
+    }
+    for (const e of [undefined, "", "inkwell.block-mode", "select.pointer", "inputs", "set"]) expect(countsAsWriting(e)).toBe(false);
+  });
+
+  it("typing in a block reports the words added", () => {
+    const t = new BlockWordTally();
+    expect(t.edit(true, P, () => note(words(100)))).toBeNull();
+    expect(t.edit(true, P, () => note(words(110)))).toBeNull();
+    expect(t.settle(() => note(words(125)))).toEqual({ sourcePath: P, words: 25 });
+    expect(t.settle(() => note(words(125)))).toBeNull();
+  });
+
+  it("deleting in a block reports the net change", () => {
+    const t = new BlockWordTally();
+    t.edit(true, P, () => note(words(100)));
+    expect(t.settle(() => note(words(70)))).toEqual({ sourcePath: P, words: -30 });
+  });
+
+  it("typing outside a block reports nothing", () => {
+    const t = new BlockWordTally();
+    t.edit(true, P, () => note(words(10)));
+    expect(t.settle(() => note(words(10), words(50)))).toBeNull();
+  });
+
+  it("a change from sync in the middle isn't counted", () => {
+    const t = new BlockWordTally();
+    t.edit(true, P, () => note(words(100)));
+    // Sync brings in 300 words while the writer has typed 5: what they typed is reported, then counting starts again.
+    expect(t.edit(false, P, () => note(words(105)))).toEqual({ sourcePath: P, words: 5 });
+    expect(t.counting).toBe(false);
+    t.edit(true, P, () => note(words(405)));
+    expect(t.settle(() => note(words(407)))).toEqual({ sourcePath: P, words: 2 });
+  });
+
+  it("switching a block to review isn't counted", () => {
+    const t = new BlockWordTally();
+    const before = note(words(200));
+    expect(t.edit(false, P, () => before)).toBeNull();
+    t.edit(true, P, () => before);
+    // A mode switch adds the first-draft comment; its words are never block words.
+    expect(t.edit(false, P, () => before)).toBeNull();
+    expect(t.settle(() => before + "\n%% writing-block first-draft review\n" + words(200) + "\n%%")).toBeNull();
+  });
+
+  it("an editor with no note reports nothing", () => {
+    const t = new BlockWordTally();
+    t.edit(true, null, () => note(words(1)));
+    expect(t.counting).toBe(false);
+    expect(t.settle(() => note(words(9)))).toBeNull();
+  });
+});
+
+describe("the word count tool", () => {
+  const block = (text: string) => findBlocks(text)[0]!;
+
+  it("counts the words in a block that was never reviewed", () => {
+    expect(wordCountLabel(block("> [!writing] Opening\n> I have come back before.\n>\n> Again."))).toEqual({
+      text: "6 words",
+      label: "6 words in this block",
+    });
+    expect(wordCountLabel(block("> [!writing]\n> One.")).text).toBe("1 word");
+    expect(wordCountLabel(block("> [!writing]\n> ")).text).toBe("0 words");
+  });
+
+  it("a reviewed block shows its words and the change since the first draft", () => {
+    const reviewedWith = (mode: BlockMode, now: string, first: string) =>
+      block(["> [!writing]", `> ${now}`, "", `%% writing-block first-draft ${mode}`, first, "%%"].join("\n"));
+    expect(wordCountLabel(reviewedWith("review", "I have come back before, twice.", "I have been here."))).toEqual({
+      text: "6 words (+2)",
+      label: "6 words now, 4 words in the first draft",
+    });
+    expect(wordCountLabel(reviewedWith("edited", "Back.", "I have been here.")).text).toBe("1 word (−3)");
+    expect(wordCountLabel(reviewedWith("review", "Same four words here.", "Four words were here.")).text).toBe("4 words (±0)");
+    // Draft mode after review shows the first draft, so it counts that.
+    expect(wordCountLabel(reviewedWith("writing", "Back.", "I have been here."))).toEqual({ text: "4 words", label: "4 words in the first draft" });
   });
 });

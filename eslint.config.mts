@@ -30,7 +30,7 @@ export default defineConfig(
   ...obsidianmd.configs.recommended,
   {
     files: ["src/**/*.ts"],
-    rules: { "obsidianmd/ui/sentence-case": ["warn", { brands: ["Inkwell", "Obsidian", "Keep the Rhythm", "StoryLine", "Bases"] }] },
+    rules: { "obsidianmd/ui/sentence-case": ["warn", { brands: ["Inkwell", "Obsidian", "StoryLine", "Bases"] }] },
   },
   {
     // Writing blocks are a self-contained component (openspec/changes/archive/2026-11-26-writing-blocks/design.md, decision 10): they

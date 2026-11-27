@@ -4,11 +4,12 @@
  * editing, so it looks the same in each. What it shows comes from the block type: for the writing block, its modes.
  *
  * Writing blocks don't depend on the rest of Inkwell (design decision 10). The host (Inkwell) passes in what it
- * wants done around a switch, such as the Keep the Rhythm notice, through `WritingBlockHost`.
+ * wants done around a switch, such as stopping the writing timer, through `WritingBlockHost`.
  */
 import { Notice, type App, type Editor, type TFile } from "obsidian";
 import type { EditorView } from "@codemirror/view";
 import { BLOCK_MODES, findBlocks, setMode, type BlockMode, type TextChange, type WritingBlock } from "./writingblocks";
+import { wordCountLabel } from "./writingblockwords";
 
 /**
  * A control the host adds to a block's toolbar, drawn at the far right, after the modes (design decision 9). The tool decides for
@@ -18,6 +19,38 @@ export interface BlockTool {
   id: string;
   /** Draw into `el` for this block, or leave it empty. Called on each toolbar draw. */
   render(el: HTMLElement, ctx: { sourcePath: string; block: WritingBlock }): void;
+  /**
+   * Called on `el`, already drawn, when the block's writing changed while the writer types in it, without a new
+   * toolbar. Tools that show the writing (the word count) refresh here; others leave it out.
+   */
+  update?(el: HTMLElement, ctx: { sourcePath: string; block: WritingBlock }): void;
+}
+
+/** The word count: the words in what the block shows, and the change since the first draft once reviewed. */
+export const wordCountTool: BlockTool = {
+  id: "words",
+  render(el, ctx) {
+    el.createSpan({ cls: "inkwell-wordcount-tool" });
+    this.update?.(el, ctx);
+  },
+  update(el, { block }) {
+    const span = el.find(".inkwell-wordcount-tool");
+    if (!span) return;
+    const { text, label } = wordCountLabel(block);
+    span.setText(text);
+    span.setAttr("aria-label", label);
+  },
+};
+
+/** Refresh the tools in a drawn toolbar that can update in place, for the block as it is now. */
+export function updateTools(bar: HTMLElement, block: WritingBlock, ctx: ToolbarContext): void {
+  const { sourcePath } = ctx;
+  if (sourcePath === null) return;
+  for (const tool of ctx.tools) {
+    if (!tool.update) continue;
+    const el = bar.querySelector<HTMLElement>(`.inkwell-wb-tool[data-tool="${tool.id}"]`);
+    if (el) tool.update(el, { sourcePath, block });
+  }
 }
 
 /** Where a toolbar is drawn: the note it's in (null for an embed with no file), and the tools to draw. */
@@ -36,6 +69,11 @@ export interface WritingBlockHost {
    * editor (Live Preview), or that editor closes. Called only when the answer changes, for each editor.
    */
   onWritingInBlock(writing: boolean): void;
+  /**
+   * Called with the net words the writer added to a note's blocks (negative when they cut), after they pause, leave
+   * the editor or close it. Only the writer's own edits count: never a mode switch, Inkwell's rewrites or sync.
+   */
+  onBlockWords(sourcePath: string, words: number): void;
 }
 
 export interface BlockType {

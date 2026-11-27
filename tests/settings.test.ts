@@ -36,6 +36,13 @@ describe("mergeSettings", () => {
     expect(settings).not.toHaveProperty("lastCaptureKind");
   });
 
+  it("defaults the word log folder and the week start, and ignores a week start it can't read", () => {
+    const { settings } = mergeSettings({ weekStart: "someday" });
+    expect(settings.folders.wordLog).toBe("99 - System/Inkwell/Word log");
+    expect(settings.weekStart).toBe("monday");
+    expect(mergeSettings({ weekStart: "sunday" }).settings.weekStart).toBe("sunday");
+  });
+
   it("never shares status lists with the defaults", () => {
     const { settings } = mergeSettings({});
     settings.shortStatuses.push("abandoned");
@@ -81,6 +88,17 @@ describe("settings controls", () => {
     expect(s.shortStatuses).toEqual(["idea", "draft", "done"]);
     applyControlValue(s, "shortStatuses", " , ");
     expect(s.shortStatuses).toEqual(DEFAULT_SETTINGS.shortStatuses);
+  });
+
+  it("keeps the week start to a weekday", () => {
+    const s = fresh();
+    applyControlValue(s, "weekStart", "sunday");
+    expect(s.weekStart).toBe("sunday");
+    expect(controlValue(s, "weekStart")).toBe("sunday");
+    applyControlValue(s, "weekStart", "Funday");
+    expect(s.weekStart).toBe("monday");
+    applyControlValue(s, "folders.wordLog", "  ");
+    expect(s.folders.wordLog).toBe(DEFAULT_SETTINGS.folders.wordLog);
   });
 
   it("reads toggles strictly", () => {

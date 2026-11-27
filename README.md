@@ -56,14 +56,15 @@ A writing block is a box for the writing itself, apart from the prompt, goal and
   - **Draft** is where you write. Once you've reviewed, Draft shows your first draft, read-only.
   - **Review** shows what you've changed since the first draft while you keep revising: added words are highlighted and underlined, removed words are struck through.
   - **Edited** shows the revised text, clean.
+- **Word count:** every block's toolbar shows how many words it holds, as you type. Once you've reviewed, Review and Edited also show how far you've come from the first draft, such as **6 words (+2)**.
 - **Your first draft stays in the note.** The first time you review a block, Inkwell saves its text as the first draft, in a hidden comment just below it, folded to one line. Click it if you ever want to edit it by hand. Nothing ever needs accepting or rejecting.
-- **Keep the Rhythm:** turn on its "Don't count comments" setting, so the hidden first draft isn't counted as new words. Inkwell reminds you the first time you review if it's off.
 - **Typewriter Mode:** if you have the Typewriter Mode plugin, Inkwell turns it on while you write in a block and off when you leave, so its focus tools are there only while you write. Its own settings (folders, platforms, which features are on) still apply.
-- Moving work up (**This became a story**, **Promote**) takes a block's current text as plain paragraphs, never the first draft.
+- **Words you type in a block count** toward your day, your week and the piece (see **Words**). Words outside blocks don't.
+- Moving work up (**This became a story**, **Promote**) carries a block's current text into a writing block in the new note, never the first draft, so it keeps counting.
 - Without Inkwell, a block is an ordinary callout and the first draft an ordinary comment, so nothing is lost.
 
 ### Practice
-- **Today's journal:** opens or creates today's journal entry.
+- **Today's journal:** opens or creates today's journal entry, with a writing block for the day's writing.
 - **Prompts:** one small note per prompt, tracking how often and how recently you've used it, with a sortable Prompts table.
 - **Random prompt:** picks the prompts you've used least and longest ago first.
 - **Prompt of the day:** appears in the journal and on Home.
@@ -74,25 +75,35 @@ A writing block is a box for the writing itself, apart from the prompt, goal and
 - **This became a story:** promote an exercise into a short story, with a link back to it.
 
 ### Stories
-- **New short story:** builds a folder with a hub note (logline, premise, outline, status, next step) and a draft.
+- **New short story:** builds a folder with a hub note (logline, premise, outline, status, next step) and a draft that starts with a writing block.
 - **Characters & locations:** notes that work the same way in stories and projects. In a project they go to `Codex/`.
-- **Story panel:** a sidebar with the hub summary, draft word count, characters, notes, and next step. It also works for projects (see below).
+- **Story panel:** a sidebar with the hub summary, draft word count, words this week, the days you wrote on it, characters, notes, and next step. It also works for projects (see below).
+- **Put in a writing block:** a draft written before blocks, as plain paragraphs, isn't counted. The story panel says so and offers to put it in a writing block, keeping the text as it is.
 - **Progress:** status (idea → drafting → revising → done), word count against a target, and when you last worked on it.
 - **Revisions:** snapshot the draft as v2, v3, … with old versions moved to `Archive/`.
 
 ### Projects
 - **New project:** asks for a title, logline, genre, and word target, then builds the layout: a project note (logline, premise, outline by act, a parking lot for loose ideas, and a table of scenes), plus `Scenes/`, `Codex/Characters/`, `Codex/Locations/`, `Notes/`, `Research/`, and `Archive/`.
-- **New scene:** adds a scene at the end of the current project (or one you pick), numbered so scenes stay in order.
-- **Project panel:** the same sidebar shows a project's status, word count against its target, words this week, next step, scenes in order with status and word count, characters, locations, notes, and research.
+- **New scene:** adds a scene at the end of the current project (or one you pick), numbered so scenes stay in order. It starts with a writing block.
+- **Project panel:** the same sidebar shows a project's status, word count against its target, words this week, the days you wrote on it, next step, scenes in order with status and word count, characters, locations, notes, and research. Scenes without a writing block are marked, with **Put in a writing block**.
 - **Progress:** projects appear on Home's in-progress list and in the status bar, with total words across scenes.
-- **Promote a story:** if a short story outgrows one draft, Inkwell can turn it into a project, splitting the draft into scenes at headings or `***` breaks and moving its characters and locations into the codex. Writing blocks become plain paragraphs of their current text first. The original draft is archived first.
+- **Promote a story:** if a short story outgrows one draft, Inkwell can turn it into a project, splitting the draft into scenes at headings or `***` breaks and moving its characters and locations into the codex. Each scene holds its writing in a writing block, made from the current text only, so a break inside a first draft never splits a scene. The original draft is archived first.
 
 ### Home
 - A built-in **Home** dashboard (command + ribbon).
-- Code blocks you can use in any note: `inkwell-inbox`, `inkwell-in-progress`, `inkwell-prompt`, `inkwell-practice`, `inkwell-contribution`, `inkwell-heatmap`.
-- **Practice this week** (`inkwell-practice`): which days you showed up, your streak, and the exercises, prompts, journal entries, minutes written, and practice words for the week.
-- **Your contribution** (`inkwell-contribution`): what you added to each part of your writing this week, month, year, or all time: ideas captured and sorted; resources added, being read, and done; exercises, journal entries, and prompts used; stories started, grown from practice, and revised; projects started or promoted and scenes added. Word counts per mode appear when Keep the Rhythm is installed.
+- Code blocks you can use in any note: `inkwell-inbox`, `inkwell-in-progress`, `inkwell-prompt`, `inkwell-practice`, `inkwell-contribution`, `inkwell-words`, `inkwell-heatmap`.
+- **Words** (`inkwell-words`): words today, this week, and this month with your daily average, and your streak, current and best.
+- **Heatmap** (`inkwell-heatmap`): one square per day, shaded by the words you wrote. Options: `weeks` (24 by default), `of` (`pieces`, the default, for story drafts and scenes; or `practice`, `stories`, `projects`, `all`), and `stops`, the word counts where the shade steps up (`1, 100, 500, 1000` by default). Home shows 48 weeks of all your writing.
+- **Practice this week** (`inkwell-practice`): which days you showed up (days you wrote words in a writing block), your streak, and the exercises, prompts, journal entries, minutes written, and practice words for the week.
+- **Your contribution** (`inkwell-contribution`): what you added to each part of your writing this week, month, year, or all time: ideas captured and sorted; resources added, being read, and done; exercises, journal entries, and prompts used; stories started, grown from practice, and revised; projects started or promoted and scenes added, with the words you wrote in each.
 - A **New…** picker that creates any Inkwell note from one command.
+
+### Words
+Inkwell counts the words you type in writing blocks and keeps a log of them, so every number it shows (today, this week, a story's words this week, your streak, the heatmap) comes from your own writing.
+- **What counts:** the words you add or cut in a writing block, net, per note per day. Cutting more than you add makes a negative day, and a day only counts as showing up when its words are above zero. Writing outside blocks, the hidden first draft, and changes Inkwell or sync makes (a new note, promote, a mode switch, an edit on another device) never count.
+- **Practice counts for your day, never for a piece.** A piece's words this week come only from its draft or scenes.
+- **The log is plain notes,** in `99 - System/Inkwell/Word log` (changeable in settings): one folder per device and one note per month, with a table of date, note, and words. Each device writes only its own notes and Inkwell adds them all up, so syncing a phone and a desktop never loses a day. If you rename a note, the device you renamed it on updates its own log.
+- **Week starts on** (settings): the first day of the week for every weekly number. Monday by default.
 
 ## Installation
 
@@ -102,8 +113,6 @@ Inkwell isn't in the community plugin directory yet. Install it with [BRAT](http
 2. Run **BRAT: Add a beta plugin** and enter this repository's URL.
 3. Enable **Inkwell** in Settings → Community plugins.
 4. Open Inkwell's settings to set your folders, then run **Inkwell: Write default templates**.
-
-Keep the Rhythm is optional. If it's installed, Inkwell uses it for word counts per story and for heatmaps.
 
 ## Default folders
 
@@ -116,6 +125,7 @@ All of these can be changed in settings.
 | `02 - Stories` | Short stories |
 | `03 - Projects` | Long-form projects |
 | `05 - Resources` | Resources: what you're reading and learning from |
+| `99 - System/Inkwell/Word log` | The word log: one folder per device, one note per month |
 
 ## Development
 

@@ -1,11 +1,15 @@
 import { describe, expect, it } from "vitest";
 import { inInkwellFolders, opts } from "../src/homeblocks";
-import { sceneFileName } from "../src/projects";
+import { ensureTodaysJournal } from "../src/journal";
+import { createScene, projectFromFolder, sceneFileName } from "../src/projects";
+import { createShortStory } from "../src/stories";
+import { fakePlugin, FakeApp } from "./helpers/fake-app";
+import { hasWritingBlock, putInWritingBlock } from "../src/blockhost";
 import { rankPrompts, type Prompt } from "../src/prompts";
 import { BUILTIN_TEMPLATES, render } from "../src/templates";
 import { findBlocks } from "../src/writingblocks";
 import { DEFAULT_SETTINGS } from "../src/settings";
-import type { TFile } from "obsidian";
+import type { App, TFile } from "obsidian";
 
 describe("block options", () => {
   it("reads key: value lines, lower-casing keys", () => {
@@ -35,6 +39,61 @@ describe("templates", () => {
     expect(blocks).toHaveLength(1);
     expect(blocks[0]?.text).toBe("");
     expect(BUILTIN_TEMPLATES.exercise.split("\n")[blocks[0]!.start - 1]).toBe("## Work");
+  });
+});
+
+describe("new notes start with a writing block", () => {
+  const empty = (text: string | undefined) => findBlocks(text ?? "").map((b) => [b.text, b.firstDraft]);
+
+  it("a new story draft holds an empty writing block", async () => {
+    const plugin = fakePlugin();
+    await createShortStory(plugin, { title: "Tide", logline: "", genre: "", target: 0 }, { open: false });
+    expect(empty(plugin.app.textOf("02 - Stories/Tide/Tide - Draft.md"))).toEqual([["", null]]);
+  });
+
+  it("a new scene's body is an empty writing block, unless it's given one", async () => {
+    const app = new FakeApp().seed({ "03 - Projects/Low/Low.md": "---\ntype: storyline\n---\n" });
+    const plugin = fakePlugin(app);
+    const project = projectFromFolder(plugin, app.folder("03 - Projects/Low"))!;
+    const scene = await createScene(plugin, project, "Arrival", { open: false });
+    expect(empty(app.textOf(scene.path))).toEqual([["", null]]);
+    const given = await createScene(plugin, project, "Storm", { body: "It rained.", open: false });
+    expect(app.textOf(given.path)).toMatch(/\nIt rained\.\n$/);
+  });
+
+  it("today's journal holds an empty writing block and no ktr-entries block", async () => {
+    const plugin = fakePlugin();
+    const file = await ensureTodaysJournal(plugin);
+    const text = plugin.app.textOf(file.path);
+    expect(empty(text)).toEqual([["", null]]);
+    expect(text).not.toMatch(/ktr-|Words Written/);
+  });
+});
+
+const asApp = (a: FakeApp) => a as unknown as App;
+
+describe("writing that won't count", () => {
+  const DRAFT = "02 - Stories/Tide/Tide - Draft.md";
+  const fm = "---\ntype: draft\nversion: 2\n---\n";
+  const plain = fm + "The boat sat.\n\nThen the sea came back.\n\nIt was low tide.\n";
+
+  it("a draft without a block is found, and one with a block isn't", async () => {
+    const app = new FakeApp().seed({ [DRAFT]: plain, "b.md": "> [!writing]\n> Counted.\n" });
+    expect(await hasWritingBlock(asApp(app), app.file(DRAFT))).toBe(false);
+    expect(await hasWritingBlock(asApp(app), app.file("b.md"))).toBe(true);
+  });
+
+  it("putting a draft in a block keeps its paragraphs and frontmatter, and logs nothing", async () => {
+    const plugin = fakePlugin(new FakeApp().seed({ [DRAFT]: plain }));
+    const { app } = plugin;
+    expect(await putInWritingBlock(asApp(app), app.file(DRAFT))).toBe(true);
+    const text = app.textOf(DRAFT) ?? "";
+    expect(text.startsWith(fm)).toBe(true);
+    expect(findBlocks(text).map((b) => b.text)).toEqual(["The boat sat.\n\nThen the sea came back.\n\nIt was low tide."]);
+    // A second time changes nothing.
+    expect(await putInWritingBlock(asApp(app), app.file(DRAFT))).toBe(false);
+    await plugin.words.store.flush();
+    expect(await plugin.words.words(() => true, "0000-00-00")).toBe(0);
   });
 });
 

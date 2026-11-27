@@ -162,10 +162,11 @@
 /* Greeting line */
 .home-page h1 { font-size: 1.6em; margin-bottom: 0.2em; }
 
-/* Keep the Rhythm stats + heatmap sit in one soft panel */
-.home-page .slots-codeblock,
-.home-page .heatmap-codeblock {
+/* Words and the heatmap sit in soft panels */
+.home-page .inkwell-words,
+.home-page .block-language-inkwell-heatmap {
   background: var(--background-secondary);
+  border: none;
   border-radius: 10px;
   padding: 10px 14px;
   margin-bottom: 8px;
@@ -241,18 +242,36 @@
   --bases-cards-line-height: 26px;
 }
 
-/* ---------- Keep the Rhythm heatmap ----------
-   Drawn by the plugin as-is; only spacing around it is set here. */
-.home-page .heatmap-codeblock {
-  width: 100%;
-  justify-content: center;
-  margin: 6px 0 24px;
-}
-/* a little more room between day names and the first column of dots */
-.home-page .heatmap-codeblock .heatmap-content { padding-left: 42px; }
+/* space above the shortcut pills, below the words */
+.home-page .inkwell-words { margin-bottom: 14px; }
 
-/* space above the shortcut pills, below the stats */
-.home-page .block-language-ktr-slots { margin-bottom: 14px; }
+/* ---------- Heatmap (inkwell-heatmap, story panel) ----------
+   One column per week, one square per day. Squares shrink to fit a narrow screen. */
+.inkwell-heatmap { overflow-x: auto; padding: var(--size-2-1) 0; }
+.inkwell-heatmap-grid {
+  display: grid;
+  grid-template-rows: repeat(7, auto);
+  grid-template-columns: repeat(var(--inkwell-heatmap-weeks, 24), minmax(0, 14px));
+  grid-auto-flow: column;
+  gap: 3px;
+  justify-content: center;
+}
+.inkwell-heat {
+  aspect-ratio: 1;
+  border-radius: 2px;
+  background: var(--background-modifier-border);
+}
+.inkwell-heat.is-future { visibility: hidden; }
+.inkwell-heat-1 { background: color-mix(in srgb, var(--interactive-accent) 30%, transparent); }
+.inkwell-heat-2 { background: color-mix(in srgb, var(--interactive-accent) 55%, transparent); }
+.inkwell-heat-3 { background: color-mix(in srgb, var(--interactive-accent) 80%, transparent); }
+.inkwell-heat-4 { background: var(--interactive-accent); }
+
+/* ---------- Words (inkwell-words) ---------- */
+.inkwell-words-row { display: flex; flex-wrap: wrap; justify-content: space-around; gap: var(--size-4-3); text-align: center; }
+.inkwell-words-stat { min-width: 5em; }
+.inkwell-words-num { font-size: var(--font-ui-large); font-weight: var(--font-semibold); font-variant-numeric: tabular-nums; }
+.inkwell-words-stat .inkwell-muted { font-size: var(--font-ui-smaller); }
 
 /* Inkwell blocks inside Home callouts: the callout is already the card */
 .home-page .callout .inkwell-block { border: none; padding: 0; }
@@ -451,6 +470,13 @@ body {
 .inkwell-timer-tool .is-hidden {
   display: none;
 }
+/* The word count: quiet text, so it never pulls the eye from the writing. */
+.inkwell-wordcount-tool {
+  color: var(--text-muted);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+  padding: 2px 4px;
+}
 /* The writing timer: a ring that fills toward the goal (or a timer icon with no goal), then the time. */
 .inkwell-wb-toolbar button.inkwell-timer-tool {
   display: inline-flex;
@@ -560,3 +586,7 @@ body {
 .markdown-source-view.mod-cm6 .cm-line.inkwell-wb-line.inkwell-wb-cont {
   text-indent: 0 !important;
 }
+
+/* A draft or scene whose writing isn't counted (no writing block) */
+.inkwell-not-counted { display: flex; flex-wrap: wrap; align-items: center; gap: var(--size-2-2); margin-top: var(--size-2-2); font-size: var(--font-ui-small); }
+.inkwell-not-counted button { font-size: var(--font-ui-smaller); height: auto; padding: var(--size-2-1) var(--size-4-2); }
