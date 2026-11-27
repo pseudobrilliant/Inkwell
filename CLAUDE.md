@@ -62,7 +62,7 @@ Feeding the well is the ethos behind Capture. It has two sides, and both go thro
 - **Progress signal:** total words across scenes against the target, words this week, scene statuses, next step.
 
 ### Shared view: Home
-- **Home** (`src/home.ts`, `src/homeblocks.ts`, `src/contribution.ts`) brings everything together: inbox, in-progress pieces, practice, prompt of the day, words and the heatmap. It is built from code blocks (`inkwell-inbox`, `inkwell-in-progress`, `inkwell-prompt`, `inkwell-practice`, `inkwell-contribution`, `inkwell-words`, `inkwell-heatmap`; the last two in `src/wordblocks.ts`) that work in any note. The **New…** picker creates any Inkwell note.
+- **Home** (`src/home.ts`, `src/homeblocks.ts`, `src/contribution.ts`) brings everything together: inbox, in-progress pieces, practice, prompt of the day, words against the daily and weekly goals, and the heatmap. It is built from code blocks (`inkwell-inbox`, `inkwell-in-progress`, `inkwell-prompt`, `inkwell-practice`, `inkwell-contribution`, `inkwell-words`, `inkwell-heatmap`; the last two in `src/wordblocks.ts`) that work in any note. The **New…** picker creates any Inkwell note.
 
 ### Core component: writing blocks
 The writing block is the heart of the writing experience (constitution, design principles 1–3). Writing blocks are not a mode. They're a core component that supports features across Capture, Practice and the writing modes, starting with exercises.
@@ -89,12 +89,12 @@ Contribution is tracked at four levels. Each answers a different question.
 
 | Level | Question it answers | What exists now | Status |
 |---|---|---|---|
-| **Session / day** | Did I show up today? | `inkwell-practice` (`src/contribution.ts`): days showed up this week, streak, exercises, prompts used, journal entries, minutes written (`writing_min`, from the writing timer), practice words. `inkwell-words`: words today, this week and this month, and the streak. A day counts as showed up only when its block words are above zero | built |
+| **Session / day** | Did I show up today? | `inkwell-practice` (`src/contribution.ts`): days showed up this week, streak, exercises, prompts used, journal entries, minutes written (`writing_min`, from the writing timer), practice words. `inkwell-words`: words today, this week and this month, the streak, and today and this week against the daily and weekly word goals (`dailyWordGoal`, `weeklyWordGoal`; 0 = off) with the goal days this week, which the practice strip also marks. A day counts as showed up only when its block words are above zero; a goal day is its own number and never breaks the streak. A notice shows when typing reaches a goal | built |
 | **Piece** | Is this story or project moving? | Words against `target_wordcount`, words this week (from the log), status, last worked on, status bar, Home in-progress list | built |
 | **Mode** | Where is my writing going: capture, practice, stories, or projects? | `inkwell-contribution` (`src/contribution.ts`): counts per objective for a week, month, year, or all time (captures, resources added/reading/done, exercises, journals, prompts, stories started or grown from practice, revisions, projects, scenes) plus logged words per mode | built |
 | **Lifetime / streak** | What has all this added up to? | Inkwell's heatmap (`inkwell-heatmap`, also in the story and project panels), the current and longest streak, all-time view of `inkwell-contribution`. Not yet: a dedicated writing-life view (milestones, pieces finished) | partial |
 
-Every word number comes from the word log (see **Word log** under Rules). Daily and weekly word goals come next (change `word-goals`).
+Every word number comes from the word log (see **Word log** under Rules). The word goals are counted from it across all writing (spec `word-goals`); the goal math is pure (`goalProgress`, `goalNoticesDue` in `src/wordlog.ts`), and which goal notices a device has shown is device-local (`inkwell-goal-notices`).
 
 **Counting rule:** practice writing (journal, exercises) **never** counts toward a piece's progress. It **does** count toward the day and lifetime levels. Piece-level numbers come only from drafts and scenes.
 

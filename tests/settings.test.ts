@@ -43,6 +43,14 @@ describe("mergeSettings", () => {
     expect(mergeSettings({ weekStart: "sunday" }).settings.weekStart).toBe("sunday");
   });
 
+  it("a goal that isn't a number falls back to the default", () => {
+    const { settings } = mergeSettings({ dailyWordGoal: "lots", weeklyWordGoal: -5 });
+    expect(settings.dailyWordGoal).toBe(300);
+    expect(settings.weeklyWordGoal).toBe(1500);
+    expect(mergeSettings({ dailyWordGoal: 0, weeklyWordGoal: 2000 }).settings).toMatchObject({ dailyWordGoal: 0, weeklyWordGoal: 2000 });
+    expect(mergeSettings({ dailyWordGoal: 12.5 }).settings.dailyWordGoal).toBe(300);
+  });
+
   it("never shares status lists with the defaults", () => {
     const { settings } = mergeSettings({});
     settings.shortStatuses.push("abandoned");
@@ -99,6 +107,17 @@ describe("settings controls", () => {
     expect(s.weekStart).toBe("monday");
     applyControlValue(s, "folders.wordLog", "  ");
     expect(s.folders.wordLog).toBe(DEFAULT_SETTINGS.folders.wordLog);
+  });
+
+  it("each goal is set on its own", () => {
+    const s = fresh();
+    applyControlValue(s, "dailyWordGoal", 500);
+    expect(s).toMatchObject({ dailyWordGoal: 500, weeklyWordGoal: 1500 });
+    applyControlValue(s, "weeklyWordGoal", 0);
+    expect(s).toMatchObject({ dailyWordGoal: 500, weeklyWordGoal: 0 });
+    expect(controlValue(s, "weeklyWordGoal")).toBe(0);
+    applyControlValue(s, "dailyWordGoal", "lots");
+    expect(s.dailyWordGoal).toBe(300);
   });
 
   it("reads toggles strictly", () => {

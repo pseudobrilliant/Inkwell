@@ -1,6 +1,8 @@
 import { describe, expect, it } from "vitest";
 import { moment } from "obsidian";
-import { deviceId, DEVICE_KEY, WordLog } from "../src/wordlogstore";
+import { deviceId, DEVICE_KEY, GOAL_NOTICES_KEY, WordLog } from "../src/wordlogstore";
+// The stub module itself (the same instance "obsidian" resolves to in tests), for its recorded notices.
+import { Notice } from "./helpers/obsidian";
 import { addToLog, newLogFile, parseLog } from "../src/wordlog";
 import { fakePlugin, FakeApp } from "./helpers/fake-app";
 
@@ -17,8 +19,9 @@ function setup(files: Record<string, string> = {}) {
   const app = new FakeApp().seed(files);
   app.saveLocalStorage(DEVICE_KEY, "desktop-0001");
   const scheduled: (() => void)[] = [];
-  const words = new WordLog(fakePlugin(app), { schedule: (fn) => void scheduled.push(fn) });
-  return { app, words, scheduled };
+  const plugin = fakePlugin(app);
+  const words = new WordLog(plugin, { schedule: (fn) => void scheduled.push(fn) });
+  return { app, words, scheduled, plugin };
 }
 
 describe("the device id", () => {
@@ -49,6 +52,12 @@ describe("storing the log", () => {
     words.add(DRAFT, 200);
     await words.store.flush();
     expect(await words.words(() => true, TODAY)).toBe(350);
+  });
+
+  it("two devices add up toward one goal", async () => {
+    const { words } = setup({ [`${LOG}/mobile-0002/${MONTH}.md`]: logOf("mobile-0002", [{ path: DRAFT, words: 150 }]) });
+    words.add(DRAFT, 200);
+    expect((await words.goals()).today).toMatchObject({ words: 350, goal: 300, met: true });
   });
 
   it("a second flush adds to the same row", async () => {
@@ -99,5 +108,58 @@ describe("renames", () => {
     expect(parseLog(app.textOf(`${LOG}/desktop-0001/${MONTH}.md`) ?? "")).toEqual([
       { date: TODAY, path: "02 - Stories/The Lock/The Lock - Draft.md", words: 507 },
     ]);
+  });
+});
+
+describe("goal notices", () => {
+  const DAILY = /^Daily word goal reached/;
+  const typed = async (words: WordLog, n: number) => {
+    words.add(DRAFT, n);
+    await words.goalCheck;
+  };
+
+  function withGoals(daily: number, weekly: number, files: Record<string, string> = {}) {
+    const s = setup(files);
+    s.plugin.settings.dailyWordGoal = daily;
+    s.plugin.settings.weeklyWordGoal = weekly;
+    Notice.messages = [];
+    return s;
+  }
+
+  it("typing past the daily goal shows a notice", async () => {
+    const { words } = withGoals(300, 0);
+    await typed(words, 280);
+    expect(Notice.messages).toEqual([]);
+    await typed(words, 30);
+    expect(Notice.messages).toEqual(["Daily word goal reached: 310 words today."]);
+  });
+
+  it("cutting and typing again shows no second notice", async () => {
+    const { app, words } = withGoals(300, 0);
+    await typed(words, 310);
+    await typed(words, -50);
+    await typed(words, 50);
+    expect(Notice.messages.filter((m) => DAILY.test(m))).toHaveLength(1);
+    expect(app.loadLocalStorage(GOAL_NOTICES_KEY)).toMatchObject({ day: TODAY });
+  });
+
+  it("a goal reached on another device shows no notice here", async () => {
+    const { words } = withGoals(300, 0, { [`${LOG}/mobile-0002/${MONTH}.md`]: logOf("mobile-0002", [{ path: DRAFT, words: 320 }]) });
+    await typed(words, 10);
+    expect(Notice.messages).toEqual([]);
+  });
+
+  it("typing past the weekly goal shows a notice", async () => {
+    const { words } = withGoals(0, 1500);
+    await typed(words, 1490);
+    await typed(words, 20);
+    expect(Notice.messages).toEqual(["Weekly word goal reached: 1,510 words this week."]);
+  });
+
+  it("words in a note that isn't writing never show a notice", async () => {
+    const { words } = withGoals(10, 0);
+    words.add("05 - Resources/A poem.md", 50);
+    await words.goalCheck;
+    expect(Notice.messages).toEqual([]);
   });
 });

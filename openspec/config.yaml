@@ -15,7 +15,7 @@ context: |
   A change that reverses or replaces an accepted ADR needs a new ADR that supersedes it.
   Capability names (flat, kebab-case): capture, resources, practice, writing-timer, short-form,
   long-form, movement, practice-stats (day level), piece-progress (piece level),
-  contribution (mode and lifetime levels), word-log (ADRs 0007, 0008). A capability is behaviour the writer can see.
+  contribution (mode and lifetime levels), word-log (ADRs 0007, 0008), word-goals. A capability is behaviour the writer can see.
   Cross-cutting rules (data model, settings sync) stay in CLAUDE.md and ADRs, not in a spec of their own.
   Ideas nobody is working on yet live in openspec/ideas/, not in openspec/changes/. A change picked up
   from an idea starts from that idea's Why and constraints, and deletes the idea file.

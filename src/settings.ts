@@ -43,6 +43,10 @@ export interface InkwellSettings {
   captureToJournal: boolean;
   /** The day every weekly number starts on. */
   weekStart: Weekday;
+  /** Words a day across all writing (spec word-goals). 0 = off. */
+  dailyWordGoal: number;
+  /** Words a week across all writing, set on its own. 0 = off. */
+  weeklyWordGoal: number;
   promptOfDay?: { date: string; path: string };
 }
 
@@ -93,7 +97,14 @@ export const DEFAULT_SETTINGS: InkwellSettings = {
   defaultSceneTarget: 800,
   captureToJournal: false,
   weekStart: "monday",
+  dailyWordGoal: 300,
+  weeklyWordGoal: 1500,
 };
+
+/** A word goal: a whole number of 0 or more (0 = off), or `fallback` for anything else. */
+export function goalValue(v: unknown, fallback: number): number {
+  return typeof v === "number" && Number.isInteger(v) && v >= 0 ? v : fallback;
+}
 
 
 /**
@@ -115,6 +126,8 @@ export function mergeSettings(raw: unknown): { settings: InkwellSettings; legacy
     shortStatuses: [...(rest.shortStatuses ?? DEFAULT_SETTINGS.shortStatuses)],
     longStatuses: [...(rest.longStatuses ?? DEFAULT_SETTINGS.longStatuses)],
     weekStart: isWeekday(rest.weekStart) ? rest.weekStart : DEFAULT_SETTINGS.weekStart,
+    dailyWordGoal: goalValue(rest.dailyWordGoal, DEFAULT_SETTINGS.dailyWordGoal),
+    weeklyWordGoal: goalValue(rest.weeklyWordGoal, DEFAULT_SETTINGS.weeklyWordGoal),
   };
   const legacy = timer !== undefined || lastCaptureKind !== undefined ? { timer, lastCaptureKind } : null;
   return { settings, legacy };
@@ -155,6 +168,8 @@ type ControlKey =
   | "homeNote"
   | "captureToJournal"
   | "weekStart"
+  | "dailyWordGoal"
+  | "weeklyWordGoal"
   | "journalDateFormat"
   | "exerciseMinutes"
   | "journalMinutes"
@@ -285,6 +300,8 @@ export class InkwellSettingTab extends PluginSettingTab {
               options: Object.fromEntries(WEEKDAYS.map((d) => [d, d.charAt(0).toUpperCase() + d.slice(1)])),
             },
           },
+          number("Daily word goal", "Words a day across all your writing, practice included. 0 = no daily goal.", "dailyWordGoal"),
+          number("Weekly word goal", "Words a week, set on its own, so you can miss a day and still make it. 0 = no weekly goal.", "weeklyWordGoal"),
         ],
       },
       {
@@ -342,6 +359,8 @@ export function applyControlValue(s: InkwellSettings, key: string, value: unknow
     s.journalDateFormat = asText(value) || DEFAULT_SETTINGS.journalDateFormat;
   } else if (key === "weekStart") {
     s.weekStart = isWeekday(value) ? value : DEFAULT_SETTINGS.weekStart;
+  } else if (key === "dailyWordGoal" || key === "weeklyWordGoal") {
+    s[key] = goalValue(value, DEFAULT_SETTINGS[key]);
   } else if (key === "captureToJournal") {
     s.captureToJournal = value === true;
   } else if (key === "exerciseMinutes") {
