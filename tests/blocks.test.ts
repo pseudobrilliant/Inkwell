@@ -66,7 +66,7 @@ describe("new notes start with a writing block", () => {
     const file = await ensureTodaysJournal(plugin);
     const text = plugin.app.textOf(file.path);
     expect(empty(text)).toEqual([["", null]]);
-    expect(text).toMatch(/> \[!writing\]\n> \n\n## Words written today\n```inkwell-entries\n```\n$/);
+    expect(text).toMatch(/\n## Daily Goals\n- \n\n## Ideas, Observations, Reflections\n\n\n## Journal Notes\n\n> \[!writing\]\n> \n\n## Writing\n\n## Words Written today\n```inkwell-entries\n```\n$/);
     expect(text).not.toMatch(/ktr-/);
   });
 });

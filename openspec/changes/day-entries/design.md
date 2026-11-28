@@ -24,7 +24,7 @@ The word log already holds what this block needs. Every device writes rows of da
 
 3. **What the block shows is a pure `entriesView(entries, goals)`**, like `wordStats`: each entry's name (the base name), words and path, then the total with a goal from `goalOf`, the words block's helper. `renderEntries` only draws it. A note that still exists is drawn as an Obsidian internal link (`a.internal-link` with `data-href`, opened with `workspace.openLinkText(path, sourcePath)`), so hovering previews it and Ctrl/⌘-click opens a new tab. A deleted note is drawn as plain text.
 
-4. **Template:** the built-in journal template gets `## Words written today` and an empty `inkwell-entries` block after the Writing section. `ensureTodaysJournal` already writes `created`, so a new journal's block shows its own day from the start.
+4. **Template:** the built-in journal template takes the writer's own sections: `## Daily Goals`, `## Ideas, Observations, Reflections`, `## Journal Notes` holding the writing block, an empty `## Writing`, and `## Words Written today` with an empty `inkwell-entries` block. `ensureTodaysJournal` already writes `created`, so a new journal's block shows its own day from the start.
 
 ## Mobile and sync
 
@@ -34,7 +34,7 @@ The word log already holds what this block needs. Every device writes rows of da
 ## Tests
 
 - **Pure:** `dayEntries` (grouping, devices, zero sums, resources and log left out, order, total) in `tests/wordlog.test.ts`. `entriesDay` and `entriesView` (option, `created`, file name, today, deleted note, goal on and off, empty day) in `tests/wordblocks.test.ts`.
-- **Fake vault:** today's journal from the built-in template holds the writing block, then the "Words written today" section with the block (`tests/blocks.test.ts`).
+- **Fake vault:** today's journal from the built-in template holds the writing block, under "Journal Notes", then "Writing", then the "Words Written today" section with the block (`tests/blocks.test.ts`).
 
 ## Risks / Trade-offs
 

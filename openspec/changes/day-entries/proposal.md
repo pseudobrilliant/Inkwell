@@ -8,7 +8,7 @@ Before Inkwell kept its own word count, each journal ended with a "Words written
 
 - **A new `inkwell-entries` block** lists what the writer wrote on one day: each note they typed in that day, linked, with its net words, summed across devices, largest first. It ends with the day's total against the daily word goal.
 - **The block knows its day.** In a journal it shows the journal's own day: its `created` date, or else a file name in the journal date format. In any other note it shows today. A `date: YYYY-MM-DD` option picks a day. So an old journal keeps showing what was written that day, and a template needs no Templater to fill in the date.
-- **The built-in journal template ends with a "Words written today" section** holding the block, after the Writing section's writing block.
+- **The built-in journal template ends with a "Words Written today" section** holding the block. The template's sections become the writer's own: Daily Goals; Ideas, Observations, Reflections; Journal Notes (the writing block); Writing; Words Written today.
 - **Counts like the rest of the word log:** all writing (practice, drafts and scenes) is listed. Resources and the log itself never are. A note whose words add up to zero for the day isn't listed, and a note that's since been deleted shows its name without a link.
 - **Encourages, doesn't scold.** A day with nothing written says so plainly. There's no warning and no red.
 
@@ -25,7 +25,7 @@ None.
 
 ### Modified Capabilities
 - `word-log`: a new requirement for the `inkwell-entries` block: which day it shows, what it lists, and the total against the daily goal.
-- `writing-blocks`: the "Drafts, scenes and journals start with a block" requirement changes, because a new journal now also ends with a "Words written today" section holding `inkwell-entries`, where it used to say that the writing block replaces that section.
+- `writing-blocks`: the "Drafts, scenes and journals start with a block" requirement changes, because a new journal's writing block now sits under "Journal Notes" and the journal ends with a "Words Written today" section holding `inkwell-entries`, where it used to say that the writing block replaces that section.
 
 ## Impact
 

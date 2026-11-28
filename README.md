@@ -64,7 +64,7 @@ A writing block is a box for the writing itself, apart from the prompt, goal and
 - Without Inkwell, a block is an ordinary callout and the first draft an ordinary comment, so nothing is lost.
 
 ### Practice
-- **Today's journal:** opens or creates today's journal entry, with a writing block for the day's writing and a **Words written today** section that lists what you wrote that day.
+- **Today's journal:** opens or creates today's journal entry, with sections for Daily Goals; Ideas, Observations, Reflections; Journal Notes (a writing block); Writing; and **Words Written today**, which lists what you wrote that day.
 - **Prompts:** one small note per prompt, tracking how often and how recently you've used it, with a sortable Prompts table.
 - **Random prompt:** picks the prompts you've used least and longest ago first.
 - **Prompt of the day:** appears in the journal and on Home.

@@ -105,11 +105,14 @@ writing_min:
 ## Ideas, Observations, Reflections
 
 
-## Writing
+## Journal Notes
+
 > [!writing]
 > 
 
-## Words written today
+## Writing
+
+## Words Written today
 \`\`\`inkwell-entries
 \`\`\`
 `,

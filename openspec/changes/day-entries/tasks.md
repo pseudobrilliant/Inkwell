@@ -11,15 +11,15 @@
 
 ## 3. The journal template
 
-- [x] 3.1 End the built-in journal template in `src/templates.ts` with `## Words written today` and an empty `inkwell-entries` block, after the Writing section (design decision 4). In `tests/blocks.test.ts`, "today's journal holds an empty writing block and no ktr-entries block" also checks that the section and block come after the writing block. It keeps its name, so the main spec's `Test:` line still finds it before the change is archived. Verify `npm test` passes.
+- [x] 3.1 Give the built-in journal template in `src/templates.ts` the writer's sections, ending with `## Words Written today` and an empty `inkwell-entries` block (design decision 4). In `tests/blocks.test.ts`, "today's journal holds an empty writing block and no ktr-entries block" also checks that the section and block come after the writing block. It keeps its name, so the main spec's `Test:` line still finds it before the change is archived. Verify `npm test` passes.
 
 ## 4. Docs and checks
 
-- [x] 4.1 Update the README: the `inkwell-entries` block and its `date` option in the Words section, and the journal's "Words written today" section. Update CLAUDE.md: add `inkwell-entries` to the Home blocks list and the Practice tools, and the journal's section to the Practice structure. No new ADR. Verify `npm run spec` passes.
+- [x] 4.1 Update the README: the `inkwell-entries` block and its `date` option in the Words section, and the journal's sections, ending with "Words Written today". Update CLAUDE.md: add `inkwell-entries` to the Home blocks list and the Practice tools, and the journal's section to the Practice structure. No new ADR. Verify `npm run spec` passes.
 - [x] 4.2 Check that every scenario in the change's specs names a test (no `Test: none yet` left). Run `npm run check` and verify it passes with zero lint errors.
 - [ ] 4.3 Run `npm run deploy:test` and check by hand, on desktop and on a phone: an old journal's block shows its own day, today's journal updates as the writer types (after the flush), links open the note and hover previews it, a deleted note shows as plain text, and the bar in light and dark themes.
 
 ## Workflow follow-up
 
 - Archive once built: `npx openspec archive day-entries`.
-- In the writer's vault (by hand, not by Inkwell): add the "Words written today" section with `inkwell-entries` back to `99 - System/Templates/Daily Journal.md` and the journals of 2026-11-21, 22 and 23.
+- In the writer's vault (by hand, not by Inkwell): done 2026-11-27. The Daily Journal template and the journals of 2026-11-21, 22, 23 and 27 have the new sections with `inkwell-entries`, and "Write default templates" wrote Inkwell's template files.
