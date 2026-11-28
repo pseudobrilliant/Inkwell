@@ -4,7 +4,7 @@ import type { InkwellSettings } from "./settings";
 
 export type TemplateKey = keyof InkwellSettings["templates"];
 
-/** Home dashboard. {{practice}} comes from the folder settings. */
+/** Home dashboard. {{practice}} (the practice folder, from the folder settings) is still filled in for a custom Home template. */
 const HOME_TEMPLATE = `---
 aliases:
   - Home
@@ -45,22 +45,7 @@ title: none
 > \`\`\`
 > \`\`\`inkwell-prompt
 > \`\`\`
-> \`\`\`base
-> filters:
->   and:
->     - file.inFolder("{{practice}}")
->     - file.ext == "md"
->     - type != "prompt"
-> views:
->   - type: list
->     name: Practice
->     order:
->       - file.name
->       - note.type
->     sort:
->       - property: file.mtime
->         direction: DESC
->     limit: 7
+> \`\`\`inkwell-recent
 > \`\`\`
 
 ## 🌱 Your Contribution
