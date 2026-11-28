@@ -89,3 +89,4 @@ export class App extends Shell {}
 export const MarkdownRenderer = { render: async () => undefined };
 export const Platform = { isMobile: false, isDesktop: true };
 export function setIcon() {}
+export const Keymap = { isModEvent: () => false };

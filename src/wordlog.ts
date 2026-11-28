@@ -146,6 +146,31 @@ export function sumDays(days: ReadonlyMap<string, number>): number {
   return n;
 }
 
+/** One note's net words on a day, summed across devices. */
+export interface DayEntry {
+  path: string;
+  words: number;
+}
+
+/**
+ * What was written on one day (spec word-log, "The entries block"): each matching note's words summed across every
+ * device's rows, notes that come to zero left out, largest first, then by path. `total` is all the matching rows.
+ */
+export function dayEntries(rows: readonly LogRow[], day: string, match: (path: string) => boolean): { entries: DayEntry[]; total: number } {
+  const byPath = new Map<string, number>();
+  let total = 0;
+  for (const r of rows) {
+    if (r.date !== day || !match(r.path)) continue;
+    byPath.set(r.path, (byPath.get(r.path) ?? 0) + r.words);
+    total += r.words;
+  }
+  const entries = [...byPath]
+    .filter(([, words]) => words !== 0)
+    .map(([path, words]) => ({ path, words }))
+    .sort((a, b) => b.words - a.words || a.path.localeCompare(b.path));
+  return { entries, total };
+}
+
 export interface Streak {
   current: number;
   longest: number;
