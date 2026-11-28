@@ -10,6 +10,7 @@ import { ensureFolder } from "./util";
 import {
   addToLog,
   dailyWordsIn,
+  dayEntries,
   goalNoticesDue,
   goalProgress,
   newLogFile,
@@ -18,6 +19,7 @@ import {
   streakIn,
   sumDays,
   weekStartFor,
+  type DayEntry,
   type GoalNoticesShown,
   type GoalProgress,
   type Goals,
@@ -281,6 +283,11 @@ export class WordLog {
   /** All-writing words per day, ever. */
   async allDays(): Promise<Map<string, number>> {
     return this.dailyWords(modeMatchers(this.plugin).all, "0000-00-00");
+  }
+
+  /** What was written on a day (YYYY-MM-DD): each note's words across all writing, and the total. */
+  async dayEntries(day: string): Promise<{ entries: DayEntry[]; total: number }> {
+    return dayEntries(await this.store.rows(), day, modeMatchers(this.plugin).all);
   }
 
   /** Days showed up in a row (current and longest), across all writing. */

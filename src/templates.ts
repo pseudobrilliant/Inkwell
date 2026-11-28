@@ -108,6 +108,10 @@ writing_min:
 ## Writing
 > [!writing]
 > 
+
+## Words written today
+\`\`\`inkwell-entries
+\`\`\`
 `,
   exercise: `---
 type: exercise

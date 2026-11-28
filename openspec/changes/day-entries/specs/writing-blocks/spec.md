@@ -21,4 +21,4 @@ Test: tests/blocks.test.ts › "a new scene's body is an empty writing block, un
 - **WHEN** the writer opens today's journal for the first time
 - **THEN** it holds an empty writing block, then a "Words written today" section with an `inkwell-entries` block, and no `ktr-entries` block
 
-Test: tests/blocks.test.ts › "today's journal holds an empty writing block, then the day's entries, and no ktr-entries block"
+Test: tests/blocks.test.ts › "today's journal holds an empty writing block and no ktr-entries block"
