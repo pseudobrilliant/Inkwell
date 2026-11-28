@@ -4,7 +4,7 @@ import { askForm, pick } from "./modals";
 import { loadTemplate, render } from "./templates";
 import { cleanName, createNote, ensureFolder, uniquePath, fmOf, fmStr } from "./util";
 import { countWords } from "./wordcount";
-import { emptyBlock } from "./writingblocks";
+import { emptyBlock, REVISION } from "./writingblocks";
 
 /** Sub-folders every project gets (StoryLine-compatible layout). */
 export const PROJECT_FOLDERS = ["Scenes", "Codex/Characters", "Codex/Locations", "Notes", "Research", "Archive"];
@@ -178,8 +178,8 @@ export async function createScene(
   const file = await createNote(
     app,
     uniquePath(app, `${project.folder.path}/Scenes`, sceneFileName(seq, title)),
-    // A new scene starts with a writing block, so its writing counts (spec writing-blocks).
-    opts.body ? opts.body.trim() + "\n" : emptyBlock().join("\n") + "\n",
+    // A new scene starts with a revision block, so its writing counts and can be revised (spec writing-blocks).
+    opts.body ? opts.body.trim() + "\n" : emptyBlock(REVISION).join("\n") + "\n",
     fields
   );
   project.scenes.push(file);

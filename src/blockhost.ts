@@ -4,7 +4,7 @@
  */
 import type { App, TFile } from "obsidian";
 import type InkwellPlugin from "./main";
-import { blockAtLine, findBlocks, wrapBody, type BlockMode } from "./writingblocks";
+import { blockAtLine, findBlocks, REVISION, wrapBody, type BlockMode } from "./writingblocks";
 import { switchInEditor, wordCountTool, type WritingBlockHost } from "./writingblocktoolbar";
 import { newWritingBlock, writingBlockEditor } from "./writingblockeditor";
 import { registerWritingBlockView } from "./writingblockview";
@@ -38,7 +38,7 @@ export async function hasWritingBlock(app: App, file: TFile): Promise<boolean> {
 export async function putInWritingBlock(app: App, file: TFile): Promise<boolean> {
   let changed = false;
   await app.vault.process(file, (text) => {
-    const next = wrapBody(text);
+    const next = wrapBody(text, REVISION);
     if (next === null) return text;
     changed = true;
     return next;
@@ -58,13 +58,14 @@ export function registerWritingBlocks(plugin: InkwellPlugin): void {
   registerWritingBlockView(plugin, host);
 
   plugin.addCommand({ id: "new-writing-block", name: "New writing block", editorCallback: (editor) => newWritingBlock(editor) });
+  plugin.addCommand({ id: "new-revision-block", name: "New revision block", editorCallback: (editor) => newWritingBlock(editor, REVISION) });
   for (const { mode, id, name } of MODE_COMMANDS) {
     plugin.addCommand({
       id,
       name,
       editorCheckCallback: (checking, editor, info) => {
         const block = blockAtLine(findBlocks(editor.getValue()), editor.getCursor().line);
-        if (!block || block.mode === mode) return false;
+        if (!block || block.type !== "revision" || block.mode === mode) return false;
         if (!checking) switchInEditor(editor, info.file?.path ?? null, block.start, mode, host);
         return true;
       },
@@ -73,8 +74,9 @@ export function registerWritingBlocks(plugin: InkwellPlugin): void {
   plugin.registerEvent(
     plugin.app.workspace.on("editor-menu", (menu, editor, info) => {
       menu.addItem((i) => i.setTitle("New writing block").setIcon("pencil-line").onClick(() => newWritingBlock(editor)));
+      menu.addItem((i) => i.setTitle("New revision block").setIcon("file-diff").onClick(() => newWritingBlock(editor, REVISION)));
       const block = blockAtLine(findBlocks(editor.getValue()), editor.getCursor().line);
-      if (!block) return;
+      if (!block || block.type !== "revision") return;
       for (const { mode, name } of MODE_COMMANDS) {
         if (mode !== block.mode) menu.addItem((i) => i.setTitle(name).onClick(() => switchInEditor(editor, info.file?.path ?? null, block.start, mode, host)));
       }

@@ -98,9 +98,10 @@ describe("writing timer state", () => {
 });
 
 describe("timing by block", () => {
-  const block = "> [!writing]\n> Draft words.";
+  const block = "> [!writing|revision timer]\n> Draft words.";
   const exercise = `## Prompt\nWrite about rain.\n\n${block}\n\n## Reflection\nIt went well.`;
-  const reviewed = (mode: string) => `> [!writing]\n> Revised.\n\n%% writing-block first-draft ${mode}\nFirst.\n%%`;
+  const reviewed = (mode: string) => `> [!writing|revision timer]\n> Revised.\n\n%% writing-block first-draft ${mode}\nFirst.\n%%`;
+  const freewrite = "> [!writing|timer]\n> Free words.";
   const at = (text: string, s: string) => text.indexOf(s);
 
   it("typing outside a Draft block is not drafting", () => {
@@ -108,7 +109,7 @@ describe("timing by block", () => {
     expect(how).toBe("block");
     expect(T.countsAsTyping(how, exercise, at(exercise, "Write about rain."))).toBe(false);
     expect(T.countsAsTyping(how, exercise, at(exercise, "It went well."))).toBe(false);
-    expect(T.countsAsTyping(how, exercise, at(exercise, "[!writing]"))).toBe(false);
+    expect(T.countsAsTyping(how, exercise, at(exercise, "[!writing|revision timer]"))).toBe(false);
   });
 
   it("typing in a reviewed block is not drafting", () => {
@@ -125,7 +126,7 @@ describe("timing by block", () => {
   });
 
   it("drafting in either of two blocks counts", () => {
-    const text = `${block}\n\nBetween.\n\n> [!writing]\n> Second block.`;
+    const text = `${block}\n\nBetween.\n\n> [!writing|revision timer]\n> Second block.`;
     const how = T.timing("exercise", text);
     expect(T.countsAsTyping(how, text, at(text, "Draft words."))).toBe(true);
     expect(T.countsAsTyping(how, text, at(text, "Second block."))).toBe(true);
@@ -152,12 +153,63 @@ describe("timing by block", () => {
     expect(T.countsAsTyping("note", "Today I wrote.", 0)).toBe(true);
   });
 
-  it("only exercises are timed by block", () => {
-    expect(T.timing("journal", block)).toBe("note");
-    expect(T.timing("draft", block)).toBe("none");
-    expect(T.timing("scene", block)).toBe("none");
-    expect(T.timing("", block)).toBe("none");
-    expect(T.countsAsTyping("none", block, at(block, "Draft words."))).toBe(false);
+  it("an untimed block gets no timer", () => {
+    const untimed = "> [!writing|revision]\n> Draft words.";
+    expect(T.timing("journal", untimed)).toBe("note");
+    expect(T.timing("exercise", untimed)).toBe("note");
+    expect(T.timing("draft", untimed)).toBe("none");
+    expect(T.timing("scene", "> [!writing]\n> Free.")).toBe("none");
+    expect(T.countsAsTyping("none", untimed, at(untimed, "Draft words."))).toBe(false);
+  });
+
+  it("a note with a timed block is timed by block", () => {
+    expect(T.timing("character", freewrite)).toBe("block");
+    expect(T.timing("", freewrite)).toBe("block");
+    expect(T.timing("journal", `Morning.\n\n${freewrite}`)).toBe("block");
+    const text = `Morning.\n\n${freewrite}`;
+    expect(T.countsAsTyping("block", text, at(text, "Morning."))).toBe(false);
+    expect(T.countsAsTyping("block", text, at(text, "Free words."))).toBe(true);
+  });
+
+  it("drafting and free-writing in one note share its timer", () => {
+    const text = `## Work\n${block}\n\n## Reflection\n${freewrite}`;
+    const how = T.timing("exercise", text);
+    expect(how).toBe("block");
+    expect(T.countsAsTyping(how, text, at(text, "Draft words."))).toBe(true);
+    expect(T.countsAsTyping(how, text, at(text, "Free words."))).toBe(true);
+    let s = T.typed(T.armed("Ex.md", 10), t0);
+    s = T.typed(s, t0 + 5 * MIN);
+    s = T.typed(s, t0 + 8 * MIN);
+    expect(T.elapsed(s, t0 + 8 * MIN)).toBe(8 * MIN);
+  });
+
+  it("the goal applies only while a timed revision block is being drafted", () => {
+    expect(T.goalFor("exercise", 10, `${block}\n\n${freewrite}`)).toBe(10);
+    expect(T.goalFor("exercise", 10, `${reviewed("review")}\n\n${freewrite}`)).toBe(0);
+    expect(T.goalFor("exercise", 10, freewrite)).toBe(0);
+    expect(T.goalFor("exercise", 10, "> [!writing|revision]\n> Untimed.")).toBe(0);
+    expect(T.goalFor("journal", 10, block)).toBe(0);
+    expect(T.goalFor("exercise", -5, block)).toBe(0);
+  });
+
+  it("a keystroke in a timed block starts a timer when none is in use", () => {
+    const text = `Notes.\n\n${freewrite}`;
+    const pos = at(text, "Free words.");
+    expect(T.startsOnTyping(null, "Char.md", "block", text, pos, true)).toBe(true);
+    expect(T.startsOnTyping(T.armed("Journal.md", 0), "Char.md", "block", text, pos, true)).toBe(true);
+    expect(T.startsOnTyping(null, "Char.md", "block", text, at(text, "Notes."), true)).toBe(false);
+    expect(T.startsOnTyping(null, "Char.md", "block", text, pos, false)).toBe(false);
+    expect(T.startsOnTyping(null, "Char.md", "none", text, pos, true)).toBe(false);
+    // An armed timer for this note starts by the usual first keystroke instead.
+    expect(T.startsOnTyping(T.armed("Char.md", 0), "Char.md", "block", text, pos, true)).toBe(false);
+  });
+
+  it("a keystroke in a timed block leaves another note's timer alone", () => {
+    const text = freewrite;
+    const pos = at(text, "Free words.");
+    const running = T.typed(T.armed("ExA.md", 10), t0);
+    expect(T.startsOnTyping(running, "Journal.md", "block", text, pos, true)).toBe(false);
+    expect(T.startsOnTyping(T.pause(running, "user", t0 + MIN), "Journal.md", "block", text, pos, true)).toBe(false);
   });
 
   it("an exercise whose blocks are all reviewed has nothing to draft", () => {
@@ -177,9 +229,10 @@ describe("timing by block", () => {
 
   it("a first review stops the note's timer, and re-arms it while a block is still in draft", () => {
     const s = T.typed(T.armed("Ex.md", 10), t0);
-    expect(T.afterFirstReview(s, "Ex.md", reviewed("review"))).toEqual({ log: true, rearmGoal: null });
-    expect(T.afterFirstReview(s, "Ex.md", `${reviewed("review")}\n\n${block}`)).toEqual({ log: true, rearmGoal: 10 });
-    expect(T.afterFirstReview(s, "Other.md", reviewed("review"))).toEqual({ log: false, rearmGoal: null });
-    expect(T.afterFirstReview(null, "Ex.md", reviewed("review"))).toEqual({ log: false, rearmGoal: null });
+    expect(T.afterFirstReview(s, "Ex.md", reviewed("review"), 0)).toEqual({ log: true, rearmGoal: null });
+    expect(T.afterFirstReview(s, "Ex.md", `${reviewed("review")}\n\n${block}`, 10)).toEqual({ log: true, rearmGoal: 10 });
+    expect(T.afterFirstReview(s, "Ex.md", `${reviewed("review")}\n\n${freewrite}`, 0)).toEqual({ log: true, rearmGoal: 0 });
+    expect(T.afterFirstReview(s, "Other.md", reviewed("review"), 10)).toEqual({ log: false, rearmGoal: null });
+    expect(T.afterFirstReview(null, "Ex.md", reviewed("review"), 10)).toEqual({ log: false, rearmGoal: null });
   });
 });

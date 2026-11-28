@@ -2,7 +2,7 @@
 
 ## Purpose
 
-A writing block marks the writing in a note, apart from the prompt, goal and reflection around it, so Inkwell can help with it. Its first feature is review: write, see what changed while revising, then read the result, with the first draft kept in the same note.
+A writing block marks the writing in a note, apart from the prompt, goal and notes around it, so Inkwell can help with it. Every block is a free-write block unless its header says otherwise: just the box to write in. A revision block (`[!writing|revision]`) adds review: write, see what changed while revising, then read the result, with the first draft kept in the same note. Any block can be timed (`timer` in its header).
 
 Decisions behind this spec: [ADR 0002](../../decisions/0002-rely-on-keep-the-rhythm-for-word-logs.md), [ADR 0006](../../decisions/0006-writing-block-first-draft-in-a-comment.md).
 
@@ -429,7 +429,7 @@ Inkwell's built-in exercise template SHALL start its `## Work` section with an e
 - **WHEN** the writer creates an exercise
 - **THEN** its Work section holds an empty writing block
 
-Test: tests/blocks.test.ts › "the built-in exercise template starts Work with a writing block"
+Test: tests/blocks.test.ts › "the built-in exercise template starts Work with a timed revision block and Reflection with a timed free-write block"
 
 ### Requirement: Drafts, scenes and journals start with a block
 Inkwell's built-in story draft and journal templates SHALL hold an empty writing block, and a new scene SHALL start with one. In a journal it replaces the "Words written" section. Template files the writer already has, and notes that already exist, SHALL NOT be changed.

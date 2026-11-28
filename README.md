@@ -49,42 +49,48 @@ Inkwell helps you organize and write projects, but it stops short of publishing 
 - **Exercise from a resource:** start a timed exercise that responds to or imitates a resource (the open one, or one you pick). Its **Try This** section becomes the prompt.
 
 ### Writing blocks
-A writing block is a box for the writing itself, apart from the prompt, goal and notes around it. It looks like a typed page: a typewriter font, each paragraph indented like a tab. You can use one in any note, and new exercises start with one.
-- **New writing block** (command or right-click): adds an empty block, wraps the selected text in one, or turns writing you indented with tabs into one.
+A writing block is a box for the writing itself, apart from the prompt, goal and notes around it. It looks like a typed page: a typewriter font, each paragraph indented like a tab. You can use one in any note. There are two kinds, and either can be timed:
+- **Free-write** (`> [!writing]`), the default: just the box. No modes and nothing to review, for writing without stopping to fix. Its toolbar says **Free-write**.
+- **Revision** (`> [!writing|revision]`): the box plus **Draft, Review, Edited** (below), for writing you'll come back to and revise.
+- **Timed:** add `timer` to the header (`> [!writing|timer]`, `> [!writing|revision timer]`) and the writing timer runs in that block, in any note (see **Writing timer**). Without it, the block isn't timed.
+- **Revise where you revise:** a new exercise's Work is a timed revision block and its Reflection a timed free-write block. Story drafts and new scenes are revision blocks. If you use your own Exercise or Story Draft template, add `revision` and `timer` to its blocks, or run **Write default templates**.
+- **New writing block** (command or right-click) adds an empty free-write block, wraps the selected text in one, or turns writing you indented with tabs into one. **New revision block** does the same with a revision block.
 - **Write in the box:** you only ever see your writing, never Markdown. Enter always starts a new paragraph, and the down arrow takes you out of the block below it. **Shift+Enter** starts a new line in the same paragraph, without the indent, for verse or a sign-off.
-- **Draft, Review, Edited:** every block has a toolbar with three modes, and you can switch between them at any time.
+- **Draft, Review, Edited:** a revision block's toolbar has three modes, and you can switch between them at any time.
   - **Draft** is where you write. Once you've reviewed, Draft shows your first draft, read-only.
   - **Review** shows what you've changed since the first draft while you keep revising: added words are highlighted and underlined, removed words are struck through.
   - **Edited** shows the revised text, clean.
 - **Word count:** every block's toolbar shows how many words it holds, as you type. Once you've reviewed, Review and Edited also show how far you've come from the first draft, such as **6 words (+2)**.
-- **Your first draft stays in the note.** The first time you review a block, Inkwell saves its text as the first draft, in a hidden comment just below it, folded to one line. Click it if you ever want to edit it by hand. Nothing ever needs accepting or rejecting.
+- **Your first draft stays in the note.** The first time you review a revision block, Inkwell saves its text as the first draft, in a hidden comment just below it, folded to one line. Click it if you ever want to edit it by hand. Nothing ever needs accepting or rejecting.
 - **Typewriter Mode:** if you have the Typewriter Mode plugin, Inkwell turns it on while you write in a block and off when you leave, so its focus tools are there only while you write. Its own settings (folders, platforms, which features are on) still apply.
 - **Words you type in a block count** toward your day, your week and the piece (see **Words**). Words outside blocks don't.
-- Moving work up (**This became a story**, **Promote**) carries a block's current text into a writing block in the new note, never the first draft, so it keeps counting.
+- Moving work up (**This became a story**, **Promote**) carries a block's current text into a revision block in the new note, never the first draft, so it keeps counting.
+- A plain `[!writing]` block you reviewed before there were two kinds stays a revision block, with its modes and first draft.
 - Without Inkwell, a block is an ordinary callout and the first draft an ordinary comment, so nothing is lost.
 
 ### Practice
-- **Today's journal:** opens or creates today's journal entry, with sections for Daily Goals; Ideas, Observations, Reflections; Journal Notes (a writing block); Writing; and **Words Written today**, which lists what you wrote that day.
+- **Today's journal:** opens or creates today's journal entry, with sections for Daily Goals; Ideas, Observations, Reflections; Journal Notes (a free-write block); Writing; and **Words Written today**, which lists what you wrote that day.
 - **Prompts:** one small note per prompt, tracking how often and how recently you've used it, with a sortable Prompts table.
 - **Random prompt:** picks the prompts you've used least and longest ago first.
 - **Prompt of the day:** appears in the journal and on Home.
-- **Exercises:** start an exercise from a prompt with a time goal. Its Work section starts with a writing block.
+- **Exercises:** start an exercise from a prompt with a time goal. Its Work section starts with a timed revision block and its Reflection with a timed free-write block.
 - **Drills:** repeatable practice for one skill (freewriting, sensory detail, dialogue…). Create your own with **New drill**, add five common ones with **Add starter drills**, and start a timed exercise from one with **Exercise from a drill** (it uses the open drill note, or asks which one).
-- **Writing timer:** exercises (new ones, including from a random prompt or a drill, and ones you reopen) and today's journal get a timer that starts when you begin typing. It pauses on its own when you stop typing for a while and picks up again when you type. Pause, reset, or stop it from the status bar, the timer button at the top of the note (on mobile too), or commands you can bind to hotkeys. Stopping adds the minutes to the note's `writing_min`, and **Practice this week** shows minutes written. Each device keeps its own timer.
-  - **In an exercise's writing block,** the timer sits in the block's toolbar instead of at the top of the note: the time, and a ring that fills toward your goal. Tap it for the same menu. Only drafting in the block counts, so reading the prompt or writing your reflection doesn't. The first time you switch the block to Review, the timer stops and logs your minutes; if another block is still in Draft, a new timer gets ready for it.
+- **Writing timer:** exercises (new ones, including from a random prompt or a drill, and ones you reopen) and today's journal get a timer that starts when you begin typing. It pauses on its own when you stop typing for a while and picks up again when you type. Pause, reset, or stop it from the status bar, the timer button at the top of the note (on mobile too), or commands you can bind to hotkeys. Stopping adds the minutes to the note's `writing_min`, and **Practice this week** shows minutes written. Each device keeps its own timer. The journal has no time goal: its timer just counts the time you spent.
+  - **In a timed block** (`timer` in its header), the timer sits in the block's toolbar instead of at the top of the note: the time, and in an exercise a ring that fills toward your goal. Tap it for the same menu. Only writing in the timed blocks counts, so reading the prompt doesn't, and an exercise's Work and Reflection share one timer. The first time you switch a revision block to Review, the timer stops and logs your minutes; if a timed block is still to be written, a new timer gets ready for it. The exercise's goal counts only while its revision block is still being drafted.
+  - **In any note:** the first keystroke in a timed block starts the timer when no other timer is in use. Its minutes go to `writing_min` in a journal or exercise, and in any other note only if it already has a `writing_min` field, so a character note you free-write in keeps its frontmatter.
 - **This became a story:** promote an exercise into a short story, with a link back to it.
 
 ### Stories
-- **New short story:** builds a folder with a hub note (logline, premise, outline, status, next step) and a draft that starts with a writing block.
+- **New short story:** builds a folder with a hub note (logline, premise, outline, status, next step) and a draft that starts with a revision block.
 - **Characters & locations:** notes that work the same way in stories and projects. In a project they go to `Codex/`.
 - **Story panel:** a sidebar with the hub summary, draft word count, words this week, the days you wrote on it, characters, notes, and next step. It also works for projects (see below).
-- **Put in a writing block:** a draft written before blocks, as plain paragraphs, isn't counted. The story panel says so and offers to put it in a writing block, keeping the text as it is.
+- **Put in a writing block:** a draft written before blocks, as plain paragraphs, isn't counted. The story panel says so and offers to put it in a revision block, keeping the text as it is.
 - **Progress:** status (idea → drafting → revising → done), word count against a target, and when you last worked on it.
 - **Revisions:** snapshot the draft as v2, v3, … with old versions moved to `Archive/`.
 
 ### Projects
 - **New project:** asks for a title, logline, genre, and word target, then builds the layout: a project note (logline, premise, outline by act, a parking lot for loose ideas, and a table of scenes), plus `Scenes/`, `Codex/Characters/`, `Codex/Locations/`, `Notes/`, `Research/`, and `Archive/`.
-- **New scene:** adds a scene at the end of the current project (or one you pick), numbered so scenes stay in order. It starts with a writing block.
+- **New scene:** adds a scene at the end of the current project (or one you pick), numbered so scenes stay in order. It starts with a revision block.
 - **Project panel:** the same sidebar shows a project's status, word count against its target, words this week, the days you wrote on it, next step, scenes in order with status and word count, characters, locations, notes, and research. Scenes without a writing block are marked, with **Put in a writing block**.
 - **Progress:** projects appear on Home's in-progress list and in the status bar, with total words across scenes.
 - **Promote a story:** if a short story outgrows one draft, Inkwell can turn it into a project, splitting the draft into scenes at headings or `***` breaks and moving its characters and locations into the codex. Each scene holds its writing in a writing block, made from the current text only, so a break inside a first draft never splits a scene. The original draft is archived first.

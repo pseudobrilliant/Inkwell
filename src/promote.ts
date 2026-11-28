@@ -1,7 +1,7 @@
 import { moment, normalizePath, Notice, TFile, TFolder } from "obsidian";
 import type InkwellPlugin from "./main";
 import { askForm } from "./modals";
-import { emptyBlock, unwrapBlocks, wrapLines } from "./writingblocks";
+import { emptyBlock, REVISION, unwrapBlocks, wrapLines } from "./writingblocks";
 import { PROJECT_FOLDERS, sceneFileName } from "./projects";
 import type { Story } from "./stories";
 import { createNote, ensureFolder, moveFile, slugWords, stripFrontmatter, uniquePath, fmOf, type Frontmatter } from "./util";
@@ -103,8 +103,8 @@ export async function promoteToLongForm(plugin: InkwellPlugin, story: Story): Pr
       created: today,
     };
     if (sceneTarget) fields.target_wordcount = sceneTarget;
-    // Each scene's writing goes back in a writing block, so it keeps counting (spec writing-blocks).
-    const body = (s.text ? wrapLines(s.text.split("\n")) : emptyBlock()).join("\n") + "\n";
+    // Each scene's writing goes back in a revision block, so it keeps counting and can be revised (spec writing-blocks).
+    const body = (s.text ? wrapLines(s.text.split("\n"), REVISION) : emptyBlock(REVISION)).join("\n") + "\n";
     await createNote(app, uniquePath(app, `${dest}/Scenes`, sceneFileName(seq, s.title)), body, fields);
   }
 

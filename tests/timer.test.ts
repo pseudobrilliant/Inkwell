@@ -1,6 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { Notice } from "./helpers/obsidian";
 import { TIMER_STORAGE_KEY, WritingTimer } from "../src/timer";
+import { openTodaysJournal } from "../src/journal";
 import * as T from "../src/timerstate";
 import { findBlocks } from "../src/writingblocks";
 import { switchInFile, type WritingBlockHost } from "../src/writingblocktoolbar";
@@ -11,7 +12,9 @@ const t0 = 10_000_000;
 const EX = "01 - Practice/Exercises/Writing/Rain.md";
 const OTHER = "01 - Practice/Exercises/Writing/Sun.md";
 
-const draftBlock = (words: string) => `> [!writing]\n> ${words}`;
+const draftBlock = (words: string) => `> [!writing|revision timer]\n> ${words}`;
+const freewriteBlock = (words: string) => `> [!writing|timer]\n> ${words}`;
+const CHAR = "02 - Stories/Tide/Mara.md";
 const reviewedBlock = (words: string, mode = "review") => `${draftBlock(words)}\n\n%% writing-block first-draft ${mode}\n${words}\n%%`;
 const exercise = (body: string, writingMin = 5) => `---\ntype: exercise\nminutes: 10\nwriting_min: ${writingMin}\n---\n## Work\n\n${body}\n`;
 
@@ -55,6 +58,42 @@ describe("the writing timer and a block's first review", () => {
     expect(app.fmOfPath(EX)?.writing_min).toBe(9);
     const s = timerState(app);
     expect(s).toMatchObject({ path: EX, phase: "armed", goalMin: 10, elapsedMs: 0 });
+  });
+
+  it("first review re-arms with no goal when only free-write is left", async () => {
+    const app = new FakeApp().seed({ [EX]: exercise(`${draftBlock("One.")}\n\n## Reflection\n${freewriteBlock("Slow.")}`) });
+    stored(app, EX, 4 * MIN);
+    const timer = new WritingTimer(fakePlugin(app));
+    await timer.blockReviewed(EX, exercise(`${reviewedBlock("One.")}\n\n## Reflection\n${freewriteBlock("Slow.")}`));
+    expect(app.fmOfPath(EX)?.writing_min).toBe(9);
+    expect(timerState(app)).toMatchObject({ path: EX, phase: "armed", goalMin: 0, elapsedMs: 0 });
+  });
+
+  it("stopping in a note without writing_min leaves its frontmatter alone", async () => {
+    const text = `---\ntype: character\n---\n${freewriteBlock("She kept the boat.")}\n`;
+    const app = new FakeApp().seed({ [CHAR]: text });
+    stored(app, CHAR, 6 * MIN);
+    const timer = new WritingTimer(fakePlugin(app));
+    await timer.stop();
+    expect(app.textOf(CHAR)).toBe(text);
+    expect(Notice.messages).toContain("You wrote 6 minutes in Mara.");
+    expect(timerState(app)).toBeNull();
+  });
+
+  it("stopping in a note with an empty writing_min fills it in", async () => {
+    const app = new FakeApp().seed({ [CHAR]: `---\ntype: character\nwriting_min:\n---\n${freewriteBlock("She kept the boat.")}\n` });
+    stored(app, CHAR, 4 * MIN);
+    const timer = new WritingTimer(fakePlugin(app));
+    await timer.stop();
+    expect(app.fmOfPath(CHAR)?.writing_min).toBe(4);
+  });
+
+  it("opening today's journal arms a timer with no goal", async () => {
+    const plugin = fakePlugin();
+    plugin.timer = new WritingTimer(plugin);
+    await openTodaysJournal(plugin);
+    expect(timerState(plugin.app)).toMatchObject({ phase: "armed", goalMin: 0 });
+    expect(timerState(plugin.app)?.path).toMatch(/^01 - Practice\/Journal\//);
   });
 
   it("switching a reviewed block's mode leaves the timer alone", async () => {

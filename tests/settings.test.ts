@@ -128,6 +128,12 @@ describe("settings controls", () => {
     expect(s.captureToJournal).toBe(true);
   });
 
+  it("an old settings file with a journal goal still loads", () => {
+    const { settings } = mergeSettings({ journalMinutes: 10, exerciseMinutes: 20 });
+    expect(settings.exerciseMinutes).toBe(20);
+    expect("journalMinutes" in settings).toBe(false);
+  });
+
   it("ignores unknown keys", () => {
     const s = fresh();
     expect(applyControlValue(s, "folders.nope", "x")).toBe(false);

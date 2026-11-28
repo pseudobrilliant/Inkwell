@@ -1,7 +1,7 @@
 # writing-timer Specification
 
 ## Purpose
-The writing timer measures how long the writer actually spends writing practice pieces (exercises and journal entries), so the day and lifetime levels of progress can show minutes written. It is built to be forgotten: it starts when you type, pauses when you stop, and logs minutes to the note.
+The writing timer measures how long the writer actually spends writing: in exercises and journal entries, and in any block whose header asks for a timer (`timer`), in any note. The day and lifetime levels of progress can then show minutes written. Exercises have a time goal; the journal and free-writing don't. It is built to be forgotten: it starts when you type, pauses when you stop, and logs minutes to the note.
 
 Decisions behind this spec: [ADR 0003](../../decisions/0003-timer-state-in-device-local-storage.md).
 
@@ -247,7 +247,7 @@ Test: tests/timerstate.test.ts › "a journal or an exercise without a block is 
 - **WHEN** the writer types in the block
 - **THEN** no timer is armed or started, and the block's toolbar shows no timer
 
-Test: tests/timerstate.test.ts › "only exercises are timed by block"
+Test: tests/timerstate.test.ts › "an untimed block gets no timer"
 
 ### Requirement: Reviewing ends the draft's timing
 WHEN a block in the timed exercise enters Review for the first time (its first draft is kept), Inkwell SHALL stop the timer and log its minutes to the exercise's `writing_min`, as stopping does. IF another block in the exercise is then still in Draft with no kept first draft, THEN Inkwell SHALL arm a new timer for the exercise with the same goal.

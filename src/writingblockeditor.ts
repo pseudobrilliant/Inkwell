@@ -33,6 +33,8 @@ import {
   writingAt,
   type KeyEdit,
   type WritingBlock,
+  FREEWRITE,
+  type BlockKind,
 } from "./writingblocks";
 import { renderToolbar, switchInView, updateTools, type WritingBlockHost } from "./writingblocktoolbar";
 import { drawBlockBody } from "./writingblockview";
@@ -544,14 +546,14 @@ export function writingBlockEditor(host: WritingBlockHost): Extension {
 }
 
 /** "New writing block": wrap the selection, convert the tabbed run under the cursor, or add an empty block. */
-export function newWritingBlock(editor: Editor): void {
+export function newWritingBlock(editor: Editor, kind: BlockKind = FREEWRITE): void {
   const lines: string[] = [];
   for (let i = 0; i < editor.lineCount(); i++) lines.push(editor.getLine(i));
   const from = editor.getCursor("from");
   const to = editor.getCursor("to");
   // A selection ending at the start of a line doesn't include that line.
   const toLine = to.line > from.line && to.ch === 0 ? to.line - 1 : to.line;
-  const edit = newBlockAt(lines, { fromLine: from.line, toLine, empty: !editor.somethingSelected() });
+  const edit = newBlockAt(lines, { fromLine: from.line, toLine, empty: !editor.somethingSelected() }, kind);
   const text = edit.lines.join("\n");
   if (edit.to >= edit.from) {
     editor.replaceRange(text, { line: edit.from, ch: 0 }, { line: edit.to, ch: (lines[edit.to] ?? "").length });

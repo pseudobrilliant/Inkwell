@@ -11,12 +11,28 @@
  *     I have been here before.
  *     %%
  *
+ * A block's type and options are the words of the callout's metadata (spec writing-blocks, "Block types and options"):
+ * `> [!writing]` is a free-write block (no modes, no first draft), `> [!writing|revision]` a revision block (Draft,
+ * Review, Edited), and `timer` makes either one timed. A plain block with a kept first draft is a revision block.
+ *
  * Everything here is pure: it reads and builds text by line. The editor, reading view and commands apply the results.
  */
 import { presentableDiff } from "@codemirror/merge";
 
 export type BlockMode = "writing" | "review" | "edited";
 export const BLOCK_MODES: readonly BlockMode[] = ["writing", "review", "edited"];
+
+/** A block's type: free-write (the default) or revision. */
+export type BlockTypeId = "freewrite" | "revision";
+
+/** What a block is made as: its type, and whether it's timed. */
+export interface BlockKind {
+  type: BlockTypeId;
+  timer: boolean;
+}
+
+export const FREEWRITE: BlockKind = { type: "freewrite", timer: false };
+export const REVISION: BlockKind = { type: "revision", timer: false };
 
 export interface FirstDraft {
   /** Line of `%% writing-block first-draft <mode>`. */
@@ -39,11 +55,15 @@ export interface WritingBlock {
   text: string;
   /** The kept first draft, or null if the block has never been reviewed (or its comment can't be read). */
   firstDraft: FirstDraft | null;
-  /** `firstDraft.mode`, or "writing" for a block that was never reviewed. */
+  /** `firstDraft.mode`, or "writing" for a block that was never reviewed (and always for a free-write block). */
   mode: BlockMode;
+  /** From the header's metadata: `revision`, or free-write; a plain block with a kept first draft is revision. */
+  type: BlockTypeId;
+  /** `timer` in the header's metadata. */
+  timer: boolean;
 }
 
-const HEADER = /^>\s*\[!writing(?:\|[^\]]*)?\][+-]?(?:\s+(.*?))?\s*$/i;
+const HEADER = /^>\s*\[!writing(?:\|([^\]]*))?\][+-]?(?:\s+(.*?))?\s*$/i;
 const COMMENT_OPEN = /^%%\s*writing-block\s+first-draft\s+(writing|review|edited)\s*$/;
 const FENCE = /^\s*(```|~~~)/;
 
@@ -120,15 +140,21 @@ export function findBlocks(text: string): WritingBlock[] {
       else break;
     }
     const body = lines.slice(i + 1, end + 1).map(unquote);
-    const firstDraft = readFirstDraft(lines, end);
+    const words = (m[1] ?? "").toLowerCase().split(/\s+/);
+    const kept = readFirstDraft(lines, end);
+    // A header that names no type is free-write, unless it was reviewed before block types existed.
+    const type: BlockTypeId = words.includes("revision") || kept ? "revision" : "freewrite";
+    const firstDraft = type === "revision" ? kept : null;
     blocks.push({
       start: i,
       end,
-      title: m[1]?.trim() ?? "",
+      title: m[2]?.trim() ?? "",
       lines: body,
       text: body.join("\n"),
       firstDraft,
       mode: firstDraft?.mode ?? "writing",
+      type,
+      timer: words.includes("timer"),
     });
     i = firstDraft ? firstDraft.end : end;
   }
@@ -140,24 +166,30 @@ export function blockAtLine(blocks: WritingBlock[], line: number): WritingBlock 
   return blocks.find((b) => line >= b.start && line <= (b.firstDraft?.end ?? b.end)) ?? null;
 }
 
+/** A block's header line: `> [!writing]`, with the type and `timer` in its metadata when there are any. */
+export function blockHeader(kind: BlockKind = FREEWRITE, title = ""): string {
+  const meta = [kind.type === "revision" ? "revision" : "", kind.timer ? "timer" : ""].filter(Boolean).join(" ");
+  return `> [!writing${meta ? `|${meta}` : ""}]${title ? " " + title : ""}`;
+}
+
 /** Callout lines for some writing: a header, then each line quoted. Blank lines stay as bare `>`. */
-export function blockLines(writing: string[], title = ""): string[] {
-  return [`> [!writing]${title ? " " + title : ""}`, ...writing.map((l) => (l.trim() === "" ? ">" : `> ${l}`))];
+export function blockLines(writing: string[], title = "", kind: BlockKind = FREEWRITE): string[] {
+  return [blockHeader(kind, title), ...writing.map((l) => (l.trim() === "" ? ">" : `> ${l}`))];
 }
 
 /** A new, empty block: the header and one empty line to write on, with the cursor after its `> `. */
-export function emptyBlock(): string[] {
-  return ["> [!writing]", "> "];
+export function emptyBlock(kind: BlockKind = FREEWRITE): string[] {
+  return [blockHeader(kind), "> "];
 }
 
 /** Wrap selected lines in a block, dropping blank lines at either end and keeping the rest as they are. */
-export function wrapLines(selected: string[]): string[] {
+export function wrapLines(selected: string[], kind: BlockKind = FREEWRITE): string[] {
   const lines = selected.map(clean);
   let a = 0;
   let b = lines.length;
   while (a < b && lines[a]?.trim() === "") a++;
   while (b > a && lines[b - 1]?.trim() === "") b--;
-  return blockLines(lines.slice(a, b));
+  return blockLines(lines.slice(a, b), "", kind);
 }
 
 /** The run of tab-indented lines around a line, or null if that line doesn't start with a tab. */
@@ -172,8 +204,8 @@ export function tabbedRunAt(lines: string[], line: number): { start: number; end
 }
 
 /** Turn tab-indented lines into a block: leading tabs go, each line stays its own paragraph. */
-export function convertTabbed(lines: string[]): string[] {
-  return blockLines(lines.map((l) => clean(l).replace(/^\t+/, "")));
+export function convertTabbed(lines: string[], kind: BlockKind = FREEWRITE): string[] {
+  return blockLines(lines.map((l) => clean(l).replace(/^\t+/, "")), "", kind);
 }
 
 /** The note with every block as plain paragraphs: the callout's lines unquoted, the first-draft comment removed. */
@@ -192,9 +224,9 @@ export function unwrapBlocks(text: string): string {
  * A note's text with `writing` in a writing block: the first empty block that was never reviewed (as a template's
  * is), or else a new block at the end. Empty writing leaves the text as it is.
  */
-export function putInBlock(text: string, writing: string): string {
+export function putInBlock(text: string, writing: string, kind: BlockKind = FREEWRITE): string {
   if (!writing.trim()) return text;
-  const wrapped = wrapLines(writing.split("\n"));
+  const wrapped = wrapLines(writing.split("\n"), kind);
   const empty = findBlocks(text).find((b) => !b.firstDraft && b.text.trim() === "");
   if (!empty) return text.replace(/\s*$/, "\n\n") + wrapped.join("\n") + "\n";
   const lines = text.split("\n");
@@ -206,12 +238,12 @@ export function putInBlock(text: string, writing: string): string {
  * A note whose writing isn't in a block, with its body (everything below the frontmatter) put in one. Null when the
  * note already has a block.
  */
-export function wrapBody(text: string): string | null {
+export function wrapBody(text: string, kind: BlockKind = FREEWRITE): string | null {
   if (findBlocks(text).length) return null;
   const fm = text.match(/^---\r?\n[\s\S]*?\r?\n---(?:\r?\n|$)/)?.[0] ?? "";
   const head = fm && !fm.endsWith("\n") ? fm + "\n" : fm;
   const body = text.slice(fm.length);
-  return head + (body.trim() ? wrapLines(body.split("\n")) : emptyBlock()).join("\n") + "\n";
+  return head + (body.trim() ? wrapLines(body.split("\n"), kind) : emptyBlock(kind)).join("\n") + "\n";
 }
 
 // ---------- Keys inside a block (Live Preview) ----------
@@ -375,6 +407,17 @@ export function drafting(block: WritingBlock): boolean {
   return block.mode === "writing" && !block.firstDraft;
 }
 
+/** Whether a block's writing counts for the timer: it's timed, and still being drafted (see `drafting`). */
+export function stillWriting(block: WritingBlock): boolean {
+  return block.timer && drafting(block);
+}
+
+/** Whether an offset is in the writing of a timed block that is still being written (see `stillWriting`). */
+export function stillWritingAt(text: string, pos: number): boolean {
+  const at = bodyLineAt(text, pos);
+  return at !== null && stillWriting(at.block);
+}
+
 /** Whether an offset is in the writing of a block that is still being drafted (see `drafting`). */
 export function draftingAt(text: string, pos: number): boolean {
   const at = bodyLineAt(text, pos);
@@ -398,24 +441,28 @@ export interface BlockInsert {
  * an empty block (on the cursor's line if it's blank, otherwise below it). A blank line keeps the next paragraph out
  * of the block (Markdown would otherwise join it to the callout).
  */
-export function newBlockAt(lines: string[], selection: { fromLine: number; toLine: number; empty: boolean }): BlockInsert {
+export function newBlockAt(
+  lines: string[],
+  selection: { fromLine: number; toLine: number; empty: boolean },
+  kind: BlockKind = FREEWRITE
+): BlockInsert {
   const { fromLine, toLine, empty } = selection;
   const fence = (out: string[], after: number) => {
     const next = lines[after + 1];
     return next !== undefined && next.trim() !== "" ? [...out, ""] : out;
   };
   if (!empty) {
-    const block = wrapLines(lines.slice(fromLine, toLine + 1));
+    const block = wrapLines(lines.slice(fromLine, toLine + 1), kind);
     const last = block.length - 1;
     return { from: fromLine, to: toLine, lines: fence(block, toLine), cursorLine: last, cursorCh: (block[last] ?? "").length };
   }
   const run = tabbedRunAt(lines, fromLine);
   if (run) {
-    const block = convertTabbed(lines.slice(run.start, run.end + 1));
+    const block = convertTabbed(lines.slice(run.start, run.end + 1), kind);
     const last = block.length - 1;
     return { from: run.start, to: run.end, lines: fence(block, run.end), cursorLine: last, cursorCh: (block[last] ?? "").length };
   }
-  const block = emptyBlock();
+  const block = emptyBlock(kind);
   if ((lines[fromLine] ?? "").trim() === "") {
     return { from: fromLine, to: fromLine, lines: fence(block, fromLine), cursorLine: 1, cursorCh: 2 };
   }
@@ -444,6 +491,7 @@ export type ModeChange = { change: TextChange } | { refused: string } | { unchan
  * it; after that, only the mode word in the comment changes. The writing itself is never touched.
  */
 export function setMode(text: string, block: WritingBlock, mode: BlockMode): ModeChange {
+  if (block.type === "freewrite") return { unchanged: true };
   const starts = lineStarts(text);
   const fd = block.firstDraft;
   if (!fd) {
