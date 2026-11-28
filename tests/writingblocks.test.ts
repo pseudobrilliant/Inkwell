@@ -34,10 +34,17 @@ import {
   tabbedRunAt,
   unwrapBlocks,
   wrapLines,
+  blockHeader,
+  putInBlock,
+  stillWriting,
+  wrapBody,
+  FREEWRITE,
+  REVISION,
   type BlockMode,
   type KeyEdit,
 } from "../src/writingblocks";
-import { blockTypeOf, WRITING_BLOCK } from "../src/writingblocktoolbar";
+import { blockTypeOf, FREEWRITE_BLOCK, REVISION_BLOCK } from "../src/writingblocktoolbar";
+import { BUILTIN_TEMPLATES, render } from "../src/templates";
 import { BlockWordTally, blockWords, countsAsWriting, wordCountLabel } from "../src/writingblockwords";
 
 const reviewed = (mode = "review") =>
@@ -227,11 +234,11 @@ function switchTo(text: string, mode: BlockMode, n = 0): string {
 }
 
 describe("modes and the first draft", () => {
-  const written = "## Work\n> [!writing]\n> I have been here before.\n\n## Reflection";
+  const written = "## Work\n> [!writing|revision]\n> I have been here before.\n\n## Reflection";
 
   it("first review saves the text as the first draft below the block", () => {
     expect(switchTo(written, "review")).toBe(
-      "## Work\n> [!writing]\n> I have been here before.\n\n%% writing-block first-draft review\nI have been here before.\n%%\n\n## Reflection"
+      "## Work\n> [!writing|revision]\n> I have been here before.\n\n%% writing-block first-draft review\nI have been here before.\n%%\n\n## Reflection"
     );
     const [b] = findBlocks(switchTo(written, "review"));
     expect(b).toMatchObject({ mode: "review", text: "I have been here before.", firstDraft: { text: "I have been here before." } });
@@ -256,34 +263,41 @@ describe("modes and the first draft", () => {
   });
 
   it("each block keeps its own mode", () => {
-    const two = `${written}\n\n> [!writing]\n> Second.\n`;
+    const two = `${written}\n\n> [!writing|revision]\n> Second.\n`;
     const text = switchTo(switchTo(two, "review", 0), "edited", 1);
     expect(findBlocks(text).map((b) => b.mode)).toEqual(["review", "edited"]);
     expect(findBlocks(switchTo(text, "writing", 0)).map((b) => b.mode)).toEqual(["writing", "edited"]);
   });
 
   it("refuses review when the writing contains %%", () => {
-    const withMarks = "> [!writing]\n> Fifty %% off.";
+    const withMarks = "> [!writing|revision]\n> Fifty %% off.";
     expect(switchTo(withMarks, "review")).toMatch(/^refused: .*%%/);
   });
 
   it("keeps blank lines and paragraphs in the first draft", () => {
-    const text = switchTo("> [!writing]\n> One.\n>\n> Two.", "review");
+    const text = switchTo("> [!writing|revision]\n> One.\n>\n> Two.", "review");
     expect(findBlocks(text)[0]?.firstDraft?.text).toBe("One.\n\nTwo.");
   });
 });
 
 describe("the block toolbar", () => {
-  it("a writing callout's type defaults to the writing block", () => {
-    for (const header of ["> [!writing]", "> [!writing|freewrite] Later types"]) {
+  it("a revision callout is a revision block, with its three modes", () => {
+    const block = findBlocks("> [!writing|revision]\n> Text.")[0]!;
+    expect(blockTypeOf(block)).toBe(REVISION_BLOCK);
+    expect(REVISION_BLOCK.modes.map((m) => m.label)).toEqual(["Draft", "Review", "Edited"]);
+  });
+
+  it("a free-write block has no modes", () => {
+    for (const header of ["> [!writing]", "> [!writing|timer] Morning"]) {
       const block = findBlocks(`${header}\n> Text.`)[0]!;
-      expect(blockTypeOf(block)).toBe(WRITING_BLOCK);
+      expect(blockTypeOf(block)).toBe(FREEWRITE_BLOCK);
     }
-    expect(WRITING_BLOCK.modes.map((m) => m.label)).toEqual(["Draft", "Review", "Edited"]);
+    expect(FREEWRITE_BLOCK.modes).toEqual([]);
+    expect(FREEWRITE_BLOCK.label).toBe("Free-write");
   });
 
   it("picking modes in any order", () => {
-    let text = "> [!writing]\n> Draft.";
+    let text = "> [!writing|revision]\n> Draft.";
     for (const mode of ["edited", "writing", "review", "writing", "edited"] as const) {
       text = switchTo(text, mode);
       expect(findBlocks(text)[0]?.mode).toBe(mode);
@@ -749,5 +763,94 @@ describe("the word count tool", () => {
     expect(wordCountLabel(reviewedWith("review", "Same four words here.", "Four words were here.")).text).toBe("4 words (±0)");
     // Draft mode after review shows the first draft, so it counts that.
     expect(wordCountLabel(reviewedWith("writing", "Back.", "I have been here."))).toEqual({ text: "4 words", label: "4 words in the first draft" });
+  });
+});
+
+describe("block types and options", () => {
+  it("the block's type and timer come from the callout's metadata", () => {
+    const text = [
+      "> [!writing]",
+      "> One.",
+      "",
+      "> [!writing|Timer]",
+      "> Two.",
+      "",
+      "> [!writing|revision] Titled",
+      "> Three.",
+      "",
+      "> [!writing|timer revision]",
+      "> Four.",
+      "",
+      "> [!writing|sonnet]",
+      "> Five.",
+    ].join("\n");
+    expect(findBlocks(text).map((b) => [b.type, b.timer])).toEqual([
+      ["freewrite", false],
+      ["freewrite", true],
+      ["revision", false],
+      ["revision", true],
+      ["freewrite", false],
+    ]);
+    expect(findBlocks(text)[2]?.title).toBe("Titled");
+  });
+
+  it("a plain block with a kept first draft is a revision block", () => {
+    const text = "> [!writing]\n> Revised.\n\n%% writing-block first-draft review\nFirst.\n%%\n";
+    expect(findBlocks(text)[0]).toMatchObject({ type: "revision", mode: "review", firstDraft: { text: "First." } });
+  });
+
+  it("a free-write block is always drafting and keeps no first draft", () => {
+    const [b] = findBlocks("> [!writing|timer]\n> One.\n>\n> Two.");
+    expect(b).toMatchObject({ type: "freewrite", mode: "writing", firstDraft: null, text: "One.\n\nTwo." });
+    expect(drafting(b!)).toBe(true);
+    expect(stillWriting(b!)).toBe(true);
+    expect(stillWriting(findBlocks("> [!writing]\n> Untimed.")[0]!)).toBe(false);
+  });
+
+  it("switching a free-write block's mode changes nothing", () => {
+    const text = "> [!writing]\n> Free.";
+    for (const mode of ["review", "edited", "writing"] as const) expect(switchTo(text, mode)).toBe(text);
+  });
+
+  it("builds each kind's header, with the type before timer", () => {
+    expect(blockHeader()).toBe("> [!writing]");
+    expect(blockHeader({ type: "freewrite", timer: true })).toBe("> [!writing|timer]");
+    expect(blockHeader(REVISION, "Opening")).toBe("> [!writing|revision] Opening");
+    expect(blockHeader({ type: "revision", timer: true })).toBe("> [!writing|revision timer]");
+  });
+
+  it("inserts an empty revision block", () => {
+    expect(newBlockAt([""], { fromLine: 0, toLine: 0, empty: true }, REVISION).lines).toEqual(["> [!writing|revision]", "> "]);
+    expect(emptyBlock()).toEqual(["> [!writing]", "> "]);
+  });
+
+  it("wraps a selection as a revision block", () => {
+    const r = newBlockAt(["One.", "", "Two."], { fromLine: 0, toLine: 2, empty: false }, REVISION);
+    expect(r.lines).toEqual(["> [!writing|revision]", "> One.", ">", "> Two."]);
+    const [b] = findBlocks(r.lines.join("\n"));
+    expect(b).toMatchObject({ type: "revision", text: "One.\n\nTwo." });
+    expect(wrapLines(["x"], FREEWRITE)[0]).toBe("> [!writing]");
+  });
+
+  it("putting writing in a block keeps a template block's header, or makes the kind asked for", () => {
+    expect(putInBlock("> [!writing|revision]\n> \n", "Words.")).toBe("> [!writing|revision]\n> Words.\n");
+    expect(putInBlock("# Draft\n", "Words.", REVISION)).toBe("# Draft\n\n> [!writing|revision]\n> Words.\n");
+    expect(wrapBody("---\ntype: draft\n---\nOld text.\n", REVISION)).toBe("---\ntype: draft\n---\n> [!writing|revision]\n> Old text.\n");
+  });
+});
+
+describe("revise where you revise", () => {
+  const kinds = (key: keyof typeof BUILTIN_TEMPLATES) => findBlocks(render(BUILTIN_TEMPLATES[key], {})).map((b) => [b.type, b.timer]);
+  it("templates start each block as the kind its writing needs", () => {
+    expect(kinds("exercise")).toEqual([
+      ["revision", true],
+      ["freewrite", true],
+    ]);
+    const exercise = render(BUILTIN_TEMPLATES.exercise, {});
+    expect(exercise).toContain("## Work\n> [!writing|revision timer]\n");
+    expect(exercise).toContain("## Reflection\n> [!writing|timer]\n");
+    expect(kinds("storyDraft")).toEqual([["revision", false]]);
+    expect(kinds("journal")).toEqual([]);
+    expect(render(BUILTIN_TEMPLATES.journal, {})).toContain("## Writing\n- \n");
   });
 });

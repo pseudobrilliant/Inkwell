@@ -34,7 +34,6 @@ export interface InkwellSettings {
   shortStatuses: string[];
   longStatuses: string[];
   exerciseMinutes: number;
-  journalMinutes: number;
   timerAutoStart: boolean;
   timerIdleMinutes: number;
   defaultShortTarget: number;
@@ -89,7 +88,6 @@ export const DEFAULT_SETTINGS: InkwellSettings = {
   // StoryLine's scene statuses
   longStatuses: ["idea", "outlined", "draft", "written", "revised", "final"],
   exerciseMinutes: 15,
-  journalMinutes: 10,
   timerAutoStart: true,
   timerIdleMinutes: 5,
   defaultShortTarget: 0,
@@ -112,8 +110,10 @@ export function goalValue(v: unknown, fallback: number): number {
  * versions kept here (`legacy`), so the caller can move it to local storage and save the settings without it.
  */
 export function mergeSettings(raw: unknown): { settings: InkwellSettings; legacy: LegacyLocalState | null } {
-  const data = (raw && typeof raw === "object" ? raw : {}) as Partial<InkwellSettings> & LegacyLocalState;
-  const { timer, lastCaptureKind, ...rest } = data;
+  const data = (raw && typeof raw === "object" ? raw : {}) as Partial<InkwellSettings> & LegacyLocalState & { journalMinutes?: unknown };
+  // The journal's time goal was removed (spec writing-timer): an older settings file's value is dropped.
+  const { timer, lastCaptureKind, journalMinutes, ...rest } = data;
+  void journalMinutes;
   // Older versions kept exercise notes under `folders.exercises`. Keep that folder as the exercise writing folder so
   // existing vaults keep working; nothing is moved.
   const { exercises, ...folders } = (rest.folders ?? {}) as Partial<InkwellSettings["folders"]> & { exercises?: string };
@@ -172,7 +172,6 @@ type ControlKey =
   | "weeklyWordGoal"
   | "journalDateFormat"
   | "exerciseMinutes"
-  | "journalMinutes"
   | "timerAutoStart"
   | "timerIdleMinutes"
   | "defaultShortTarget"
@@ -273,7 +272,6 @@ export class InkwellSettingTab extends PluginSettingTab {
             control: { type: "toggle", key: "timerAutoStart" },
           },
           number("Exercise goal (minutes)", "Pre-filled when creating an exercise.", "exerciseMinutes", 1),
-          number("Journal goal (minutes)", "A notice appears when you reach it. 0 = no goal.", "journalMinutes"),
           number("Pause after (minutes without typing)", "The timer pauses by itself and resumes when you type again. 0 = never.", "timerIdleMinutes"),
         ],
       },
@@ -365,7 +363,7 @@ export function applyControlValue(s: InkwellSettings, key: string, value: unknow
     s.captureToJournal = value === true;
   } else if (key === "exerciseMinutes") {
     s.exerciseMinutes = asCount(value) || DEFAULT_SETTINGS.exerciseMinutes;
-  } else if (key === "journalMinutes" || key === "timerIdleMinutes") {
+  } else if (key === "timerIdleMinutes") {
     s[key] = asCount(value);
   } else if (key === "timerAutoStart") {
     s.timerAutoStart = value === true;

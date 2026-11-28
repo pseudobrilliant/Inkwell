@@ -34,21 +34,23 @@ describe("templates", () => {
     expect(render("# {{title}}\n{{ logline }}\n{{missing}}!", { title: "Tide", logline: "A boat." })).toBe("# Tide\nA boat.\n!");
   });
 
-  it("the built-in exercise template starts Work with a writing block", () => {
+  it("the built-in exercise template starts Work with a timed revision block and Reflection with a timed free-write block", () => {
     const blocks = findBlocks(BUILTIN_TEMPLATES.exercise);
-    expect(blocks).toHaveLength(1);
-    expect(blocks[0]?.text).toBe("");
-    expect(BUILTIN_TEMPLATES.exercise.split("\n")[blocks[0]!.start - 1]).toBe("## Work");
+    const lines = BUILTIN_TEMPLATES.exercise.split("\n");
+    expect(blocks.map((b) => [lines[b.start - 1], b.type, b.timer, b.text])).toEqual([
+      ["## Work", "revision", true, ""],
+      ["## Reflection", "freewrite", true, ""],
+    ]);
   });
 });
 
 describe("new notes start with a writing block", () => {
-  const empty = (text: string | undefined) => findBlocks(text ?? "").map((b) => [b.text, b.firstDraft]);
+  const empty = (text: string | undefined) => findBlocks(text ?? "").map((b) => [b.text, b.firstDraft, b.type]);
 
   it("a new story draft holds an empty writing block", async () => {
     const plugin = fakePlugin();
     await createShortStory(plugin, { title: "Tide", logline: "", genre: "", target: 0 }, { open: false });
-    expect(empty(plugin.app.textOf("02 - Stories/Tide/Tide - Draft.md"))).toEqual([["", null]]);
+    expect(empty(plugin.app.textOf("02 - Stories/Tide/Tide - Draft.md"))).toEqual([["", null, "revision"]]);
   });
 
   it("a new scene's body is an empty writing block, unless it's given one", async () => {
@@ -56,16 +58,17 @@ describe("new notes start with a writing block", () => {
     const plugin = fakePlugin(app);
     const project = projectFromFolder(plugin, app.folder("03 - Projects/Low"))!;
     const scene = await createScene(plugin, project, "Arrival", { open: false });
-    expect(empty(app.textOf(scene.path))).toEqual([["", null]]);
+    expect(empty(app.textOf(scene.path))).toEqual([["", null, "revision"]]);
     const given = await createScene(plugin, project, "Storm", { body: "It rained.", open: false });
     expect(app.textOf(given.path)).toMatch(/\nIt rained\.\n$/);
   });
 
-  it("today's journal holds an empty writing block and no ktr-entries block", async () => {
+  it("today's journal has a Writing list, no block and no ktr-entries block", async () => {
     const plugin = fakePlugin();
     const file = await ensureTodaysJournal(plugin);
     const text = plugin.app.textOf(file.path);
-    expect(empty(text)).toEqual([["", null]]);
+    expect(empty(text)).toEqual([]);
+    expect(text).toContain("## Writing\n- \n");
     expect(text).not.toMatch(/ktr-|Words Written/);
   });
 });
@@ -89,7 +92,7 @@ describe("writing that won't count", () => {
     expect(await putInWritingBlock(asApp(app), app.file(DRAFT))).toBe(true);
     const text = app.textOf(DRAFT) ?? "";
     expect(text.startsWith(fm)).toBe(true);
-    expect(findBlocks(text).map((b) => b.text)).toEqual(["The boat sat.\n\nThen the sea came back.\n\nIt was low tide."]);
+    expect(findBlocks(text).map((b) => [b.type, b.text])).toEqual([["revision", "The boat sat.\n\nThen the sea came back.\n\nIt was low tide."]]);
     // A second time changes nothing.
     expect(await putInWritingBlock(asApp(app), app.file(DRAFT))).toBe(false);
     await plugin.words.store.flush();

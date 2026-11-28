@@ -3,7 +3,7 @@
  * Every function takes the time it should act at and returns a new state; nothing here reads the clock.
  * The UI, persistence and notices live in src/timer.ts.
  */
-import { drafting, draftingAt, findBlocks } from "./writingblocks";
+import { findBlocks, stillWriting, stillWritingAt } from "./writingblocks";
 
 export interface TimerState {
   path: string;
@@ -118,36 +118,57 @@ export function isTimerState(v: unknown): v is TimerState {
   );
 }
 
-// ---------- Timing by block (exercises with a writing block) ----------
+// ---------- Timing by block (notes with a timed block) ----------
 
 /**
- * How a note is timed. An exercise with a writing block is timed by block: only drafting counts. A journal, or an
- * exercise with no block, is timed as a whole note. Any other note gets no timer.
+ * How a note is timed. A note with a timed block (`timer` in its header) is timed by block: only writing in a timed
+ * block still being written counts. A journal or an exercise with no timed block is timed as a whole note. Any other
+ * note gets no timer.
  */
 export type Timing = "note" | "block" | "none";
 
 export function timing(type: string, text: string): Timing {
-  if (type === "exercise") return findBlocks(text).length ? "block" : "note";
-  return type === "journal" ? "note" : "none";
+  if (findBlocks(text).some((b) => b.timer)) return "block";
+  return type === "exercise" || type === "journal" ? "note" : "none";
 }
 
-/** Whether any block in the note is still being drafted (Draft mode, never reviewed). */
+/** Whether any timed block in the note is still being written (see `stillWriting`). */
 export function hasDraftLeft(text: string): boolean {
-  return findBlocks(text).some(drafting);
+  return findBlocks(text).some(stillWriting);
 }
 
 /** Whether a keystroke at `pos` counts as typing for the timer. */
 export function countsAsTyping(how: Timing, text: string, pos: number): boolean {
-  return how === "note" || (how === "block" && draftingAt(text, pos));
+  return how === "note" || (how === "block" && stillWritingAt(text, pos));
+}
+
+/**
+ * The goal for a note's timer (spec writing-timer, "The goal is for revising"): an exercise's `minutes` while a timed
+ * revision block in it is still being drafted, and otherwise none.
+ */
+export function goalFor(type: string, minutes: number, text: string): number {
+  if (type !== "exercise") return 0;
+  return findBlocks(text).some((b) => b.type === "revision" && stillWriting(b)) ? Math.max(0, minutes) : 0;
 }
 
 /**
  * A block in note `path` was reviewed for the first time, leaving the note as `text`. If the timer is on that note it
- * stops and logs; it is then armed again with the same goal if another block is still being drafted.
+ * stops and logs; it is then armed again, with `goal`, if a timed block is still being written.
  */
-export function afterFirstReview(s: TimerState | null, path: string, text: string): { log: boolean; rearmGoal: number | null } {
+export function afterFirstReview(s: TimerState | null, path: string, text: string, goal: number): { log: boolean; rearmGoal: number | null } {
   if (!s || s.path !== path) return { log: false, rearmGoal: null };
-  return { log: true, rearmGoal: hasDraftLeft(text) ? s.goalMin : null };
+  return { log: true, rearmGoal: hasDraftLeft(text) ? goal : null };
+}
+
+/**
+ * Whether a keystroke at `pos` in note `path` starts a timer for that note (spec writing-timer, "Starting in a timed
+ * block"): with auto-start on, in a timed block still being written, when there's no timer or only one armed for
+ * another note, with no time on it. A timer with time on it is never replaced.
+ */
+export function startsOnTyping(s: TimerState | null, path: string, how: Timing, text: string, pos: number, autoStart: boolean): boolean {
+  if (!autoStart || how !== "block" || !stillWritingAt(text, pos)) return false;
+  if (!s) return true;
+  return s.path !== path && s.phase === "armed";
 }
 
 /** Share of the goal written, from 0 to 1 (full at the goal and after); null with no goal. */

@@ -132,7 +132,7 @@ Test: tests/timerstate.test.ts › "a journal or an exercise without a block is 
 - **WHEN** the writer types in the block
 - **THEN** no timer is armed or started, and the block's toolbar shows no timer
 
-Test: tests/timerstate.test.ts › "only exercises are timed by block"
+Test: tests/timerstate.test.ts › "an untimed block gets no timer"
 
 #### Scenario: Work and reflection share the timer
 - **GIVEN** an exercise with a timed revision block in Work and a timed free-write block in Reflection, and a timer armed for it

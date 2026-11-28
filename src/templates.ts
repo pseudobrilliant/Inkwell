@@ -106,8 +106,7 @@ writing_min:
 
 
 ## Writing
-> [!writing]
-> 
+- 
 `,
   exercise: `---
 type: exercise
@@ -120,10 +119,12 @@ tags:
 
 
 ## Work
-> [!writing]
+> [!writing|revision timer]
 > 
 
 ## Reflection
+> [!writing|timer]
+> 
 `,
   drill: `---
 type: drill
@@ -175,7 +176,7 @@ views:
   storyDraft: `---
 type: draft
 ---
-> [!writing]
+> [!writing|revision]
 > 
 `,
   projectHub: `---

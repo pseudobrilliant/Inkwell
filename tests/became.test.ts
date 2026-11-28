@@ -63,7 +63,7 @@ describe("exerciseBecameStory", () => {
     const draft = app.textOf("02 - Stories/Low Tide/Low Tide - Draft.md") ?? "";
     const blocks = findBlocks(draft);
     expect(blocks).toHaveLength(1);
-    expect(blocks[0]).toMatchObject({ text: "The boat came back.\nThen the sea.", firstDraft: null });
+    expect(blocks[0]).toMatchObject({ text: "The boat came back.\nThen the sea.", firstDraft: null, type: "revision", timer: false });
     expect(draft).not.toMatch(/first-draft|The boat sat|Old ending/);
     expect(app.textOf(EX)?.endsWith("## Reflection\nGood.")).toBe(true);
   });

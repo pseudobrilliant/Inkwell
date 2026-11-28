@@ -144,6 +144,18 @@ describe("promoteToLongForm", () => {
     expect(app.textOf("03 - Projects/Tide/Archive/Tide - Draft.md")).toBe(draftText);
   });
 
+  it("each scene's text goes in a revision block", async () => {
+    const plugin = fakePlugin(storyVault("---\ntype: draft\n---\n> [!writing|revision]\n> The boat sat.\n> ***\n> Then the sea came back.\n"));
+    const { app } = plugin;
+    await promoteToLongForm(plugin, storyFromFolder(plugin, app.folder(STORY)));
+    const scenes = app.paths().filter((p) => p.includes("/Scenes/"));
+    expect(scenes.flatMap((p) => findBlocks(app.textOf(p) ?? "").map((b) => [b.type, b.timer]))).toEqual([
+      ["revision", false],
+      ["revision", false],
+    ]);
+    expect(scenes.every((p) => (app.textOf(p) ?? "").includes("> [!writing|revision]\n"))).toBe(true);
+  });
+
   it("promoting logs no words, though the scenes hold the draft's words in blocks", async () => {
     const plugin = fakePlugin(storyVault("---\ntype: draft\n---\n> [!writing]\n> The boat sat.\n> ***\n> Then the sea came back.\n"));
     await promoteToLongForm(plugin, storyFromFolder(plugin, plugin.app.folder(STORY)));

@@ -1,7 +1,8 @@
 /**
  * The writing block's toolbar, and switching a block's mode from it (or from a command).
  * One toolbar is drawn in both places a block appears: the rendered callout's title, and the header line while
- * editing, so it looks the same in each. What it shows comes from the block type: for the writing block, its modes.
+ * editing, so it looks the same in each. What it shows comes from the block type: a revision block's modes, or the
+ * free-write block's label.
  *
  * Writing blocks don't depend on the rest of Inkwell (design decision 10). The host (Inkwell) passes in what it
  * wants done around a switch, such as stopping the writing timer, through `WritingBlockHost`.
@@ -78,26 +79,34 @@ export interface WritingBlockHost {
 
 export interface BlockType {
   id: string;
+  /** What the toolbar shows in place of modes, for a type that has none. */
+  label: string;
   modes: readonly { mode: BlockMode; label: string }[];
 }
 
-/** The writing block: write, review your changes, read the edited text. More types come later (idea writing-block-types). */
-export const WRITING_BLOCK: BlockType = {
-  id: "writing",
+/** The revision block: write, review your changes, read the edited text. */
+export const REVISION_BLOCK: BlockType = {
+  id: "revision",
+  label: "Revision",
   modes: BLOCK_MODES.map((mode) => ({ mode, label: mode === "writing" ? "Draft" : mode === "review" ? "Review" : "Edited" })),
 };
 
-/** The type of a block. Only the writing block exists so far, so every writing callout is one. */
-export function blockTypeOf(_block: WritingBlock): BlockType {
-  return WRITING_BLOCK;
+/** The free-write block, the default: just the box, with no modes. */
+export const FREEWRITE_BLOCK: BlockType = { id: "freewrite", label: "Free-write", modes: [] };
+
+/** The type of a block, from its header (spec writing-blocks, "Block types and options"). */
+export function blockTypeOf(block: WritingBlock): BlockType {
+  return block.type === "revision" ? REVISION_BLOCK : FREEWRITE_BLOCK;
 }
 
 /** Draw a block's toolbar into `container`: its modes, the current one marked, then the host's tools at the far right. */
 export function renderToolbar(container: HTMLElement, block: WritingBlock, onPick: (mode: BlockMode) => void, ctx: ToolbarContext): HTMLElement {
   const bar = container.createDiv({ cls: "inkwell-wb-toolbar" });
   bar.setAttr("role", "toolbar");
+  const type = blockTypeOf(block);
+  if (!type.modes.length) bar.createSpan({ cls: "inkwell-wb-type", text: type.label });
   const modes = bar.createDiv({ cls: "inkwell-wb-modes" });
-  for (const { mode, label } of blockTypeOf(block).modes) {
+  for (const { mode, label } of type.modes) {
     const button = modes.createEl("button", { cls: "inkwell-wb-mode", text: label });
     button.setAttr("aria-pressed", String(mode === block.mode));
     if (mode === block.mode) button.addClass("is-active");

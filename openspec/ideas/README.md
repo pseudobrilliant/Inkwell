@@ -14,9 +14,7 @@ Open questions and possible features that nobody is working on yet. They live he
 
 Kept short on purpose: only ideas that build on what we're working on now (writing blocks). Other ideas were dropped on 2026-11-26 and are in git history.
 
-| Idea | Status | Likely capabilities |
-|---|---|---|
-| [writing-block-types](writing-block-types.md) | open (after writing-blocks) | writing-blocks |
+None right now: the last one (`writing-block-types`) became the `block-types` change.
 
 ### Gated
 

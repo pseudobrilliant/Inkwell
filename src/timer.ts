@@ -4,10 +4,11 @@
  * Creating or opening an exercise (including from a random prompt or a drill) or opening
  * today's journal arms the timer for that note. It starts on the first keystroke in the note, pauses
  * by itself after a stretch without typing, and resumes when you type again.
- * Stopping it adds the minutes to the note's `writing_min`.
+ * Stopping it adds the minutes to the note's `writing_min` (journals and exercises, or any note that has the field).
  *
- * An exercise with a writing block is timed by block: only drafting in a block counts, the timer lives in the
- * block's toolbar instead of the note's header, and the block's first review stops it and logs the minutes.
+ * A note with a timed block (`timer` in its header, any note) is timed by block: only writing in a timed block still
+ * being written counts, the first keystroke there starts a timer when none is in use, the timer lives in the block's
+ * toolbar instead of the note's header, and a revision block's first review stops it and logs the minutes.
  *
  * Time is kept as timestamps, not a ticking counter, so it stays right when a phone
  * puts Obsidian in the background and survives a reload.
@@ -18,17 +19,23 @@ import { fmOf, fmStr, type Frontmatter } from "./util";
 import * as T from "./timerstate";
 import type { TimerState, Timing } from "./timerstate";
 import type { BlockTool } from "./writingblocktoolbar";
-import { drafting, type WritingBlock } from "./writingblocks";
+import { findBlocks, stillWriting, type WritingBlock } from "./writingblocks";
 
 export type { TimerState } from "./timerstate";
 
 /** Device-local storage key for the running timer: each device times its own writing, and it never syncs. */
 export const TIMER_STORAGE_KEY = "inkwell-timer";
 
-/** Notes the timer can run on: exercises and journal entries. */
-export function isTimedNote(plugin: InkwellPlugin, file: TFile | null): file is TFile {
+/** Notes the timer can run on by command: exercises, journal entries, and notes with a timed block. */
+export function isTimedNote(plugin: InkwellPlugin, file: TFile | null, text = ""): file is TFile {
+  if (!file) return false;
   const type = fmStr(fmOf(plugin.app, file)?.type);
-  return type === "exercise" || type === "journal";
+  return type === "exercise" || type === "journal" || findBlocks(text).some((b) => b.timer);
+}
+
+/** Whether a note's minutes go to its `writing_min`: journals and exercises always, other notes only if they have it. */
+export function logsMinutes(type: string, fm: Record<string, unknown> | undefined): boolean {
+  return type === "exercise" || type === "journal" || (!!fm && "writing_min" in fm);
 }
 
 export class WritingTimer {
@@ -58,7 +65,7 @@ export class WritingTimer {
     plugin.registerEvent(
       app.workspace.on("file-open", (file) => {
         const fm = fmOf(app, file);
-        if (file && fmStr(fm?.type) === "exercise") void this.armOnOpen(file, Number(fm?.minutes) || 0);
+        if (file && fmStr(fm?.type) === "exercise") void this.armOnOpen(file);
       })
     );
     plugin.registerEvent(app.workspace.on("layout-change", () => this.render()));
@@ -134,24 +141,37 @@ export class WritingTimer {
     return how;
   }
 
-  /** Opening an exercise arms it, unless it has blocks and every one has been reviewed: nothing is left to draft. */
-  private async armOnOpen(file: TFile, goalMin: number): Promise<void> {
+  /** The goal for a note's timer, from its type, its `minutes` and its blocks (spec writing-timer, "The goal is for revising"). */
+  private goalOf(file: TFile, text: string): number {
+    const fm = fmOf(this.plugin.app, file);
+    return T.goalFor(fmStr(fm?.type), Number(fm?.minutes) || 0, text);
+  }
+
+  /** Opening an exercise arms it, unless it has timed blocks and none is still being written. */
+  private async armOnOpen(file: TFile): Promise<void> {
     const text = await this.plugin.app.vault.cachedRead(file);
     if (this.timingOf(file, text) === "block" && !T.hasDraftLeft(text)) {
       this.render();
       return;
     }
-    await this.arm(file, goalMin, false);
+    await this.arm(file, this.goalOf(file, text), false);
   }
 
   private onType(editor: Editor, file: TFile | null) {
-    const s = this.state;
-    if (!s || !file || file.path !== s.path) return;
+    if (!file) return;
+    let s = this.state;
     const text = editor.getValue();
+    const pos = editor.posToOffset(editor.getCursor());
     const before = this.timings.get(file.path);
     const how = this.timingOf(file, text);
     if (how !== before) this.render();
-    if (!T.countsAsTyping(how, text, editor.posToOffset(editor.getCursor()))) return;
+    // The first keystroke in a timed block starts a timer for its note, when no timer is in use.
+    if (T.startsOnTyping(s, file.path, how, text, pos, this.plugin.settings.timerAutoStart)) {
+      this.state = T.typed(T.armed(file.path, this.goalOf(file, text)), Date.now());
+      return;
+    }
+    if (!s || file.path !== s.path) return;
+    if (!T.countsAsTyping(how, text, pos)) return;
     const next = T.typed(s, Date.now());
     if (next.phase !== s.phase) this.state = next;
     else {
@@ -170,7 +190,7 @@ export class WritingTimer {
     if (this.state) this.state = T.reset(this.state);
   }
 
-  /** Stop and add the whole minutes to the note's `writing_min`. */
+  /** Stop and add the whole minutes to the note's `writing_min`, if it keeps one (spec writing-timer, "Logging minutes"). */
   async stop(): Promise<void> {
     const s = this.state;
     if (!s) return;
@@ -182,10 +202,16 @@ export class WritingTimer {
       new Notice("Writing timer stopped. Under a minute, so nothing was logged.");
       return;
     }
+    const fm = fmOf(this.plugin.app, file);
+    const unit = minutes === 1 ? "minute" : "minutes";
+    if (!logsMinutes(fmStr(fm?.type), fm)) {
+      new Notice(`You wrote ${minutes} ${unit} in ${file.basename}.`);
+      return;
+    }
     await this.plugin.app.fileManager.processFrontMatter(file, (fm: Frontmatter) => {
       fm.writing_min = (Number(fm.writing_min) || 0) + minutes;
     });
-    new Notice(`Logged ${minutes} ${minutes === 1 ? "minute" : "minutes"} to ${file.basename}.`);
+    new Notice(`Logged ${minutes} ${unit} to ${file.basename}.`);
   }
 
   private clear() {
@@ -200,17 +226,16 @@ export class WritingTimer {
   async blockReviewed(path: string, text: string): Promise<void> {
     const file = this.plugin.app.vault.getFileByPath(path);
     if (file) this.timingOf(file, text);
-    const r = T.afterFirstReview(this.state, path, text);
+    const r = T.afterFirstReview(this.state, path, text, file ? this.goalOf(file, text) : 0);
     if (!r.log) return;
     await this.stop();
     if (r.rearmGoal !== null) this.state = T.armed(path, r.rearmGoal);
   }
 
   /** A timer for this note that runs right away (the command, or "Start now" in a block's toolbar). */
-  private startFor(file: TFile) {
-    const fm = fmOf(this.plugin.app, file);
-    const goal = fmStr(fm?.type) === "exercise" ? Number(fm?.minutes) || 0 : this.plugin.settings.journalMinutes;
-    this.state = T.start(T.armed(file.path, goal), Date.now());
+  private async startFor(file: TFile) {
+    const text = await this.plugin.app.vault.cachedRead(file);
+    this.state = T.start(T.armed(file.path, this.goalOf(file, text)), Date.now());
   }
 
   private tick() {
@@ -279,13 +304,13 @@ export class WritingTimer {
   }
 
   /**
-   * The timer in a block's toolbar: only in exercises, on blocks still being drafted. It shows this note's timer (time,
+   * The timer in a block's toolbar: on timed blocks still being written, in any note. It shows this note's timer (time,
    * and a ring toward the goal), nothing while another note has the timer, and a quiet icon that offers to start one
    * when there's no timer. A tap opens the menu.
    */
   private renderTool(el: HTMLElement, path: string, block: WritingBlock) {
     const file = this.plugin.app.vault.getFileByPath(path);
-    if (!file || !drafting(block) || fmStr(fmOf(this.plugin.app, file)?.type) !== "exercise") return;
+    if (!file || !stillWriting(block)) return;
     el.dataset.path = path;
     const button = el.createEl("button", { cls: "inkwell-timer-tool" });
     const ring = button.createSvg("svg", { cls: "inkwell-timer-ring", attr: { viewBox: "0 0 20 20", "aria-hidden": "true" } });
@@ -337,7 +362,7 @@ export class WritingTimer {
     const s = this.state;
     const menu = new Menu();
     if (!s) {
-      if (from) menu.addItem((i) => i.setTitle("Start now").setIcon("play").onClick(() => this.startFor(from)));
+      if (from) menu.addItem((i) => i.setTitle("Start now").setIcon("play").onClick(() => void this.startFor(from)));
       return menu;
     }
     const startLabel = s.phase === "armed" ? "Start now" : s.phase === "running" ? "Pause" : "Resume";
@@ -362,9 +387,10 @@ export class WritingTimer {
       name: "Start or pause writing timer",
       checkCallback: (checking) => {
         const active = plugin.app.workspace.getActiveFile();
-        if (!this.state && !isTimedNote(plugin, active)) return false;
+        const text = plugin.app.workspace.getActiveViewOfType(MarkdownView)?.getViewData() ?? "";
+        if (!this.state && !isTimedNote(plugin, active, text)) return false;
         if (checking) return true;
-        if (!this.state && active) this.startFor(active);
+        if (!this.state && active) void this.startFor(active);
         else this.toggle();
         return true;
       },
