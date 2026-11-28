@@ -39,25 +39,28 @@ describe("goals in the words block", () => {
 
   it("the words block shows today and this week against the goals", () => {
     const [t, w] = statsFor({ "2026-11-23": 400, "2026-11-24": 380, "2026-11-26": 120 }, { daily: 300, weekly: 1500 });
-    expect(t).toMatchObject({ value: "120", label: "Today", goal: { text: "120 of 300", share: 0.4, met: false } });
-    expect(w).toMatchObject({ value: "900", label: "This week", sub: "2 goal days", goal: { text: "900 of 1,500", share: 0.6, met: false } });
+    expect(t).toMatchObject({ label: "Today", value: "120", caption: "of 300", goal: { text: "120 of 300", share: 0.4, met: false } });
+    expect(w).toMatchObject({ label: "This week", value: "900", caption: "of 1,500 · 2 goal days", goal: { text: "900 of 1,500", share: 0.6, met: false } });
   });
 
   it("a met goal shows a full bar marked met", () => {
     const [t] = statsFor({ "2026-11-26": 450 }, { daily: 300, weekly: 1500 });
     expect(t?.goal).toEqual({ text: "450 of 300", share: 1, met: true, label: "Daily word goal met" });
+    expect(t?.caption).toBe("of 300 ✓");
   });
 
   it("only a weekly goal shows only the week's bar", () => {
     const [t, w] = statsFor({ "2026-11-26": 450 }, { daily: 0, weekly: 2000 });
     expect(t?.goal).toBeUndefined();
     expect(w?.goal?.text).toBe("450 of 2,000");
-    expect(w?.sub).toBeUndefined();
+    expect(w?.caption).toBe("of 2,000");
+    expect(t?.caption).toBeUndefined();
   });
 
   it("with both goals off, the block shows only the words", () => {
     const stats = statsFor({ "2026-11-26": 450 }, { daily: 0, weekly: 0 });
     expect(stats.map((x) => x.goal)).toEqual([undefined, undefined, undefined, undefined]);
+    expect(stats.map((x) => x.caption)).toEqual([undefined, undefined, "17 a day", "Best 1"]);
   });
 });
 

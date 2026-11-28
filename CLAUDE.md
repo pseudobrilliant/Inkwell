@@ -62,7 +62,7 @@ Feeding the well is the ethos behind Capture. It has two sides, and both go thro
 - **Progress signal:** total words across scenes against the target, words this week, scene statuses, next step.
 
 ### Shared view: Home
-- **Home** (`src/home.ts`, `src/homeblocks.ts`, `src/contribution.ts`) brings everything together: inbox, in-progress pieces, practice, prompt of the day, words against the daily and weekly goals, and the heatmap. It is built from code blocks (`inkwell-inbox`, `inkwell-in-progress`, `inkwell-prompt`, `inkwell-practice`, `inkwell-contribution`, `inkwell-words`, `inkwell-entries`, `inkwell-heatmap`; the last three in `src/wordblocks.ts`) that work in any note. The **New…** picker creates any Inkwell note.
+- **Home** (`src/home.ts`, `src/homeblocks.ts`, `src/contribution.ts`) brings everything together: inbox, in-progress pieces, practice, prompt of the day, words against the daily and weekly goals, and the heatmap. It is built from code blocks (`inkwell-inbox`, `inkwell-in-progress`, `inkwell-prompt`, `inkwell-practice`, `inkwell-recent`, `inkwell-contribution`, `inkwell-words`, `inkwell-entries`, `inkwell-heatmap`; the last three in `src/wordblocks.ts`) that work in any note. The **New…** picker creates any Inkwell note.
 
 ### Core component: writing blocks
 The writing block is the heart of the writing experience (constitution, design principles 1–3). Writing blocks are not a mode. They're a core component that supports features across Capture, Practice and the writing modes, starting with exercises.

@@ -265,6 +265,52 @@ export function heatmapStart(today: moment.Moment, weeks: number, weekStart: Wee
   return moment(weekStartFor(today, weekStart), DAY).subtract(weeks - 1, "weeks").format(DAY);
 }
 
+/**
+ * The month over each heatmap column: a column whose week holds the 1st of a month gets that month's short name,
+ * the rest get "". The first column names its own month, unless the next name is too close to fit beside it.
+ */
+export function heatmapMonths(grid: readonly HeatDay[][]): string[] {
+  const labels = grid.map((week) => {
+    const first = week.find((d) => d.date.endsWith("-01"));
+    return first ? moment(first.date, DAY).format("MMM") : "";
+  });
+  const next = labels.findIndex((l, i) => i > 0 && l !== "");
+  const start = grid[0]?.[0];
+  if (start && labels[0] === "" && (next === -1 || next >= 3)) labels[0] = moment(start.date, DAY).format("MMM");
+  return labels;
+}
+
+/** The heatmap's row names, first day of the week first: every other day is named, the rest are "". */
+export function heatmapDayNames(weekStart: Weekday): string[] {
+  const start = WEEKDAYS.indexOf(weekStart);
+  return Array.from({ length: 7 }, (_, i) => (i % 2 === 0 ? moment().day((start + i) % 7).format("ddd") : ""));
+}
+
+/** What the legend says each shade means, from the stops: shade 0 is no words, then one entry per stop. */
+export function heatLegend(stops: readonly number[] = DEFAULT_STOPS): string[] {
+  const k = Math.min(4, stops.length);
+  const fmt = (x: number) => x.toLocaleString();
+  const shades = Array.from({ length: k }, (_, i) => {
+    const lo = i === 0 ? 1 : (stops[i] ?? 1);
+    const next = stops[i + 1];
+    if (i === k - 1 || next === undefined) return `${fmt(lo)}+ words`;
+    const hi = next - 1;
+    return lo >= hi ? `${fmt(lo)} words` : `${fmt(lo)}–${fmt(hi)} words`;
+  });
+  return ["No words", ...shades];
+}
+
+/** The words and the days written across the heatmap. */
+export function heatmapTotals(grid: readonly HeatDay[][]): { words: number; days: number } {
+  let words = 0;
+  let days = 0;
+  for (const d of grid.flat()) {
+    words += d.words;
+    if (d.words > 0) days++;
+  }
+  return { words, days };
+}
+
 // ---------- The words block ----------
 
 export interface WordsSummary {

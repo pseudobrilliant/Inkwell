@@ -8,7 +8,11 @@ import {
   goalProgress,
   goalReached,
   heatLevel,
+  heatmapDayNames,
   heatmapGrid,
+  heatmapMonths,
+  heatmapTotals,
+  heatLegend,
   newLogFile,
   parseLog,
   parseStops,
@@ -164,6 +168,29 @@ describe("the heatmap", () => {
     expect(grid[2]?.[1]).toEqual({ date: "2026-11-24", words: 300, level: 2, future: false });
     expect(grid[1]?.[0]).toEqual({ date: "2026-11-16", words: 0, level: 0, future: false });
     expect(grid[2]?.[3]?.future).toBe(true);
+  });
+
+  it("names the months over their first week and every other day beside the rows", () => {
+    // 12 weeks ending the week of Wednesday 25 November 2026, weeks starting Monday: 7 September to 29 November.
+    const grid = heatmapGrid(days({}), moment("2026-11-25"), 12, "monday");
+    const months = heatmapMonths(grid);
+    expect(months).toHaveLength(12);
+    expect(months.filter((m) => m)).toEqual(["Sep", "Oct", "Nov"]);
+    expect(months[0]).toBe("Sep");
+    expect(months[3]).toBe("Oct"); // the week of 28 September holds 1 October
+    expect(months[7]).toBe("Nov"); // the week of 26 October holds 1 November
+    // The first column is left unnamed when the next name follows too closely.
+    expect(heatmapMonths(heatmapGrid(days({}), moment("2026-11-25"), 6, "monday"))[0]).toBe("");
+    expect(heatmapDayNames("monday")).toEqual(["Mon", "", "Wed", "", "Fri", "", "Sun"]);
+    expect(heatmapDayNames("sunday")).toEqual(["Sun", "", "Tue", "", "Thu", "", "Sat"]);
+  });
+
+  it("the legend says what each shade means, and the totals add up the days written", () => {
+    expect(heatLegend()).toEqual(["No words", "1–99 words", "100–499 words", "500–999 words", "1,000+ words"]);
+    expect(heatLegend([100, 500])).toEqual(["No words", "1–499 words", "500+ words"]);
+    expect(heatLegend([1])).toEqual(["No words", "1+ words"]);
+    const grid = heatmapGrid(days({ "2026-11-24": 300, "2026-11-10": 1200 }), moment("2026-11-25"), 3, "monday");
+    expect(heatmapTotals(grid)).toEqual({ words: 1500, days: 2 });
   });
 });
 

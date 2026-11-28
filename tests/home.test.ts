@@ -11,6 +11,8 @@ describe("Home", () => {
     const text = plugin.app.textOf(HOME) ?? "";
     expect(text).toContain("```inkwell-heatmap\nof: all\nweeks: 48\n```");
     expect(text).toContain("```inkwell-words");
+    expect(text).toContain("```inkwell-recent");
+    expect(text).not.toContain('file.inFolder("01 - Practice")');
     expect(text).not.toContain("ktr-");
     expect(plugin.app.opened).toEqual([HOME]);
   });
