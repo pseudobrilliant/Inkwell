@@ -169,8 +169,10 @@
   border: none;
   border-radius: 10px;
   padding: 10px 14px;
-  margin-bottom: 8px;
+  margin: 0 0 var(--size-4-3);
 }
+/* the heatmap sits a step below the shortcut pills, the same step as between the two panels */
+.home-page .block-language-inkwell-heatmap { margin-top: var(--size-4-3); padding: var(--size-4-3) var(--size-4-4); }
 
 /* ---------- Quick moves: one compact row of pills ---------- */
 .home-page .callout[data-callout="moves"] {
@@ -243,48 +245,109 @@
 }
 
 /* space above the shortcut pills, below the words */
-.home-page .inkwell-words { margin-bottom: 14px; }
+.home-page .inkwell-words { margin-bottom: var(--size-4-5); }
 
 /* ---------- Heatmap (inkwell-heatmap, story panel) ----------
-   One column per week, one square per day. Squares shrink to fit a narrow screen. */
-.inkwell-heatmap { overflow-x: auto; padding: var(--size-2-1) 0; }
+   One grid filled column by column: a column of day names, then one column per week,
+   each a month name over seven days. Squares shrink to fit a narrow screen. */
+/* One column as wide as the grid, centred, so the summary and legend line up with the squares. */
+.inkwell-heatmap {
+  /* the heatmap's shade: the theme's accent */
+  --inkwell-heat-color: var(--interactive-accent);
+  display: grid;
+  grid-template-columns: minmax(0, max-content);
+  justify-content: center;
+  overflow-x: auto;
+  padding: var(--size-2-1) 0;
+}
 .inkwell-heatmap-grid {
   display: grid;
-  grid-template-rows: repeat(7, auto);
-  grid-template-columns: repeat(var(--inkwell-heatmap-weeks, 24), minmax(0, 14px));
+  grid-template-rows: auto repeat(7, auto);
+  grid-template-columns: auto repeat(var(--inkwell-heatmap-weeks, 24), minmax(0, 15px));
   grid-auto-flow: column;
   gap: 3px;
   justify-content: center;
+  /* room for a month name that starts in the last column */
+  padding-right: var(--size-4-5);
+}
+.inkwell-heatmap-month,
+.inkwell-heatmap-day {
+  font-size: var(--font-ui-smaller);
+  color: var(--text-faint);
+  line-height: 1;
+  white-space: nowrap;
+}
+/* A month name starts over its week and runs on over the empty names after it. */
+.inkwell-heatmap-month { overflow: visible; padding-bottom: var(--size-2-1); min-height: 1em; }
+.inkwell-heatmap-day {
+  /* takes no height, so a name never makes its row taller than the squares beside it */
+  height: 0; align-self: center;
+  display: flex; align-items: center;
+  padding-right: var(--size-4-2);
+  font-size: var(--font-ui-smallest, 11px);
 }
 .inkwell-heat {
   aspect-ratio: 1;
-  border-radius: 2px;
-  background: var(--background-modifier-border);
+  border-radius: 3px;
+  background: color-mix(in srgb, var(--background-modifier-border) 75%, transparent);
 }
 .inkwell-heat.is-future { visibility: hidden; }
-.inkwell-heat-1 { background: color-mix(in srgb, var(--interactive-accent) 30%, transparent); }
-.inkwell-heat-2 { background: color-mix(in srgb, var(--interactive-accent) 55%, transparent); }
-.inkwell-heat-3 { background: color-mix(in srgb, var(--interactive-accent) 80%, transparent); }
-.inkwell-heat-4 { background: var(--interactive-accent); }
+.inkwell-heat-1 { background: color-mix(in srgb, var(--inkwell-heat-color) 35%, transparent); }
+.inkwell-heat-2 { background: color-mix(in srgb, var(--inkwell-heat-color) 60%, transparent); }
+.inkwell-heat-3 { background: color-mix(in srgb, var(--inkwell-heat-color) 85%, transparent); }
+.inkwell-heat-4 {
+  background: var(--inkwell-heat-color);
+  box-shadow: 0 0 6px color-mix(in srgb, var(--inkwell-heat-color) 55%, transparent);
+}
+.inkwell-heatmap-grid .inkwell-heat:hover { outline: 1px solid var(--text-muted); outline-offset: 1px; }
+.inkwell-heat.is-today { outline: 1.5px solid var(--inkwell-heat-color); outline-offset: 1px; }
 
-/* ---------- Words (inkwell-words) ---------- */
-.inkwell-words-row { display: flex; flex-wrap: wrap; justify-content: space-around; gap: var(--size-4-3); text-align: center; }
-.inkwell-words-stat { min-width: 5em; }
-.inkwell-words-num { font-size: var(--font-ui-large); font-weight: var(--font-semibold); font-variant-numeric: tabular-nums; }
-.inkwell-words-stat .inkwell-muted { font-size: var(--font-ui-smaller); }
+.inkwell-heatmap-foot {
+  display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between;
+  gap: var(--size-2-3) var(--size-4-4);
+  margin-top: var(--size-4-2);
+  /* the legend ends under the last week, not under the grid's room for a month name */
+  padding-right: var(--size-4-5);
+  font-size: var(--font-ui-smaller);
+  color: var(--text-muted);
+}
+.inkwell-heatmap-sum-num { color: var(--text-normal); font-weight: var(--font-semibold); font-variant-numeric: tabular-nums; }
+.inkwell-heatmap-legend { display: flex; align-items: center; gap: 3px; color: var(--text-faint); }
+.inkwell-heatmap-legend .inkwell-heat { width: 11px; height: 11px; }
+.inkwell-heatmap-legend span:first-child { margin-right: var(--size-2-1); }
+.inkwell-heatmap-legend span:last-child { margin-left: var(--size-2-1); }
+
+/* ---------- Words (inkwell-words) ----------
+   Four stats side by side, each a label, a number, one caption line and (with a goal) a bar,
+   so every row lines up across the block. Two by two on a narrow screen. */
+.inkwell-words-row { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); }
+.inkwell-words-stat {
+  display: flex; flex-direction: column; gap: var(--size-2-1);
+  padding: var(--size-2-2) var(--size-4-4);
+  min-width: 0;
+}
+.inkwell-words-stat + .inkwell-words-stat { border-left: 1px solid var(--background-modifier-border); }
+.inkwell-words-stat .inkwell-label { justify-content: flex-start; height: 1.4em; line-height: 1.4em; overflow: visible; white-space: nowrap; }
+.inkwell-words-num {
+  font-size: 1.7em; font-weight: var(--font-bold); line-height: 1.15;
+  font-variant-numeric: tabular-nums; color: var(--text-normal);
+}
+.inkwell-words-unit { font-size: var(--font-ui-small); font-weight: var(--font-normal); color: var(--text-muted); margin-left: var(--size-2-2); }
+.inkwell-words-caption {
+  font-size: var(--font-ui-smaller); color: var(--text-muted);
+  font-variant-numeric: tabular-nums; min-height: 1.4em;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.inkwell-words-caption.is-met { color: var(--text-accent); }
+.inkwell-words-stat .inkwell-goal-bar { margin: var(--size-2-1) 0 0; }
+@media (max-width: 600px) {
+  .inkwell-words-row { grid-template-columns: repeat(2, minmax(0, 1fr)); row-gap: var(--size-4-3); }
+  .inkwell-words-stat:nth-child(3) { border-left: none; }
+}
 .inkwell-goal-bar { height: 6px; margin: var(--size-2-2) 0 0; }
 .inkwell-goal { font-size: var(--font-ui-smaller); color: var(--text-muted); font-variant-numeric: tabular-nums; }
 /* A met goal is marked; a goal not yet met is never coloured as a warning (spec word-goals). */
 .inkwell-goal.is-met { color: var(--text-accent); }
-
-/* ---------- A day's entries (inkwell-entries) ---------- */
-.inkwell-entries-list { list-style: none; padding: 0; margin: 0; }
-.inkwell-entries-list li,
-.inkwell-entries-total { display: flex; justify-content: space-between; gap: var(--size-4-3); padding: var(--size-2-1) 0; }
-.inkwell-entries-list li > :first-child { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.inkwell-entries-words { color: var(--text-muted); font-variant-numeric: tabular-nums; white-space: nowrap; }
-.inkwell-entries-total { border-top: 1px solid var(--background-modifier-border); margin-top: var(--size-2-2); padding-top: var(--size-2-3); }
-.inkwell-entries-goal .inkwell-goal-bar { width: 100%; }
 
 /* Inkwell blocks inside Home callouts: the callout is already the card */
 .home-page .callout .inkwell-block { border: none; padding: 0; }
@@ -297,23 +360,70 @@
 .home-page .callout[data-callout="inbox"],
 .home-page .callout[data-callout="practice"] { border-radius: 10px; margin: 12px 0; }
 
-/* Practice this week (inkwell-practice) */
-.inkwell-streak { margin-left: auto; font-weight: var(--font-normal); font-size: var(--font-ui-small); }
-.inkwell-week { display: flex; align-items: center; gap: var(--size-4-3); margin-bottom: var(--size-4-2); }
-.inkwell-week-days { display: flex; gap: var(--size-2-2); }
+/* Practice this week (inkwell-practice)
+   The week strip, the count and the streak on one row, then the week's numbers as tiles. */
+.inkwell-practice-top {
+  display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between;
+  gap: var(--size-4-3) var(--size-4-6, 24px);
+  margin-bottom: var(--size-4-4);
+}
+.inkwell-week { display: flex; align-items: center; gap: var(--size-4-5); flex-wrap: wrap; }
+.inkwell-week-days { display: flex; gap: var(--size-4-2); }
 .inkwell-day {
-  width: 24px; height: 24px; border-radius: 50%;
+  width: 36px; height: 36px; border-radius: 50%;
   display: flex; align-items: center; justify-content: center;
-  font-size: var(--font-ui-smaller); color: var(--text-muted);
+  font-size: var(--font-ui-small); font-weight: var(--font-semibold); color: var(--text-muted);
   background: var(--background-modifier-hover);
 }
 .inkwell-day.is-done { background: var(--interactive-accent); color: var(--text-on-accent); }
-.inkwell-day.is-today { box-shadow: 0 0 0 2px var(--interactive-accent); }
+.inkwell-day.is-today { outline: 2px solid var(--interactive-accent); outline-offset: 2px; }
 /* A goal day: an inner ring on the showed-up fill. */
 .inkwell-day.is-goal { box-shadow: inset 0 0 0 2px var(--text-on-accent); }
-.inkwell-day.is-goal.is-today { box-shadow: inset 0 0 0 2px var(--text-on-accent), 0 0 0 2px var(--interactive-accent); }
 .inkwell-day.is-future { opacity: 0.4; }
-.inkwell-week-count { font-size: var(--font-ui-small); color: var(--text-muted); }
+.inkwell-practice-big {
+  font-size: 1.5em; font-weight: var(--font-bold); line-height: 1.15;
+  color: var(--text-normal); font-variant-numeric: tabular-nums; white-space: nowrap;
+}
+.inkwell-week-count .inkwell-muted,
+.inkwell-streak .inkwell-muted { font-size: var(--font-ui-smaller); white-space: nowrap; }
+.inkwell-streak { text-align: right; }
+.inkwell-practice-stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap: var(--size-4-2); }
+.inkwell-practice-stat {
+  background: var(--background-modifier-hover);
+  border-radius: var(--radius-m);
+  padding: var(--size-4-2) var(--size-4-3);
+}
+.inkwell-practice-num { font-size: 1.35em; font-weight: var(--font-bold); line-height: 1.2; font-variant-numeric: tabular-nums; color: var(--text-normal); }
+.inkwell-practice-stat .inkwell-label { justify-content: flex-start; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+/* Recent practice (inkwell-recent): one quiet row per piece, title left, numbers and day right */
+.inkwell-recent .inkwell-prompt-label { margin-bottom: var(--size-4-2); }
+.inkwell-recent-list { display: flex; flex-direction: column; }
+.inkwell-recent-row {
+  display: flex; align-items: center; gap: var(--size-4-2);
+  padding: var(--size-2-3, 6px) var(--size-4-2);
+  border-radius: var(--radius-s);
+  font-size: var(--font-ui-small);
+}
+.inkwell-recent-row + .inkwell-recent-row { border-top: 1px solid var(--background-modifier-border); }
+.inkwell-recent-row:hover { background: var(--background-modifier-hover); }
+.inkwell-recent-icon { display: flex; color: var(--text-faint); }
+.inkwell-recent-icon svg { width: var(--icon-xs, 14px); height: var(--icon-xs, 14px); }
+.inkwell-recent-row.is-exercise .inkwell-recent-icon { color: var(--text-accent); }
+.inkwell-recent .inkwell-recent-title {
+  flex: 1; min-width: 0;
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+  color: var(--text-normal); text-decoration: none; cursor: pointer;
+}
+.inkwell-recent .inkwell-recent-title:hover { color: var(--text-accent); }
+.inkwell-recent-meta, .inkwell-recent-when {
+  font-size: var(--font-ui-smaller); color: var(--text-muted);
+  font-variant-numeric: tabular-nums; white-space: nowrap;
+}
+.inkwell-recent-meta { display: flex; gap: var(--size-4-2); }
+.inkwell-recent-meta span + span::before { content: "·"; margin-right: var(--size-4-2); color: var(--text-faint); }
+.inkwell-recent-when { min-width: 5.5em; text-align: right; color: var(--text-faint); }
+@media (max-width: 600px) { .inkwell-recent-meta { display: none; } }
 
 /* Your contribution (inkwell-contribution) */
 .inkwell-contribution .inkwell-block-head { flex-wrap: wrap; }

@@ -3,11 +3,12 @@
  *
  * ```inkwell-practice```      Session/day level: did I show up this week?
  * ```inkwell-contribution```  Mode level: what did I add to each part of my writing?
+ * ```inkwell-recent```        The practice you worked on last: exercises and journal entries, newest first.
  *
  * Counts come from frontmatter Inkwell already writes (type, created, prompt…).
  * Word numbers come from Inkwell's word log (`plugin.words`, spec word-log): words typed in writing blocks.
  */
-import { moment, normalizePath, TFile } from "obsidian";
+import { Keymap, moment, normalizePath, setIcon, TFile } from "obsidian";
 import { fmDay, fmOf, fmStr } from "./util";
 
 export { fmDay } from "./util";
@@ -101,14 +102,24 @@ export async function practiceWeek(plugin: InkwellPlugin): Promise<PracticeWeek>
   };
 }
 
+/** The week's practice numbers, as the tiles under the week strip show them: label and number. */
+export function practiceStats(w: PracticeWeek): { label: string; value: string }[] {
+  return [
+    { label: w.exercises === 1 ? "Exercise" : "Exercises", value: n(w.exercises) },
+    { label: "Prompts used", value: n(w.prompts) },
+    { label: w.journals === 1 ? "Journal entry" : "Journal entries", value: n(w.journals) },
+    { label: "Minutes written", value: n(w.minutes) },
+    { label: "Practice words", value: n(w.practiceWords) },
+  ];
+}
+
 function renderPractice(box: HTMLElement, w: PracticeWeek, title: string | undefined) {
   box.addClass("inkwell-block", "inkwell-practice");
-  const head = box.createDiv({ cls: "inkwell-block-head" });
-  if (title !== "none") head.createSpan({ text: title || "Practice this week" });
-  const s = head.createSpan({ cls: "inkwell-streak", text: `🔥 ${plural(w.streak.current, "day")}` });
-  s.setAttr("aria-label", `Current streak · best ${plural(w.streak.longest, "day")}`);
+  if (title !== "none") box.createDiv({ cls: "inkwell-block-head", text: title || "Practice this week" });
 
-  const row = box.createDiv({ cls: "inkwell-week" });
+  // The week: the days you showed up, how many so far, and the streak, on one row.
+  const top = box.createDiv({ cls: "inkwell-practice-top" });
+  const row = top.createDiv({ cls: "inkwell-week" });
   const strip = row.createDiv({ cls: "inkwell-week-days" });
   const today = moment().format(DAY);
   for (const d of w.days) {
@@ -123,16 +134,22 @@ function renderPractice(box: HTMLElement, w: PracticeWeek, title: string | undef
   }
   const shown = w.days.filter((d) => d.showed).length;
   const elapsed = w.days.filter((d) => !d.future).length;
-  row.createSpan({ cls: "inkwell-week-count", text: `${shown} of ${elapsed} ${elapsed === 1 ? "day" : "days"}` });
+  const count = row.createDiv({ cls: "inkwell-week-count" });
+  count.createDiv({ cls: "inkwell-practice-big", text: `${shown} of ${elapsed}` });
+  count.createDiv({ cls: "inkwell-muted", text: `${elapsed === 1 ? "day" : "days"} this week` });
 
-  const parts = [
-    plural(w.exercises, "exercise"),
-    plural(w.prompts, "prompt") + " used",
-    plural(w.journals, "journal entry", "journal entries"),
-  ];
-  if (w.minutes > 0) parts.push(plural(w.minutes, "minute") + " written");
-  parts.push(`${n(w.practiceWords)} practice words`);
-  box.createDiv({ cls: "inkwell-muted", text: parts.join(" · ") });
+  const streak = top.createDiv({ cls: "inkwell-streak" });
+  streak.setAttr("aria-label", `Current streak · best ${plural(w.streak.longest, "day")}`);
+  streak.createDiv({ cls: "inkwell-practice-big", text: `🔥 ${n(w.streak.current)}` });
+  streak.createDiv({ cls: "inkwell-muted", text: `${w.streak.current === 1 ? "day" : "days"} in a row · best ${n(w.streak.longest)}` });
+
+  // What the week added up to: one tile per number.
+  const stats = box.createDiv({ cls: "inkwell-practice-stats" });
+  for (const st of practiceStats(w)) {
+    const tile = stats.createDiv({ cls: "inkwell-practice-stat" });
+    tile.createDiv({ cls: "inkwell-practice-num", text: st.value });
+    tile.createDiv({ cls: "inkwell-label", text: st.label });
+  }
 }
 
 // ---------- Mode level: inkwell-contribution ----------
@@ -260,11 +277,109 @@ function renderContribution(box: HTMLElement, c: Contribution, title: string | u
   ]);
 }
 
+// ---------- Recent practice: inkwell-recent ----------
+
+/** A practice note as `inkwell-recent` reads it. */
+export interface PracticeNote {
+  path: string;
+  basename: string;
+  type: string;
+  created: string;
+  /** Last modified, in milliseconds. */
+  mtime: number;
+  minutes: number;
+}
+
+/** One row of `inkwell-recent`. */
+export interface RecentRow {
+  path: string;
+  kind: "exercise" | "journal";
+  title: string;
+  /** "15 min", or "" when the timer logged nothing. */
+  minutes: string;
+  /** When it was last worked on: "Today", "Yesterday", a weekday this past week, else a date. */
+  when: string;
+}
+
+/** When a note was last worked on, in words, as seen from `today`. */
+export function whenWorked(mtime: number, today: moment.Moment): string {
+  const day = moment(mtime).startOf("day");
+  const ago = today.clone().startOf("day").diff(day, "days");
+  if (ago <= 0) return "Today";
+  if (ago === 1) return "Yesterday";
+  if (ago < 7) return day.format("dddd");
+  return day.format(day.year() === today.year() ? "D MMM" : "D MMM YYYY");
+}
+
+/**
+ * The rows of `inkwell-recent`: exercises and journal entries, last worked on first. A journal is titled by its
+ * day ("Friday 27 Nov"), from `created` or else its file name in the journal date format.
+ */
+export function recentPractice(notes: readonly PracticeNote[], today: moment.Moment, limit: number, journalFormat: string): RecentRow[] {
+  return notes
+    .filter((x) => x.type === "exercise" || x.type === "journal")
+    .sort((a, b) => b.mtime - a.mtime)
+    .slice(0, Math.max(1, limit))
+    .map((x) => {
+      const kind = x.type === "journal" ? "journal" : "exercise";
+      let title = x.basename;
+      if (kind === "journal") {
+        const d = [moment(x.created, DAY, true), moment(x.basename, journalFormat || DAY, true)].find((m) => m.isValid());
+        if (d) title = d.format(d.year() === today.year() ? "dddd D MMM" : "dddd D MMM YYYY");
+      }
+      return { path: x.path, kind, title, minutes: x.minutes > 0 ? `${n(x.minutes)} min` : "", when: whenWorked(x.mtime, today) };
+    });
+}
+
+async function renderRecent(box: HTMLElement, plugin: InkwellPlugin, hoverParent: LiveBlock, sourcePath: string, o: Record<string, string>) {
+  const { app, settings } = plugin;
+  box.addClass("inkwell-block", "inkwell-recent");
+  if (o.title !== "none") box.createDiv({ cls: "inkwell-prompt-label", text: o.title || "Recent practice" });
+  const practice = (p: string) => under(p, settings.folders.journal) || under(p, settings.folders.writings);
+  const notes: PracticeNote[] = allNotes(plugin)
+    .filter((x) => practice(x.file.path))
+    .map((x) => ({
+      path: x.file.path,
+      basename: x.file.basename,
+      type: x.type,
+      created: x.created,
+      mtime: x.file.stat.mtime,
+      minutes: Number(x.fm.writing_min) || 0,
+    }));
+  const rows = recentPractice(notes, moment(), parseInt(o.limit ?? "", 10) || 7, settings.journalDateFormat);
+  if (!rows.length) {
+    box.createDiv({ cls: "inkwell-muted", text: "No exercises or journal entries yet." });
+    return;
+  }
+  const list = box.createDiv({ cls: "inkwell-recent-list" });
+  for (const r of rows) {
+    const row = list.createDiv({ cls: `inkwell-recent-row is-${r.kind}` });
+    setIcon(row.createSpan({ cls: "inkwell-recent-icon", attr: { "aria-label": r.kind === "journal" ? "Journal" : "Exercise" } }), r.kind === "journal" ? "notebook-pen" : "pen-line");
+    const a = row.createEl("a", { cls: "inkwell-recent-title internal-link", text: r.title, attr: { "data-href": r.path, href: r.path } });
+    a.onclick = (ev) => {
+      ev.preventDefault();
+      void app.workspace.openLinkText(r.path, sourcePath, Keymap.isModEvent(ev));
+    };
+    // Hovering previews the note, like any internal link in reading view.
+    a.onmouseover = (event) => app.workspace.trigger("hover-link", { event, source: "preview", hoverParent, targetEl: a, linktext: r.path, sourcePath });
+    const words = await plugin.words.words((p) => p === r.path, "1970-01-01");
+    const meta = row.createSpan({ cls: "inkwell-recent-meta" });
+    for (const part of [words > 0 ? plural(words, "word") : "", r.minutes]) if (part) meta.createSpan({ text: part });
+    row.createSpan({ cls: "inkwell-recent-when", text: r.when });
+  }
+}
+
 export function registerContributionBlocks(plugin: InkwellPlugin): void {
   // ```inkwell-practice```  (option: title: <text>|none)
   plugin.registerMarkdownCodeBlockProcessor("inkwell-practice", (src, el, ctx) => {
     const o = opts(src);
     ctx.addChild(new LiveBlock(el, plugin, async (box) => renderPractice(box, await practiceWeek(plugin), o.title)));
+  });
+
+  // ```inkwell-recent```  (options: limit: 7, title: <text>|none)
+  plugin.registerMarkdownCodeBlockProcessor("inkwell-recent", (src, el, ctx) => {
+    const o = opts(src);
+    ctx.addChild(new LiveBlock(el, plugin, (box, child) => renderRecent(box, plugin, child, ctx.sourcePath, o)));
   });
 
   // ```inkwell-contribution```  (options: period: week|month|year|all, title: <text>|none)
