@@ -850,7 +850,6 @@ describe("revise where you revise", () => {
     expect(exercise).toContain("## Work\n> [!writing|revision timer]\n");
     expect(exercise).toContain("## Reflection\n> [!writing|timer]\n");
     expect(kinds("storyDraft")).toEqual([["revision", false]]);
-    expect(kinds("journal")).toEqual([]);
-    expect(render(BUILTIN_TEMPLATES.journal, {})).toContain("## Writing\n- \n");
+    expect(kinds("journal")).toEqual([["freewrite", false]]);
   });
 });

@@ -105,8 +105,16 @@ writing_min:
 ## Ideas, Observations, Reflections
 
 
+## Journal Notes
+
+> [!writing]
+> 
+
 ## Writing
-- 
+
+## Words Written today
+\`\`\`inkwell-entries
+\`\`\`
 `,
   exercise: `---
 type: exercise

@@ -3,6 +3,7 @@ import { moment } from "obsidian";
 import {
   addToLog,
   dailyWordsIn,
+  dayEntries,
   goalNoticesDue,
   goalProgress,
   goalReached,
@@ -17,6 +18,8 @@ import {
   wordsSummary,
   type LogRow,
 } from "../src/wordlog";
+import { modeMatchers } from "../src/contribution";
+import { fakePlugin } from "./helpers/fake-app";
 
 const DRAFT = "02 - Stories/The Chapel/The Chapel - Draft.md";
 const days = (entries: Record<string, number>) => new Map(Object.entries(entries));
@@ -229,5 +232,46 @@ describe("goals", () => {
     // The next day, the daily notice can show again; the week's has been shown.
     const next = goalNoticesDue({ today: 0, week: 1520 }, { today: 300, week: 1820 }, goals, first.shown, "2026-11-27", "2026-11-23");
     expect(next).toMatchObject({ daily: true, weekly: false });
+  });
+});
+
+describe("a day's entries", () => {
+  const JOURNAL = "01 - Practice/Journal/2026-11-22.md";
+  const TIDE = "02 - Stories/Tide/Tide - Draft.md";
+  const all = modeMatchers(fakePlugin()).all;
+
+  it("a day's entries list each note's words, largest first, with the total", () => {
+    const rows: LogRow[] = [
+      { date: "2026-11-22", path: JOURNAL, words: 120 },
+      { date: "2026-11-22", path: TIDE, words: 450 },
+      { date: "2026-11-23", path: TIDE, words: 300 },
+    ];
+    expect(dayEntries(rows, "2026-11-22", all)).toEqual({
+      entries: [
+        { path: TIDE, words: 450 },
+        { path: JOURNAL, words: 120 },
+      ],
+      total: 570,
+    });
+  });
+
+  it("a note written on two devices is listed once with both devices' words", () => {
+    // One row from the phone's log note and one from the laptop's.
+    const rows: LogRow[] = [
+      { date: "2026-11-22", path: TIDE, words: 200 },
+      { date: "2026-11-22", path: TIDE, words: 150 },
+    ];
+    expect(dayEntries(rows, "2026-11-22", all)).toEqual({ entries: [{ path: TIDE, words: 350 }], total: 350 });
+  });
+
+  it("a day's entries leave out resources, the log, and notes that add up to zero", () => {
+    const rows: LogRow[] = [
+      { date: "2026-11-22", path: "05 - Resources/A poem.md", words: 80 },
+      { date: "2026-11-22", path: "99 - System/Inkwell/Word log/phone/2026-11.md", words: 10 },
+      { date: "2026-11-22", path: TIDE, words: 40 },
+      { date: "2026-11-22", path: TIDE, words: -40 },
+    ];
+    expect(dayEntries(rows, "2026-11-22", all)).toEqual({ entries: [], total: 0 });
+    expect(dayEntries([], "2026-11-22", all)).toEqual({ entries: [], total: 0 });
   });
 });

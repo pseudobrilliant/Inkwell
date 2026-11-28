@@ -97,7 +97,7 @@ Inkwell's built-in exercise template SHALL start its `## Work` section with an e
 Test: tests/blocks.test.ts › "the built-in exercise template starts Work with a timed revision block and Reflection with a timed free-write block"
 
 ### Requirement: Drafts, scenes and journals start with a block
-Inkwell's built-in story draft template SHALL hold an empty untimed revision block (`> [!writing|revision]`), and a new scene SHALL start with one. The built-in journal template SHALL hold no block: its `## Writing` section is a plain list of what the writer wrote that day, in place of the old "Words written" section. Template files the writer already has, and notes that already exist, SHALL NOT be changed.
+Inkwell's built-in story draft template SHALL hold an empty untimed revision block (`> [!writing|revision]`), and a new scene SHALL start with one. The built-in journal template SHALL hold an empty free-write block (`> [!writing]`) under "Journal Notes", and the journal SHALL end with a "Words Written today" section holding an `inkwell-entries` block. Template files the writer already has, and notes that already exist, SHALL NOT be changed.
 
 #### Scenario: A new story draft
 - **GIVEN** no custom story draft template
@@ -115,9 +115,10 @@ Test: tests/blocks.test.ts › "a new scene's body is an empty writing block, un
 #### Scenario: Today's journal
 - **GIVEN** no custom journal template
 - **WHEN** the writer opens today's journal for the first time
-- **THEN** it holds no writing block, a `## Writing` section with an empty list item, and no `ktr-entries` block
+- **THEN** its sections are "Daily Goals", "Ideas, Observations, Reflections", "Journal Notes" holding an empty free-write block, an empty "Writing", and "Words Written today" holding an `inkwell-entries` block
+- **AND** it holds no `ktr-entries` block
 
-Test: tests/blocks.test.ts › "today's journal has a Writing list, no block and no ktr-entries block"
+Test: tests/blocks.test.ts › "today's journal holds an empty writing block and no ktr-entries block"
 
 ### Requirement: Writing that won't count
 WHEN the story panel shows a story whose draft has no writing block, or the project panel shows scenes without one, Inkwell SHALL say their writing isn't counted and offer "Put in a writing block", which wraps the note's body, below its frontmatter, in one untimed revision block.

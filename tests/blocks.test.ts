@@ -63,13 +63,13 @@ describe("new notes start with a writing block", () => {
     expect(app.textOf(given.path)).toMatch(/\nIt rained\.\n$/);
   });
 
-  it("today's journal has a Writing list, no block and no ktr-entries block", async () => {
+  it("today's journal holds an empty writing block and no ktr-entries block", async () => {
     const plugin = fakePlugin();
     const file = await ensureTodaysJournal(plugin);
     const text = plugin.app.textOf(file.path);
-    expect(empty(text)).toEqual([]);
-    expect(text).toContain("## Writing\n- \n");
-    expect(text).not.toMatch(/ktr-|Words Written/);
+    expect(empty(text)).toEqual([["", null, "freewrite"]]);
+    expect(text).toMatch(/\n## Daily Goals\n- \n\n## Ideas, Observations, Reflections\n\n\n## Journal Notes\n\n> \[!writing\]\n> \n\n## Writing\n\n## Words Written today\n```inkwell-entries\n```\n$/);
+    expect(text).not.toMatch(/ktr-/);
   });
 });
 

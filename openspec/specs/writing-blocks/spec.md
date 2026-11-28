@@ -452,7 +452,7 @@ Test: tests/blocks.test.ts › "a new scene's body is an empty writing block, un
 - **WHEN** the writer opens today's journal for the first time
 - **THEN** it holds an empty writing block and no `ktr-entries` block
 
-Test: tests/blocks.test.ts › "today's journal has a Writing list, no block and no ktr-entries block"
+Test: tests/blocks.test.ts › "today's journal holds an empty writing block and no ktr-entries block"
 
 ### Requirement: Word count on the block
 Every writing block's toolbar SHALL show a word count tool with the words in what the block shows, counted as in the "Word counts" requirement, kept up to date while the writer types. Once the block has been reviewed, in Review and Edited it SHALL also show the change since the first draft, and in Draft mode, which shows the first draft, it SHALL count the first draft.

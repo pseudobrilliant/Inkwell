@@ -69,7 +69,7 @@ A writing block is a box for the writing itself, apart from the prompt, goal and
 - Without Inkwell, a block is an ordinary callout and the first draft an ordinary comment, so nothing is lost.
 
 ### Practice
-- **Today's journal:** opens or creates today's journal entry. Its **Writing** section is a list of what you wrote that day.
+- **Today's journal:** opens or creates today's journal entry, with sections for Daily Goals; Ideas, Observations, Reflections; Journal Notes (a free-write block); Writing; and **Words Written today**, which lists what you wrote that day.
 - **Prompts:** one small note per prompt, tracking how often and how recently you've used it, with a sortable Prompts table.
 - **Random prompt:** picks the prompts you've used least and longest ago first.
 - **Prompt of the day:** appears in the journal and on Home.
@@ -97,8 +97,9 @@ A writing block is a box for the writing itself, apart from the prompt, goal and
 
 ### Home
 - A built-in **Home** dashboard (command + ribbon).
-- Code blocks you can use in any note: `inkwell-inbox`, `inkwell-in-progress`, `inkwell-prompt`, `inkwell-practice`, `inkwell-contribution`, `inkwell-words`, `inkwell-heatmap`.
+- Code blocks you can use in any note: `inkwell-inbox`, `inkwell-in-progress`, `inkwell-prompt`, `inkwell-practice`, `inkwell-contribution`, `inkwell-words`, `inkwell-entries`, `inkwell-heatmap`.
 - **Words** (`inkwell-words`): words today, this week, and this month with your daily average, and your streak, current and best. With goals on, today and this week show a bar against your daily and weekly goals, and how many goal days you've had this week.
+- **Words written on a day** (`inkwell-entries`): each note you wrote in that day, linked, with its words from every device, largest first, and the day's total against your daily goal. In a journal it shows the journal's own day (its `created` date, or its file name), so an old journal keeps showing what you wrote then. Anywhere else it shows today. Option: `date: YYYY-MM-DD` to pick a day.
 - **Heatmap** (`inkwell-heatmap`): one square per day, shaded by the words you wrote. Options: `weeks` (24 by default), `of` (`pieces`, the default, for story drafts and scenes; or `practice`, `stories`, `projects`, `all`), and `stops`, the word counts where the shade steps up (`1, 100, 500, 1000` by default). Home shows 48 weeks of all your writing.
 - **Practice this week** (`inkwell-practice`): which days you showed up (days you wrote words in a writing block), with a ring on the days you met your daily goal, your streak, and the exercises, prompts, journal entries, minutes written, and practice words for the week.
 - **Your contribution** (`inkwell-contribution`): what you added to each part of your writing this week, month, year, or all time: ideas captured and sorted; resources added, being read, and done; exercises, journal entries, and prompts used; stories started, grown from practice, and revised; projects started or promoted and scenes added, with the words you wrote in each.

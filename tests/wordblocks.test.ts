@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { moment } from "obsidian";
-import { heatmapMatch, wordStats } from "../src/wordblocks";
+import { entriesDay, entriesView, heatmapMatch, wordStats } from "../src/wordblocks";
 import { dailyWordsIn, goalProgress, heatmapGrid, wordsSummary, type Goals, type LogRow } from "../src/wordlog";
 import { fakePlugin } from "./helpers/fake-app";
 
@@ -58,5 +58,49 @@ describe("goals in the words block", () => {
   it("with both goals off, the block shows only the words", () => {
     const stats = statsFor({ "2026-11-26": 450 }, { daily: 0, weekly: 0 });
     expect(stats.map((x) => x.goal)).toEqual([undefined, undefined, undefined, undefined]);
+  });
+});
+
+describe("the entries block", () => {
+  const today = moment("2026-11-27");
+  const TIDE = "02 - Stories/Tide/Tide - Draft.md";
+  const JOURNAL = "01 - Practice/Journal/2026-11-22.md";
+
+  it("the entries block shows the date option, else a journal's day, else today", () => {
+    const journal = { fm: { type: "journal" }, basename: "2026-11-21" };
+    const draft = { fm: { type: "draft" }, basename: "Tide - Draft" };
+    expect(entriesDay(undefined, journal, today, "YYYY-MM-DD")).toBe("2026-11-21");
+    expect(entriesDay(undefined, { fm: { type: "journal", created: "2026-11-19" }, basename: "2026-11-21" }, today, "YYYY-MM-DD")).toBe("2026-11-19");
+    expect(entriesDay(undefined, draft, today, "YYYY-MM-DD")).toBe("2026-11-27");
+    expect(entriesDay("2026-11-20", draft, today, "YYYY-MM-DD")).toBe("2026-11-20");
+    expect(entriesDay("2026-11-20", journal, today, "YYYY-MM-DD")).toBe("2026-11-20");
+    // A journal named in another date format, a typo in the option, and a block outside any note.
+    expect(entriesDay(undefined, { fm: { type: "journal" }, basename: "21.11.2026" }, today, "DD.MM.YYYY")).toBe("2026-11-21");
+    expect(entriesDay("Nov 20", journal, today, "YYYY-MM-DD")).toBe("2026-11-21");
+    expect(entriesDay(undefined, { fm: { type: "journal" }, basename: "Monday" }, today, "YYYY-MM-DD")).toBe("2026-11-27");
+    expect(entriesDay(undefined, null, today, "YYYY-MM-DD")).toBe("2026-11-27");
+  });
+
+  it("an entry for a deleted note shows its name without a link", () => {
+    const view = entriesView({ entries: [{ path: TIDE, words: 450 }, { path: JOURNAL, words: 1 }], total: 451 }, (p) => p === JOURNAL, 0);
+    expect(view.entries).toEqual([
+      { path: TIDE, name: "Tide - Draft", words: "450 words", link: false },
+      { path: JOURNAL, name: "2026-11-22", words: "1 word", link: true },
+    ]);
+  });
+
+  it("the entries block shows the day's total against the daily goal, or alone when it's off", () => {
+    const day = { entries: [{ path: TIDE, words: 450 }, { path: JOURNAL, words: 120 }], total: 570 };
+    const met = entriesView(day, () => true, 300);
+    expect(met.total).toBe("570 words");
+    expect(met.goal).toMatchObject({ text: "570 of 300", share: 1, met: true });
+    expect(entriesView({ ...day, total: 150 }, () => true, 300).goal).toMatchObject({ text: "150 of 300", share: 0.5, met: false });
+    expect(entriesView(day, () => true, 0).goal).toBeUndefined();
+  });
+
+  it("a day with nothing written says so plainly", () => {
+    const view = entriesView({ entries: [], total: 0 }, () => true, 300);
+    expect(view.empty).toBe(true);
+    expect(view.entries).toEqual([]);
   });
 });

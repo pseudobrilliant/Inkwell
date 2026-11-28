@@ -12,7 +12,7 @@
 
 ## 3. Revise where you revise
 
-- [x] 3.1 Update the templates in `src/templates.ts` (design decision 9) and the revision blocks made by `src/projects.ts`, `src/promote.ts` and `src/stories.ts` (design decision 2). The writing-blocks delta modifies "Exercise template", "Drafts, scenes and journals start with a block", "Moving work up" and "Writing that won't count" to say which kind each makes. Tests: "the built-in exercise template starts Work with a timed revision block and Reflection with a timed free-write block" and "today's journal has a Writing list, no block and no ktr-entries block" in `tests/blocks.test.ts` (renamed, `Test:` lines set), the draft, scene and "Put in a writing block" checks there, "each scene's text goes in a revision block" in `tests/promote.test.ts`, the revision draft in `tests/became.test.ts`, and "templates start each block as the kind its writing needs" in `tests/writingblocks.test.ts`. Verify `npm test` passes.
+- [x] 3.1 Update the templates in `src/templates.ts` (design decision 9) and the revision blocks made by `src/projects.ts`, `src/promote.ts` and `src/stories.ts` (design decision 2). The writing-blocks delta modifies "Exercise template", "Drafts, scenes and journals start with a block", "Moving work up" and "Writing that won't count" to say which kind each makes. Tests: "the built-in exercise template starts Work with a timed revision block and Reflection with a timed free-write block" and "today's journal holds an empty writing block and no ktr-entries block" (now also checking the block is free-write) in `tests/blocks.test.ts` (`Test:` lines set), the draft, scene and "Put in a writing block" checks there, "each scene's text goes in a revision block" in `tests/promote.test.ts`, the revision draft in `tests/became.test.ts`, and "templates start each block as the kind its writing needs" in `tests/writingblocks.test.ts`. Verify `npm test` passes.
 
 ## 4. Timing by the block's option
 
@@ -33,10 +33,11 @@
   - free-writing in a character note with `timer` (no frontmatter change)
   - "New writing block" and "New revision block"
   - an older reviewed `[!writing]` block still in Review
-  - the journal's plain Writing list
+  - the journal's Journal Notes block showing "Free-write", and its timer at the top of the note
   - the toolbar in light and dark themes
 
 ## Workflow follow-up
 
 - Archive once built: `npx openspec archive block-types`.
+- Archive `day-entries` before this change: both modify "Drafts, scenes and journals start with a block", and this change's version includes day-entries' journal sections.
 - The `lessons` change also edits the exercise and journal templates. Whichever merges second combines them.

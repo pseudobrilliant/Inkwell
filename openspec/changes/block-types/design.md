@@ -63,7 +63,7 @@ goalFor(type, minutes, text)       = type === "exercise" && some block is (revis
 `journalMinutes` goes from `InkwellSettings`, `DEFAULT_SETTINGS`, the setting definitions and `getControlValue`/`setControlValue`. `mergeSettings` doesn't carry it over, and a settings test loads an old file that has it. `openTodaysJournal` arms with 0, and `startFor` uses `goalFor`, which is 0 for a journal.
 
 ### 9. Templates
-- Journal: `## Writing\n- \n` (a plain list).
+- Journal: unchanged from the day-entries change. Its `> [!writing]` under Journal Notes is now a free-write block. Since it isn't timed, the journal is timed as a whole note, with no goal.
 - Exercise: `## Work\n> [!writing|revision timer]\n> \n` and `## Reflection\n> [!writing|timer]\n> \n`.
 - Story draft: `> [!writing|revision]\n> \n`.
 

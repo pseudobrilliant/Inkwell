@@ -14,13 +14,13 @@ Most practice writing is free-writing: write without stopping and without fixing
 - **Revise where you revise.** In the templates and the notes Inkwell makes:
   - Exercise: Work is `[!writing|revision timer]` and Reflection is `[!writing|timer]`.
   - Story drafts, new scenes, and what "This became a story", "Promote" and "Put in a writing block" make: `[!writing|revision]`.
-  - Journal: `## Writing` becomes a plain list (what you wrote that day), not a block.
+  - Journal: its block under "Journal Notes" is a plain `[!writing]`, so it's now an untimed free-write block (the day-entries change set the journal's sections). With no timed block, the journal is timed as a whole note, as before.
 - **"New writing block"** makes a free-write block. A new **"New revision block"** command makes the other kind. Both are in the editor menu too.
 - **BREAKING: no journal time goal.** The "Journal goal (minutes)" setting is removed, so the journal's timer has no goal. Exercises keep their `minutes` goal. Inkwell is unreleased, so there's no migration.
 
 Out of scope:
 - **A toolbar control to switch a block's type or turn its timer on and off.** The writer edits the header, or makes a new block.
-- **Listing the day's writing in the journal's Writing section automatically.** The section is a plain list the writer fills in.
+- **Timing the journal by its block.** Adding `timer` to the journal template's block would do it. That's left for the writer to choose.
 - **A stopwatch that keeps running through pauses.** The timer pauses on idle, as today.
 - **Mode labels.** Draft, Review and Edited stay as they are. The idea's question about renaming them is dropped.
 
