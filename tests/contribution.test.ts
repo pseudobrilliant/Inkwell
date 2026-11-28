@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { moment } from "obsidian";
-import { contribution, practiceWeek } from "../src/contribution";
+import { contribution, practiceStats, practiceWeek, recentPractice, whenWorked, type PracticeNote } from "../src/contribution";
 import { addToLog, newLogFile, type LogRow } from "../src/wordlog";
 import { fakePlugin, FakeApp } from "./helpers/fake-app";
 
@@ -108,5 +108,53 @@ describe("your contribution", () => {
       { date: TODAY, path: EXERCISE, words: 300 },
     ]);
     expect(await plugin.words.wordsThisWeek((p) => p === DRAFT)).toBe(400);
+  });
+});
+
+describe("recent practice", () => {
+  // Friday 27 November 2026, mid-afternoon.
+  const today = moment("2026-11-27 15:00");
+  const at = (s: string) => moment(s).valueOf();
+  const note = (over: Partial<PracticeNote>): PracticeNote => ({ path: "x.md", basename: "x", type: "exercise", created: "", mtime: 0, minutes: 0, ...over });
+
+  it("says when a note was last worked on, nearest first", () => {
+    expect(whenWorked(at("2026-11-27 09:00"), today)).toBe("Today");
+    expect(whenWorked(at("2026-11-26 23:00"), today)).toBe("Yesterday");
+    expect(whenWorked(at("2026-11-23 10:00"), today)).toBe("Monday");
+    expect(whenWorked(at("2026-11-12 10:00"), today)).toBe("12 Nov");
+    expect(whenWorked(at("2025-12-30 10:00"), today)).toBe("30 Dec 2025");
+  });
+
+  it("lists exercises and journal entries, last worked on first, with journals titled by their day", () => {
+    const rows = recentPractice(
+      [
+        note({ path: "a.md", basename: "Tense Cooking", mtime: at("2026-11-25 10:00"), minutes: 15 }),
+        note({ path: "j.md", basename: "2026-11-27", type: "journal", mtime: at("2026-11-27 08:00") }),
+        note({ path: "k.md", basename: "2026-11-21", type: "journal", created: "2026-11-21", mtime: at("2026-11-21 08:00") }),
+        note({ path: "p.md", basename: "A prompt", type: "prompt", mtime: at("2026-11-27 12:00") }),
+      ],
+      today,
+      7,
+      "YYYY-MM-DD"
+    );
+    expect(rows).toEqual([
+      { path: "j.md", kind: "journal", title: "Friday 27 Nov", minutes: "", when: "Today" },
+      { path: "a.md", kind: "exercise", title: "Tense Cooking", minutes: "15 min", when: "Wednesday" },
+      { path: "k.md", kind: "journal", title: "Saturday 21 Nov", minutes: "", when: "Saturday" },
+    ]);
+    expect(recentPractice([note({ mtime: 1 }), note({ mtime: 2 })], today, 1, "YYYY-MM-DD")).toHaveLength(1);
+  });
+});
+
+describe("practice this week", () => {
+  it("shows the week's numbers as tiles, every one even at zero", () => {
+    const week = { days: [], exercises: 3, prompts: 1, journals: 1, minutes: 0, practiceWords: 1722, streak: { current: 1, longest: 3 } };
+    expect(practiceStats(week)).toEqual([
+      { label: "Exercises", value: "3" },
+      { label: "Prompts used", value: "1" },
+      { label: "Journal entry", value: "1" },
+      { label: "Minutes written", value: "0" },
+      { label: "Practice words", value: "1,722" },
+    ]);
   });
 });

@@ -167,6 +167,23 @@ Test: tests/wordblocks.test.ts › "Home's heatmap shows 48 weeks of all the wri
 
 Test: tests/wordlog.test.ts › "lays out weeks of days ending with this week, with empty days and future days"
 
+### Requirement: The heatmap's labels
+The heatmap SHALL name the months above their weeks and every other day of the week beside the rows, starting with the first day of the week, and SHALL mark today. Below the grid it SHALL show the words and the days written across it, and a legend that says how many words each shade means.
+
+#### Scenario: Month and day names
+- **GIVEN** a heatmap of 12 weeks ending in the week of 25 November 2026, with weeks starting on Monday
+- **WHEN** it renders
+- **THEN** "Sep", "Oct" and "Nov" stand above the first week of each month, and "Mon", "Wed", "Fri" and "Sun" stand beside their rows
+
+Test: tests/wordlog.test.ts › "names the months over their first week and every other day beside the rows"
+
+#### Scenario: The legend and the totals
+- **GIVEN** the default stops and 1,500 words written over 2 days in the heatmap's weeks
+- **WHEN** it renders
+- **THEN** the legend reads no words, 1–99, 100–499, 500–999 and 1,000+ words, and below the grid it shows 1,500 words on 2 days
+
+Test: tests/wordlog.test.ts › "the legend says what each shade means, and the totals add up the days written"
+
 ### Requirement: The words block
 The `inkwell-words` block SHALL show the writer's words today, this week, and this month with the month's daily average, and the current and longest streak, all from the log across all writing.
 

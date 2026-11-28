@@ -12,7 +12,7 @@ import type InkwellPlugin from "./main";
 import { modeMatchers } from "./contribution";
 import { LiveBlock, opts } from "./homeblocks";
 import { fmOf, fmStr } from "./util";
-import { goalBar, heatmapGrid, heatmapStart, parseStops, wordsSummary, type DayEntry, type GoalBar, type GoalProgress, type WordsSummary } from "./wordlog";
+import { DEFAULT_STOPS, goalBar, heatLegend, heatmapDayNames, heatmapGrid, heatmapMonths, heatmapStart, heatmapTotals, parseStops, wordsSummary, type DayEntry, type GoalBar, type GoalProgress, type WordsSummary } from "./wordlog";
 
 const n = (x: number) => x.toLocaleString();
 
@@ -30,36 +30,58 @@ export interface HeatmapOptions {
   stops?: number[];
 }
 
-/** Draw a heatmap of the words in matching notes into `el`. */
+/** Draw a heatmap of the words in matching notes into `el`: month names above, day names beside, a legend below. */
 export async function renderHeatmap(el: HTMLElement, plugin: InkwellPlugin, match: (path: string) => boolean, o: HeatmapOptions = {}): Promise<void> {
   const weeks = Math.max(1, Math.min(104, o.weeks ?? 24));
   const today = moment();
+  const todayStr = today.format("YYYY-MM-DD");
   const weekStart = plugin.settings.weekStart;
+  const stops = o.stops ?? [...DEFAULT_STOPS];
   const days = await plugin.words.dailyWords(match, heatmapStart(today, weeks, weekStart));
-  const grid = heatmapGrid(days, today, weeks, weekStart, o.stops);
+  const grid = heatmapGrid(days, today, weeks, weekStart, stops);
   const box = el.createDiv({ cls: "inkwell-heatmap" });
+  // One grid, filled column by column: the first column is a corner and the day names, then each week is its
+  // month name and its seven days.
   const cells = box.createDiv({ cls: "inkwell-heatmap-grid" });
   cells.setCssProps({ "--inkwell-heatmap-weeks": String(weeks) });
-  for (const week of grid) {
+  cells.createDiv({ cls: "inkwell-heatmap-month" });
+  for (const name of heatmapDayNames(weekStart)) cells.createDiv({ cls: "inkwell-heatmap-day", text: name });
+  const months = heatmapMonths(grid);
+  grid.forEach((week, w) => {
+    cells.createDiv({ cls: "inkwell-heatmap-month", text: months[w] ?? "" });
     for (const d of week) {
       const cell = cells.createDiv({ cls: `inkwell-heat inkwell-heat-${d.level}` });
       if (d.future) {
         cell.addClass("is-future");
         continue;
       }
+      if (d.date === todayStr) cell.addClass("is-today");
       const label = `${moment(d.date).format("ddd D MMM YYYY")} · ${d.words === 1 ? "1 word" : `${n(d.words)} words`}`;
       cell.setAttr("aria-label", label);
       // A phone has no hover: a tap shows the day instead.
       if (Platform.isMobile) cell.onclick = () => new Notice(label);
     }
-  }
+  });
+
+  const foot = box.createDiv({ cls: "inkwell-heatmap-foot" });
+  const t = heatmapTotals(grid);
+  const sum = foot.createDiv({ cls: "inkwell-heatmap-sum" });
+  sum.createSpan({ cls: "inkwell-heatmap-sum-num", text: n(t.words) });
+  sum.appendText(` words on ${t.days === 1 ? "1 day" : `${n(t.days)} days`} in the last ${weeks === 1 ? "week" : `${weeks} weeks`}`);
+  const legend = foot.createDiv({ cls: "inkwell-heatmap-legend" });
+  legend.createSpan({ text: "Less" });
+  heatLegend(stops).forEach((label, level) => legend.createDiv({ cls: `inkwell-heat inkwell-heat-${level}`, attr: { "aria-label": label } }));
+  legend.createSpan({ text: "More" });
 }
 
-/** One number in the words block, with its goal when one is on. */
+/** One number in the words block: a label over it, a short line under it, and its goal's bar when one is on. */
 export interface WordStat {
-  value: string;
   label: string;
-  sub?: string;
+  value: string;
+  /** A small word after the number ("days"). */
+  unit?: string;
+  /** One muted line under the number: the goal it's measured against, the daily average, the best streak. */
+  caption?: string;
   goal?: { text: string; share: number; met: boolean; label: string };
 }
 
@@ -71,24 +93,31 @@ const goalOf = (b: GoalBar | null, which: string) =>
     label: b.met ? `${which} word goal met` : `${n(b.words)} of your ${which.toLowerCase()} goal of ${n(b.goal)} words`,
   };
 
+/** "of 300 ✓": the goal a number is measured against, marked once it's met. */
+const ofGoal = (b: GoalBar | null) => b && `of ${n(b.goal)}${b.met ? " ✓" : ""}`;
+
 /**
  * What `inkwell-words` shows (spec word-log, "The words block"; spec word-goals, "Goals in the words block").
  * A goal that's off adds nothing, and a goal not yet met shows only the words so far: no warning.
  */
 export function wordStats(s: WordsSummary, g: GoalProgress): WordStat[] {
   const plural = (x: number, one: string) => `${n(x)} ${one}${x === 1 ? "" : "s"}`;
-  const today: WordStat = { value: n(s.today), label: "Today" };
-  const week: WordStat = { value: n(s.week), label: "This week" };
+  const line = (...parts: (string | null)[]) => parts.filter((p): p is string => !!p).join(" · ") || undefined;
+  const today: WordStat = { label: "Today", value: n(s.today) };
+  const week: WordStat = { label: "This week", value: n(s.week) };
   const todayGoal = goalOf(g.today, "Daily");
   const weekGoal = goalOf(g.week, "Weekly");
   if (todayGoal) today.goal = todayGoal;
   if (weekGoal) week.goal = weekGoal;
-  if (g.goalDays !== null) week.sub = plural(g.goalDays, "goal day");
+  const todayLine = line(ofGoal(g.today));
+  const weekLine = line(ofGoal(g.week), g.goalDays === null ? null : plural(g.goalDays, "goal day"));
+  if (todayLine) today.caption = todayLine;
+  if (weekLine) week.caption = weekLine;
   return [
     today,
     week,
-    { value: n(s.month), label: "This month", sub: `${n(s.monthAverage)} a day` },
-    { value: `🔥 ${n(s.streak.current)}`, label: s.streak.current === 1 ? "Day in a row" : "Days in a row", sub: `Best ${n(s.streak.longest)}` },
+    { label: "This month", value: n(s.month), caption: `${n(s.monthAverage)} a day` },
+    { label: s.streak.current > 0 ? "Streak 🔥" : "Streak", value: n(s.streak.current), unit: s.streak.current === 1 ? "day" : "days", caption: `Best ${n(s.streak.longest)}` },
   ];
 }
 
@@ -110,10 +139,21 @@ function renderWords(box: HTMLElement, stats: WordStat[], title: string | undefi
   const row = box.createDiv({ cls: "inkwell-words-row" });
   for (const st of stats) {
     const el = row.createDiv({ cls: "inkwell-words-stat" });
-    el.createDiv({ cls: "inkwell-words-num", text: st.value });
     el.createDiv({ cls: "inkwell-label", text: st.label });
-    if (st.goal) drawGoal(el, st.goal);
-    if (st.sub) el.createDiv({ cls: "inkwell-muted", text: st.sub });
+    const num = el.createDiv({ cls: "inkwell-words-num", text: st.value });
+    if (st.unit) num.createSpan({ cls: "inkwell-words-unit", text: st.unit });
+    // Every stat keeps its caption line, empty or not, so the rows line up across the block.
+    const caption = el.createDiv({ cls: "inkwell-words-caption", text: st.caption ?? "" });
+    if (st.goal) {
+      const bar = el.createEl("progress", { cls: "inkwell-progress inkwell-goal-bar" });
+      bar.max = 1;
+      bar.value = st.goal.share;
+      for (const e of [bar, caption]) e.setAttr("aria-label", st.goal.label);
+      if (st.goal.met) {
+        bar.addClass("is-met");
+        caption.addClass("is-met");
+      }
+    }
   }
 }
 
